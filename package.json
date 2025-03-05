@@ -10,17 +10,14 @@
     "prepare-deploy": "mkdir -p src/app/data && echo '[]' > src/app/data/used_codes.json"
   },
   "dependencies": {
-    "autoprefixer": "^10.4.16",
     "cookie": "^0.6.0",
     "google-auth-library": "^9.6.3",
     "googleapis": "^133.0.0",
     "next": "13.5.6",
-    "postcss": "^8.4.31",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-hot-toast": "^2.4.1",
     "react-router-dom": "^6.22.0",
-    "tailwindcss": "^3.3.0",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
@@ -29,8 +26,11 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/uuid": "^9.0.8",
+    "autoprefixer": "^10.4.16",
     "eslint": "^8.56.0",
     "eslint-config-next": "13.5.6",
+    "postcss": "^8.4.31",
+    "tailwindcss": "^3.3.0",
     "typescript": "^5"
   },
   "engines": {
