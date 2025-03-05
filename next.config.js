@@ -14,6 +14,15 @@ const nextConfig = {
   images: {
     domains: ["drive.google.com"],
   },
+  // Configuración para rutas dinámicas
+  serverRuntimeConfig: {
+    dynamicRoutes: [
+      "/api/auth",
+      "/api/auth/callback",
+      "/api/auth/validate",
+      "/api/drive/videos",
+    ],
+  },
 };
 
 module.exports = nextConfig;
