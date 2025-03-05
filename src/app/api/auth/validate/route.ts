@@ -18,6 +18,12 @@ const DB_PATH = path.join(process.cwd(), "src/app/data/used_codes.json");
 // Función para obtener los códigos utilizados
 function getUsedCodes(): UsedCode[] {
   try {
+    // En producción (Vercel), usamos cookies para verificar en lugar de archivos
+    if (process.env.NODE_ENV === "production") {
+      return []; // En producción, la verificación se hace con cookies
+    }
+
+    // En desarrollo, usamos el archivo local
     if (fs.existsSync(DB_PATH)) {
       const data = fs.readFileSync(DB_PATH, "utf8");
       return JSON.parse(data);
@@ -32,6 +38,12 @@ function getUsedCodes(): UsedCode[] {
 // Función para guardar un código utilizado
 function saveUsedCode(code: string, deviceId: string, subjects?: string[]) {
   try {
+    // En producción (Vercel), no guardamos en archivos
+    if (process.env.NODE_ENV === "production") {
+      return; // No hacemos nada en producción
+    }
+
+    // En desarrollo, guardamos en el archivo local
     const usedCodes = getUsedCodes();
 
     // Verificar si el código ya existe
@@ -106,10 +118,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar si el código ya ha sido utilizado en otro dispositivo
-    const usedCodes = getUsedCodes();
-    const existingCode = usedCodes.find((item) => item.code === code);
+    // En producción, verificamos usando cookies
+    const studentCodeCookie = cookieStore.get(`student_${code}`)?.value;
 
-    if (existingCode && existingCode.deviceId !== deviceId) {
+    if (studentCodeCookie && studentCodeCookie !== deviceId) {
       return NextResponse.json(
         {
           success: false,
@@ -118,6 +130,23 @@ export async function POST(request: NextRequest) {
         },
         { status: 403 }
       );
+    }
+
+    // En desarrollo, también verificamos con el archivo
+    if (process.env.NODE_ENV !== "production") {
+      const usedCodes = getUsedCodes();
+      const existingCode = usedCodes.find((item) => item.code === code);
+
+      if (existingCode && existingCode.deviceId !== deviceId) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "Este código ya ha sido utilizado en otro dispositivo",
+            isDeviceUsed: true,
+          },
+          { status: 403 }
+        );
+      }
     }
 
     // Store device ID and student code in cookies
@@ -135,6 +164,14 @@ export async function POST(request: NextRequest) {
       maxAge: 30 * 24 * 60 * 60, // 30 days
     });
 
+    // Guardar una cookie específica para este código de estudiante
+    cookieStore.set(`student_${code}`, deviceId, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 30 * 24 * 60 * 60, // 30 days
+    });
+
     // Guardar las materias permitidas en una cookie
     if (student.subjects && student.subjects.length > 0) {
       cookieStore.set("allowed_subjects", JSON.stringify(student.subjects), {
@@ -145,7 +182,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Guardar el código como utilizado
+    // Guardar el código como utilizado (solo en desarrollo)
     saveUsedCode(code, deviceId, student.subjects);
 
     return NextResponse.json({

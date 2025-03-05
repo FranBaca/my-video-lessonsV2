@@ -11,6 +11,7 @@ Una aplicación Next.js para gestionar y visualizar clases en video almacenadas 
 - Interfaz intuitiva con sidebar de navegación
 - Reproductor de video integrado
 - Diseño responsive para todos los dispositivos
+- **No requiere base de datos externa** - Funciona completamente con Vercel
 
 ## Requisitos Previos
 
@@ -105,10 +106,10 @@ La aplicación soporta tres tipos de códigos:
 
 1. Crea una cuenta en [Vercel](https://vercel.com) si aún no tienes una
 
-2. Instala la CLI de Vercel (opcional):
+2. Prepara el proyecto para despliegue:
 
    ```bash
-   npm i -g vercel
+   npm run prepare-deploy
    ```
 
 3. Despliega desde la línea de comandos (opcional):
@@ -138,13 +139,25 @@ La aplicación soporta tres tipos de códigos:
    - Vercel desplegará automáticamente tu aplicación
    - Cada vez que hagas push a la rama principal, se desplegará una nueva versión
 
-## Consideraciones para Producción
+## Cómo funciona sin base de datos
 
-1. **Base de datos**: En producción, deberías usar una base de datos real (MongoDB, PostgreSQL, etc.) en lugar de archivos JSON para almacenar los códigos utilizados.
+Esta aplicación está diseñada para funcionar sin necesidad de una base de datos externa:
 
-2. **Seguridad**: Considera implementar medidas adicionales de seguridad como rate limiting, protección contra ataques de fuerza bruta, etc.
+1. **En desarrollo local**:
 
-3. **Monitoreo**: Implementa herramientas de monitoreo para detectar problemas y mejorar la experiencia del usuario.
+   - Utiliza archivos JSON para almacenar información de estudiantes y códigos utilizados
+   - Permite probar todas las funcionalidades en un entorno local
+
+2. **En producción (Vercel)**:
+   - Utiliza cookies HTTP para almacenar la información de sesión y validación
+   - Cada código de estudiante se asocia con un dispositivo específico mediante cookies
+   - No requiere configuración de base de datos externa
+
+### Limitaciones
+
+- Las cookies tienen un tiempo de vida limitado (30 días por defecto)
+- Si un usuario borra sus cookies, podrá volver a usar su código en ese dispositivo
+- No hay persistencia entre diferentes despliegues de la aplicación
 
 ## Licencia
 
