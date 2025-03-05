@@ -25,7 +25,7 @@ export async function GET() {
     response.cookies.set("device_id", deviceId, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "strict" as "strict",
       maxAge: 30 * 24 * 60 * 60, // 30 days
       path: "/",
     });

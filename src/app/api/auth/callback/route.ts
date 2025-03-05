@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "strict" as "strict",
       path: "/",
     };
 
