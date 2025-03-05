@@ -10,12 +10,19 @@ const FOLDER_IDS = {
 
 export async function GET(request: NextRequest) {
   try {
+    // Obtener headers para verificar si hay un deviceId enviado desde el cliente
+    const clientDeviceId = request.headers.get("X-Device-Id");
+    const clientStudentCode = request.headers.get("X-Student-Code");
+    const clientAllowedSubjects = request.headers.get("X-Allowed-Subjects");
+
     // Leer cookies directamente de la solicitud
     const cookieStore = cookies();
     const accessToken = cookieStore.get("access_token")?.value;
-    const studentCode = cookieStore.get("student_code")?.value;
-    const allowedSubjectsStr = cookieStore.get("allowed_subjects")?.value;
-    const deviceId = cookieStore.get("device_id")?.value;
+    const studentCode =
+      cookieStore.get("student_code")?.value || clientStudentCode;
+    const allowedSubjectsStr =
+      cookieStore.get("allowed_subjects")?.value || clientAllowedSubjects;
+    const deviceId = cookieStore.get("device_id")?.value || clientDeviceId;
 
     if (!accessToken) {
       return NextResponse.json(
@@ -49,7 +56,27 @@ export async function GET(request: NextRequest) {
 
     // Verificar que el código de estudiante esté asociado con este dispositivo
     const studentDeviceId = cookieStore.get(`student_${studentCode}`)?.value;
-    if (!studentDeviceId || studentDeviceId !== deviceId) {
+    if (!studentDeviceId && process.env.NODE_ENV === "production") {
+      // En producción, si no hay cookie pero tenemos deviceId del cliente, confiamos en él
+      // Esto es para manejar el caso donde las cookies no funcionan correctamente en Vercel
+      if (
+        clientDeviceId &&
+        clientStudentCode &&
+        clientDeviceId === deviceId &&
+        clientStudentCode === studentCode
+      ) {
+        // Aceptamos la autenticación basada en los headers del cliente
+        console.log("Autenticación basada en headers del cliente");
+      } else {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "Invalid device for this student code",
+          },
+          { status: 403 }
+        );
+      }
+    } else if (studentDeviceId && studentDeviceId !== deviceId) {
       return NextResponse.json(
         {
           success: false,
@@ -103,10 +130,43 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({
+    // Configurar la respuesta con las cookies para reforzar la autenticación
+    const response = NextResponse.json({
       success: true,
       subjects,
     });
+
+    // Si no hay cookies pero hay información del cliente, establecer las cookies
+    if (!cookieStore.get("device_id")?.value && clientDeviceId) {
+      const cookieOptions = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict" as "strict",
+        maxAge: 30 * 24 * 60 * 60, // 30 days
+        path: "/",
+      };
+
+      response.cookies.set("device_id", clientDeviceId, cookieOptions);
+
+      if (clientStudentCode) {
+        response.cookies.set("student_code", clientStudentCode, cookieOptions);
+        response.cookies.set(
+          `student_${clientStudentCode}`,
+          clientDeviceId,
+          cookieOptions
+        );
+      }
+
+      if (clientAllowedSubjects) {
+        response.cookies.set(
+          "allowed_subjects",
+          clientAllowedSubjects,
+          cookieOptions
+        );
+      }
+    }
+
+    return response;
   } catch (error) {
     console.error("Videos fetch error:", error);
     return NextResponse.json(

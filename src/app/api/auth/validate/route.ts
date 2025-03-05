@@ -64,7 +64,7 @@ function saveUsedCode(code: string, deviceId: string, subjects?: string[]) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { code } = await request.json();
+    const { code, deviceId: clientDeviceId } = await request.json();
 
     if (!code) {
       return NextResponse.json(
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
 
     // Generate device ID if not exists
     const cookieStore = cookies();
-    let deviceId = cookieStore.get("device_id")?.value;
+    let deviceId = cookieStore.get("device_id")?.value || clientDeviceId;
 
     if (!deviceId) {
       deviceId = uuidv4();
