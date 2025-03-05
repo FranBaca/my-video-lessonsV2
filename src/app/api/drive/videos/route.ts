@@ -10,10 +10,12 @@ const FOLDER_IDS = {
 
 export async function GET(request: NextRequest) {
   try {
+    // Leer cookies directamente de la solicitud
     const cookieStore = cookies();
     const accessToken = cookieStore.get("access_token")?.value;
     const studentCode = cookieStore.get("student_code")?.value;
     const allowedSubjectsStr = cookieStore.get("allowed_subjects")?.value;
+    const deviceId = cookieStore.get("device_id")?.value;
 
     if (!accessToken) {
       return NextResponse.json(
@@ -30,6 +32,28 @@ export async function GET(request: NextRequest) {
         {
           success: false,
           message: "No student code found",
+        },
+        { status: 403 }
+      );
+    }
+
+    if (!deviceId) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "No device ID found",
+        },
+        { status: 403 }
+      );
+    }
+
+    // Verificar que el código de estudiante esté asociado con este dispositivo
+    const studentDeviceId = cookieStore.get(`student_${studentCode}`)?.value;
+    if (!studentDeviceId || studentDeviceId !== deviceId) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Invalid device for this student code",
         },
         { status: 403 }
       );

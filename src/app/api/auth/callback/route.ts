@@ -18,27 +18,42 @@ export async function GET(request: NextRequest) {
     }
 
     const tokens = await getTokens(code);
-    const cookieStore = cookies();
 
-    // Store tokens securely
-    cookieStore.set("access_token", tokens.access_token!, {
+    // Crear la respuesta de redirección
+    const response = NextResponse.redirect(new URL("/", request.url));
+
+    // Configurar las opciones de cookies
+    const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
+      path: "/",
+    };
+
+    // Establecer las cookies en la respuesta
+    response.cookies.set("access_token", tokens.access_token!, {
+      ...cookieOptions,
       maxAge: 3600, // 1 hour
     });
 
     if (tokens.refresh_token) {
-      cookieStore.set("refresh_token", tokens.refresh_token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
+      response.cookies.set("refresh_token", tokens.refresh_token, {
+        ...cookieOptions,
         maxAge: 30 * 24 * 60 * 60, // 30 days
       });
     }
 
-    // Redirect to home page after successful authentication
-    return NextResponse.redirect(new URL("/", request.url));
+    // Mantener el device_id si existe
+    const cookieStore = cookies();
+    const deviceId = cookieStore.get("device_id")?.value;
+    if (deviceId) {
+      response.cookies.set("device_id", deviceId, {
+        ...cookieOptions,
+        maxAge: 30 * 24 * 60 * 60, // 30 days
+      });
+    }
+
+    return response;
   } catch (error) {
     console.error("Callback error:", error);
     return NextResponse.json(

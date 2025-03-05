@@ -11,20 +11,26 @@ export async function GET() {
 
     if (!deviceId) {
       deviceId = uuidv4();
-      cookieStore.set("device_id", deviceId, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        maxAge: 30 * 24 * 60 * 60, // 30 days
-      });
     }
 
     const authUrl = getAuthUrl();
 
-    return NextResponse.json({
+    // Configurar la respuesta con las cookies
+    const response = NextResponse.json({
       success: true,
       url: authUrl,
     });
+
+    // Establecer la cookie de device_id en la respuesta
+    response.cookies.set("device_id", deviceId, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 30 * 24 * 60 * 60, // 30 days
+      path: "/",
+    });
+
+    return response;
   } catch (error) {
     console.error("Auth error:", error);
     return NextResponse.json(

@@ -18,11 +18,6 @@ const DB_PATH = path.join(process.cwd(), "src/app/data/used_codes.json");
 // Función para obtener los códigos utilizados
 function getUsedCodes(): UsedCode[] {
   try {
-    // En producción (Vercel), usamos cookies para verificar en lugar de archivos
-    if (process.env.NODE_ENV === "production") {
-      return []; // En producción, la verificación se hace con cookies
-    }
-
     // En desarrollo, usamos el archivo local
     if (fs.existsSync(DB_PATH)) {
       const data = fs.readFileSync(DB_PATH, "utf8");
@@ -38,11 +33,6 @@ function getUsedCodes(): UsedCode[] {
 // Función para guardar un código utilizado
 function saveUsedCode(code: string, deviceId: string, subjects?: string[]) {
   try {
-    // En producción (Vercel), no guardamos en archivos
-    if (process.env.NODE_ENV === "production") {
-      return; // No hacemos nada en producción
-    }
-
     // En desarrollo, guardamos en el archivo local
     const usedCodes = getUsedCodes();
 
@@ -118,7 +108,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar si el código ya ha sido utilizado en otro dispositivo
-    // En producción, verificamos usando cookies
+    // Verificamos usando cookies
     const studentCodeCookie = cookieStore.get(`student_${code}`)?.value;
 
     if (studentCodeCookie && studentCodeCookie !== deviceId) {
@@ -150,48 +140,43 @@ export async function POST(request: NextRequest) {
     }
 
     // Store device ID and student code in cookies
-    cookieStore.set("device_id", deviceId, {
+    const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
       maxAge: 30 * 24 * 60 * 60, // 30 days
-    });
+      path: "/",
+    };
 
-    cookieStore.set("student_code", code, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 30 * 24 * 60 * 60, // 30 days
-    });
-
-    // Guardar una cookie específica para este código de estudiante
-    cookieStore.set(`student_${code}`, deviceId, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 30 * 24 * 60 * 60, // 30 days
-    });
-
-    // Guardar las materias permitidas en una cookie
-    if (student.subjects && student.subjects.length > 0) {
-      cookieStore.set("allowed_subjects", JSON.stringify(student.subjects), {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        maxAge: 30 * 24 * 60 * 60, // 30 days
-      });
-    }
-
-    // Guardar el código como utilizado (solo en desarrollo)
-    saveUsedCode(code, deviceId, student.subjects);
-
-    return NextResponse.json({
+    // Configurar la respuesta con las cookies
+    const response = NextResponse.json({
       success: true,
       student: {
         ...student,
         deviceId,
       },
     });
+
+    // Establecer las cookies en la respuesta
+    response.cookies.set("device_id", deviceId, cookieOptions);
+    response.cookies.set("student_code", code, cookieOptions);
+    response.cookies.set(`student_${code}`, deviceId, cookieOptions);
+
+    // Guardar las materias permitidas en una cookie
+    if (student.subjects && student.subjects.length > 0) {
+      response.cookies.set(
+        "allowed_subjects",
+        JSON.stringify(student.subjects),
+        cookieOptions
+      );
+    }
+
+    // Guardar el código como utilizado (solo en desarrollo)
+    if (process.env.NODE_ENV !== "production") {
+      saveUsedCode(code, deviceId, student.subjects);
+    }
+
+    return response;
   } catch (error) {
     console.error("Validation error:", error);
     return NextResponse.json(
