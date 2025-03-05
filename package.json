@@ -1,0 +1,36 @@
+{
+  "name": "my-video-lessons",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "prepare-deploy": "mkdir -p src/app/data && echo '[]' > src/app/data/used_codes.json"
+  },
+  "dependencies": {
+    "cookie": "^0.6.0",
+    "google-auth-library": "^9.6.3",
+    "googleapis": "^133.0.0",
+    "next": "15.2.1",
+    "react": "^18",
+    "react-dom": "^18",
+    "react-hot-toast": "^2.4.1",
+    "react-router-dom": "^7.2.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/cookie": "^0.6.0",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "@types/uuid": "^9.0.8",
+    "autoprefixer": "^10.0.1",
+    "eslint": "^9",
+    "eslint-config-next": "15.2.1",
+    "postcss": "^8",
+    "tailwindcss": "^3.3.0",
+    "typescript": "^5"
+  }
+}

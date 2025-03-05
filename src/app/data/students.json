@@ -1,0 +1,56 @@
+[
+  {
+    "code": "ANAT2023001",
+    "name": "Estudiante Anatomía 1",
+    "authorized": true,
+    "subjects": ["anatomia"]
+  },
+  {
+    "code": "ANAT2023002",
+    "name": "Estudiante Anatomía 2",
+    "authorized": true,
+    "subjects": ["anatomia"]
+  },
+  {
+    "code": "ANAT2023003",
+    "name": "Estudiante Anatomía 3",
+    "authorized": true,
+    "subjects": ["anatomia"]
+  },
+  {
+    "code": "HIST2023001",
+    "name": "Estudiante Histología 1",
+    "authorized": true,
+    "subjects": ["histologia"]
+  },
+  {
+    "code": "HIST2023002",
+    "name": "Estudiante Histología 2",
+    "authorized": true,
+    "subjects": ["histologia"]
+  },
+  {
+    "code": "HIST2023003",
+    "name": "Estudiante Histología 3",
+    "authorized": true,
+    "subjects": ["histologia"]
+  },
+  {
+    "code": "COMPLETO001",
+    "name": "Estudiante Completo 1",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia"]
+  },
+  {
+    "code": "COMPLETO002",
+    "name": "Estudiante Completo 2",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia"]
+  },
+  {
+    "code": "TESTUSER123",
+    "name": "Usuario de Prueba",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia"]
+  }
+] 
