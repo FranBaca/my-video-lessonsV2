@@ -222,6 +222,38 @@ export default function Home() {
     setSelectedVideo(video);
   };
 
+  // Función para cerrar sesión
+  const handleLogout = () => {
+    console.log("Cerrando sesión...");
+
+    // Eliminar cookies
+    document.cookie =
+      "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie =
+      "refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie =
+      "device_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie =
+      "student_code=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie =
+      "allowed_subjects=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+
+    // Eliminar datos del localStorage
+    localStorage.removeItem("student_code");
+    localStorage.removeItem("device_id");
+    localStorage.removeItem("allowed_subjects");
+
+    // Actualizar el estado
+    setIsAuthenticated(false);
+    setStudent(null);
+    setSubjects([]);
+    setSelectedSubject(null);
+    setSelectedVideo(null);
+
+    // Mostrar mensaje de éxito
+    toast.success("Sesión cerrada correctamente");
+  };
+
   // Mostrar spinner mientras se carga
   if (isLoading) {
     return (
@@ -270,16 +302,27 @@ export default function Home() {
   }
 
   return (
-    <main className="flex flex-col md:flex-row h-screen overflow-hidden">
+    <div className="flex h-screen bg-gray-50 text-black">
       <Sidebar
         subjects={subjects}
         selectedSubject={selectedSubject}
         selectedVideo={selectedVideo}
         onSubjectSelect={handleSubjectSelect}
         onVideoSelect={handleVideoSelect}
+        onLogout={handleLogout}
       />
-      <VideoPlayer video={selectedVideo} />
+      <main className="flex-1 p-4 overflow-auto">
+        {selectedVideo ? (
+          <VideoPlayer video={selectedVideo} />
+        ) : (
+          <div className="flex h-full items-center justify-center">
+            <p className="text-xl text-gray-500">
+              Selecciona una clase para comenzar
+            </p>
+          </div>
+        )}
+      </main>
       <Toaster position="top-center" />
-    </main>
+    </div>
   );
 }

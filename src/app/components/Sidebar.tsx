@@ -7,6 +7,7 @@ interface SidebarProps {
   selectedVideo: Video | null;
   onSubjectSelect: (subject: Subject) => void;
   onVideoSelect: (video: Video) => void;
+  onLogout: () => void;
 }
 
 export default function Sidebar({
@@ -15,6 +16,7 @@ export default function Sidebar({
   selectedVideo,
   onSubjectSelect,
   onVideoSelect,
+  onLogout,
 }: SidebarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -61,9 +63,10 @@ export default function Sidebar({
         w-64 h-screen bg-gray-100 p-4 overflow-y-auto
         transition-transform duration-300 ease-in-out
         md:transition-none text-black
+        flex flex-col
       `}
       >
-        <div className="pt-16 md:pt-0">
+        <div className="pt-16 md:pt-0 flex-grow">
           <h2 className="text-xl font-bold mb-4">Asignaturas</h2>
 
           <div className="space-y-4">
@@ -110,6 +113,30 @@ export default function Sidebar({
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Botón de cerrar sesión */}
+        <div className="mt-auto pt-4 border-t border-gray-300">
+          <button
+            onClick={onLogout}
+            className="w-full bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded flex items-center justify-center"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 mr-2"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+              />
+            </svg>
+            Cerrar Sesión
+          </button>
         </div>
       </div>
 
