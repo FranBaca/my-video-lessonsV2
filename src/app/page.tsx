@@ -86,6 +86,25 @@ export default function Home() {
     checkAuth();
   }, []);
 
+  // Añadir un useEffect para seleccionar automáticamente la primera materia y el primer video
+  useEffect(() => {
+    if (subjects.length > 0 && !selectedSubject) {
+      console.log(
+        "Seleccionando automáticamente la primera materia:",
+        subjects[0]
+      );
+      setSelectedSubject(subjects[0].id);
+
+      if (subjects[0].videos.length > 0) {
+        console.log(
+          "Seleccionando automáticamente el primer video:",
+          subjects[0].videos[0]
+        );
+        setSelectedVideo(subjects[0].videos[0]);
+      }
+    }
+  }, [subjects, selectedSubject]);
+
   const handleLoginSuccess = async (student: Student) => {
     setStudent(student);
     setIsAuthenticated(true);
@@ -105,20 +124,50 @@ export default function Home() {
       const studentCode = localStorage.getItem("student_code");
       const allowedSubjects = localStorage.getItem("allowed_subjects");
 
+      console.log("Información de localStorage:", {
+        deviceId,
+        studentCode,
+        allowedSubjects,
+      });
+
       // Preparar los headers
       const headers: HeadersInit = {};
       if (deviceId) headers["X-Device-Id"] = deviceId;
       if (studentCode) headers["X-Student-Code"] = studentCode;
       if (allowedSubjects) headers["X-Allowed-Subjects"] = allowedSubjects;
 
+      console.log(
+        "Realizando petición a /api/drive/videos con headers:",
+        headers
+      );
       const response = await fetch("/api/drive/videos", { headers });
       const data = await response.json();
+      console.log("Respuesta de /api/drive/videos:", data);
 
       if (!data.success) {
-        // Si falla la API, intentamos usar los datos almacenados en localStorage
+        console.log("La petición no fue exitosa:", data);
+        // Verificar si necesitamos autenticación
+        if (response.status === 401 && data.redirectUrl) {
+          console.log("Redirigiendo a autenticación:", data.redirectUrl);
+          // Iniciar el proceso de autenticación
+          const authResponse = await fetch(data.redirectUrl);
+          const authData = await authResponse.json();
+
+          if (authData.success && authData.url) {
+            // Redirigir al usuario a la URL de autenticación de Google
+            window.location.href = authData.url;
+            return;
+          }
+        }
+
+        // Si falla la API por otras razones, intentamos usar los datos almacenados en localStorage
         const storedSubjects = localStorage.getItem("allowed_subjects");
         if (storedSubjects) {
           const parsedSubjects = JSON.parse(storedSubjects);
+          console.log(
+            "Usando datos almacenados en localStorage:",
+            parsedSubjects
+          );
           // Aquí deberíamos tener una lógica para cargar videos desde localStorage si es posible
           // Por ahora, solo mostramos un mensaje
           toast.error(
@@ -128,9 +177,11 @@ export default function Home() {
           throw new Error(data.message || "Failed to fetch videos");
         }
       } else {
+        console.log("Videos cargados correctamente:", data.subjects);
         setSubjects(data.subjects);
       }
     } catch (err) {
+      console.error("Error al cargar videos:", err);
       setError(err instanceof Error ? err.message : "An error occurred");
       toast.error("Error al cargar los videos. Por favor, intente nuevamente.");
     } finally {
@@ -139,11 +190,13 @@ export default function Home() {
   };
 
   const handleSubjectSelect = (subject: Subject) => {
+    console.log("Materia seleccionada:", subject);
     setSelectedSubject(subject.id);
     setSelectedVideo(null);
   };
 
   const handleVideoSelect = (video: Video) => {
+    console.log("Video seleccionado:", video);
     setSelectedVideo(video);
   };
 
@@ -165,6 +218,15 @@ export default function Home() {
   if (showWelcome && student) {
     return <WelcomeScreen student={student} onContinue={handleContinue} />;
   }
+
+  // Añadir log para ver el estado actual
+  console.log("Estado actual:", {
+    subjects,
+    selectedSubject,
+    selectedVideo,
+    isAuthenticated,
+    student,
+  });
 
   if (error) {
     return (

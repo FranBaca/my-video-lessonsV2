@@ -28,7 +28,7 @@ export default function Sidebar({
       <div className="md:hidden fixed top-0 left-0 z-40 p-4">
         <button
           onClick={toggleMobileMenu}
-          className="bg-blue-500 text-white p-2 rounded-md"
+          className="bg-blue-500 text-black p-2 rounded-md"
           aria-label="Toggle menu"
         >
           <svg
@@ -60,7 +60,7 @@ export default function Sidebar({
         fixed md:static top-0 left-0 z-30
         w-64 h-screen bg-gray-100 p-4 overflow-y-auto
         transition-transform duration-300 ease-in-out
-        md:transition-none
+        md:transition-none text-black
       `}
       >
         <div className="pt-16 md:pt-0">
@@ -78,7 +78,7 @@ export default function Sidebar({
                   }}
                   className={`w-full text-left p-2 rounded ${
                     selectedSubject === subject.id
-                      ? "bg-blue-500 text-white"
+                      ? "bg-blue-500 text-black"
                       : "hover:bg-gray-200"
                   }`}
                 >

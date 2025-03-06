@@ -3,10 +3,19 @@ import { cookies } from "next/headers";
 import { createDriveClient, listFolderVideos } from "@/app/lib/google-auth";
 import { Subject, Video } from "@/app/types";
 
+// Definir los IDs de las carpetas
 const FOLDER_IDS = {
   anatomia: process.env.GOOGLE_DRIVE_FOLDER_MATH!,
   histologia: process.env.GOOGLE_DRIVE_FOLDER_SCIENCE!,
+  fisiologia: process.env.GOOGLE_DRIVE_FOLDER_PHYSIOLOGY!,
 };
+
+// Verificar que los IDs de las carpetas estén definidos
+console.log("IDs de carpetas configurados:", {
+  anatomia: process.env.GOOGLE_DRIVE_FOLDER_MATH || "No definido",
+  histologia: process.env.GOOGLE_DRIVE_FOLDER_SCIENCE || "No definido",
+  fisiologia: process.env.GOOGLE_DRIVE_FOLDER_PHYSIOLOGY || "No definido",
+});
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,6 +23,12 @@ export async function GET(request: NextRequest) {
     const clientDeviceId = request.headers.get("X-Device-Id");
     const clientStudentCode = request.headers.get("X-Student-Code");
     const clientAllowedSubjects = request.headers.get("X-Allowed-Subjects");
+
+    console.log("Headers recibidos:", {
+      clientDeviceId,
+      clientStudentCode,
+      clientAllowedSubjects,
+    });
 
     // Leer cookies directamente de la solicitud
     const cookieStore = cookies();
@@ -24,11 +39,20 @@ export async function GET(request: NextRequest) {
       cookieStore.get("allowed_subjects")?.value || clientAllowedSubjects;
     const deviceId = cookieStore.get("device_id")?.value || clientDeviceId;
 
+    console.log("Cookies encontradas:", {
+      accessToken: accessToken ? "Presente" : "No presente",
+      studentCode,
+      allowedSubjectsStr,
+      deviceId,
+    });
+
     if (!accessToken) {
+      console.log("No se encontró token de acceso");
       return NextResponse.json(
         {
           success: false,
           message: "Not authenticated",
+          redirectUrl: "/api/auth", // URL para iniciar el proceso de autenticación
         },
         { status: 401 }
       );
@@ -125,7 +149,12 @@ export async function GET(request: NextRequest) {
 
       subjects.push({
         id: folderId,
-        name: subjectName === "anatomia" ? "Anatomía" : "Histología",
+        name:
+          subjectName === "anatomia"
+            ? "Anatomía"
+            : subjectName === "histologia"
+            ? "Histología"
+            : "Fisiología",
         videos,
       });
     }
@@ -134,6 +163,11 @@ export async function GET(request: NextRequest) {
     const response = NextResponse.json({
       success: true,
       subjects,
+    });
+
+    console.log("Enviando respuesta al frontend:", {
+      success: true,
+      subjects: JSON.parse(JSON.stringify(subjects)), // Convertir a JSON para ver la estructura completa
     });
 
     // Si no hay cookies pero hay información del cliente, establecer las cookies

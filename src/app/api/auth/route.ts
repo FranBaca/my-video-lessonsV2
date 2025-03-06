@@ -5,15 +5,21 @@ import { v4 as uuidv4 } from "uuid";
 
 export async function GET() {
   try {
+    console.log("Iniciando proceso de autenticación");
+
     // Generate device ID if not exists
     const cookieStore = cookies();
     let deviceId = cookieStore.get("device_id")?.value;
 
     if (!deviceId) {
       deviceId = uuidv4();
+      console.log("Generando nuevo device ID:", deviceId);
+    } else {
+      console.log("Usando device ID existente:", deviceId);
     }
 
     const authUrl = getAuthUrl();
+    console.log("URL de autenticación generada:", authUrl);
 
     // Configurar la respuesta con las cookies
     const response = NextResponse.json({
@@ -30,6 +36,7 @@ export async function GET() {
       path: "/",
     });
 
+    console.log("Respuesta de autenticación preparada");
     return response;
   } catch (error) {
     console.error("Auth error:", error);
