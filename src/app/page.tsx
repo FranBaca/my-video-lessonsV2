@@ -8,6 +8,7 @@ import LoginForm from "./components/LoginForm";
 import WelcomeScreen from "./components/WelcomeScreen";
 import { Toaster } from "react-hot-toast";
 import toast from "react-hot-toast";
+import { useSearchParams } from "next/navigation";
 
 export default function Home() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -18,6 +19,27 @@ export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [student, setStudent] = useState<Student | null>(null);
   const [showWelcome, setShowWelcome] = useState(false);
+
+  // Obtener parámetros de URL para errores de autenticación
+  const searchParams = useSearchParams();
+  const authError = searchParams.get("authError");
+  const errorDescription = searchParams.get("errorDescription");
+  const errorDetails = searchParams.get("errorDetails");
+
+  useEffect(() => {
+    // Mostrar errores de autenticación si existen
+    if (authError) {
+      const errorMessage = errorDescription || errorDetails || authError;
+      toast.error(`Error de autenticación: ${errorMessage}`, {
+        duration: 6000,
+      });
+      console.error("Error de autenticación:", {
+        authError,
+        errorDescription,
+        errorDetails,
+      });
+    }
+  }, [authError, errorDescription, errorDetails]);
 
   useEffect(() => {
     // Check if student is already logged in

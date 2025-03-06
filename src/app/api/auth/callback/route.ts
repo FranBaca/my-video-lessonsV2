@@ -5,9 +5,30 @@ import { cookies } from "next/headers";
 export async function GET(request: NextRequest) {
   try {
     console.log("Callback de autenticación recibido");
+    console.log("URL completa del callback:", request.url);
 
     const searchParams = request.nextUrl.searchParams;
     const code = searchParams.get("code");
+    const error = searchParams.get("error");
+
+    // Verificar si hay un error en los parámetros de la URL
+    if (error) {
+      console.error("Error recibido en los parámetros:", error);
+      const errorDescription =
+        searchParams.get("error_description") ||
+        "No hay descripción disponible";
+      console.error("Descripción del error:", errorDescription);
+
+      // Redirigir a la página principal con un parámetro de error
+      return NextResponse.redirect(
+        new URL(
+          `/?authError=${error}&errorDescription=${encodeURIComponent(
+            errorDescription
+          )}`,
+          request.url
+        )
+      );
+    }
 
     if (!code) {
       console.log("No se proporcionó código de autorización");
@@ -69,14 +90,36 @@ export async function GET(request: NextRequest) {
     }
 
     return response;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Callback error:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to process authentication",
-      },
-      { status: 500 }
+
+    // Proporcionar información más detallada sobre el error
+    let errorMessage = "Failed to process authentication";
+    let errorDetails = "";
+
+    if (error.message) {
+      errorMessage = error.message;
+
+      if (error.message.includes("redirect_uri_mismatch")) {
+        errorDetails =
+          "La URL de redirección no coincide con las configuradas en Google Cloud Console.";
+      } else if (error.message.includes("invalid_client")) {
+        errorDetails =
+          "Cliente OAuth inválido. Verifica el ID y secreto del cliente.";
+      } else if (error.message.includes("invalid_grant")) {
+        errorDetails =
+          "Concesión inválida. El código de autorización puede haber expirado.";
+      }
+    }
+
+    // Redirigir a la página principal con información del error
+    return NextResponse.redirect(
+      new URL(
+        `/?authError=${encodeURIComponent(
+          errorMessage
+        )}&errorDetails=${encodeURIComponent(errorDetails)}`,
+        request.url
+      )
     );
   }
 }

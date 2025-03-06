@@ -1,31 +1,95 @@
 import { google } from "googleapis";
 import { OAuth2Client } from "google-auth-library";
 
+// Verificar que las variables de entorno estén disponibles
+const clientId = process.env.GOOGLE_CLIENT_ID;
+const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+const nextAuthUrl = process.env.NEXTAUTH_URL;
+
+// Logs para depuración
+console.log("Variables de entorno para OAuth:", {
+  NODE_ENV: process.env.NODE_ENV,
+  GOOGLE_CLIENT_ID: clientId
+    ? `${clientId.substring(0, 10)}...`
+    : "No disponible",
+  GOOGLE_CLIENT_SECRET: clientSecret ? "Presente" : "No disponible",
+  NEXTAUTH_URL: nextAuthUrl || "No disponible",
+});
+
 // Asegurarnos de que la URL de callback sea correcta
 const redirectUri =
   process.env.NODE_ENV === "production"
-    ? process.env.NEXTAUTH_URL + "/api/auth/callback"
+    ? `${
+        nextAuthUrl || "https://my-video-lessons.vercel.app"
+      }/api/auth/callback`
     : "http://localhost:3001/api/auth/callback";
 
-const oauth2Client = new OAuth2Client(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  redirectUri
-);
+console.log("URL de redirección configurada:", redirectUri);
+
+// Verificar si tenemos las credenciales necesarias
+if (!clientId) {
+  console.error("ERROR: GOOGLE_CLIENT_ID no está configurado");
+}
+
+if (!clientSecret) {
+  console.error("ERROR: GOOGLE_CLIENT_SECRET no está configurado");
+}
+
+// Crear el cliente OAuth2
+const oauth2Client = new OAuth2Client(clientId, clientSecret, redirectUri);
 
 export const scopes = ["https://www.googleapis.com/auth/drive.readonly"];
 
 export function getAuthUrl(): string {
-  return oauth2Client.generateAuthUrl({
+  console.log("Generando URL de autenticación con redirectUri:", redirectUri);
+
+  if (!clientId) {
+    throw new Error(
+      "GOOGLE_CLIENT_ID no está configurado. No se puede generar la URL de autenticación."
+    );
+  }
+
+  const scopes = ["https://www.googleapis.com/auth/drive.readonly"];
+  const url = oauth2Client.generateAuthUrl({
     access_type: "offline",
     scope: scopes,
     prompt: "consent",
   });
+
+  return url;
 }
 
 export async function getTokens(code: string) {
-  const { tokens } = await oauth2Client.getToken(code);
-  return tokens;
+  try {
+    console.log("Obteniendo tokens con código de autorización");
+
+    if (!code) {
+      throw new Error("No se proporcionó código de autorización");
+    }
+
+    console.log(
+      "URL de redirección utilizada para obtener tokens:",
+      redirectUri
+    );
+
+    const { tokens } = await oauth2Client.getToken(code);
+    console.log("Tokens obtenidos correctamente");
+
+    return tokens;
+  } catch (error: any) {
+    console.error("Error al obtener tokens:", error);
+
+    // Proporcionar información más detallada sobre el error
+    if (error.message && error.message.includes("redirect_uri_mismatch")) {
+      console.error(`
+        ERROR DE REDIRECT_URI_MISMATCH:
+        La URL de redirección configurada (${redirectUri}) no coincide con las URLs autorizadas en Google Cloud Console.
+        Por favor, verifica que esta URL esté exactamente configurada en la consola de Google Cloud.
+      `);
+    }
+
+    throw error;
+  }
 }
 
 export function createDriveClient(accessToken: string) {
