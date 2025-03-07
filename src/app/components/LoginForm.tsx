@@ -1,126 +1,123 @@
 "use client";
 
 import { useState } from "react";
-import { Student } from "@/app/types";
-import toast, { Toaster } from "react-hot-toast";
-import { v4 as uuidv4 } from "uuid";
+import * as fpjs from "@fingerprintjs/fingerprintjs";
 
 interface LoginFormProps {
-  onLoginSuccess: (student: Student) => void;
+  onSuccess: (studentName: string, subjects: string[]) => void;
 }
 
-export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
+export default function LoginForm({ onSuccess }: LoginFormProps) {
   const [code, setCode] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setError("");
+    setLoading(true);
 
     try {
-      // Verificar si ya hay un código almacenado en localStorage
-      const storedDeviceId = localStorage.getItem("device_id");
-      const storedCode = localStorage.getItem("student_code");
-      const storedCodeDevice = localStorage.getItem(`student_${code}`);
+      // Generar fingerprint
+      const fp = await fpjs.load();
+      const result = await fp.get();
+      const fingerprint = result.visitorId;
 
-      // Si el código ya está en uso en otro dispositivo (verificación local)
-      if (
-        storedCodeDevice &&
-        storedCodeDevice !== storedDeviceId &&
-        storedDeviceId
-      ) {
-        toast.error("Este código ya ha sido utilizado en otro dispositivo");
-        setIsLoading(false);
-        return;
-      }
-
-      // Generar un nuevo deviceId si no existe
-      const deviceId = storedDeviceId || uuidv4();
-
-      // Guardar el deviceId en localStorage
-      if (!storedDeviceId) {
-        localStorage.setItem("device_id", deviceId);
-      }
-
-      const response = await fetch("/api/auth/validate", {
+      // Enviar código y fingerprint al servidor
+      const response = await fetch("/api/auth/verify", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Device-Id": deviceId,
         },
-        body: JSON.stringify({
-          code,
-          deviceId,
-        }),
+        body: JSON.stringify({ code, fingerprint }),
       });
 
       const data = await response.json();
 
-      if (data.success) {
-        // Guardar información en localStorage como respaldo
-        localStorage.setItem("device_id", data.student.deviceId);
-        localStorage.setItem("student_code", code);
-        localStorage.setItem(`student_${code}`, data.student.deviceId);
-
-        if (data.student.subjects) {
-          localStorage.setItem(
-            "allowed_subjects",
-            JSON.stringify(data.student.subjects)
-          );
-        }
-
-        onLoginSuccess(data.student);
-      } else {
-        toast.error(data.message || "Error al validar el código");
+      if (!response.ok) {
+        throw new Error(data.message || "Error al verificar el código");
       }
-    } catch (error) {
-      console.error("Login error:", error);
-      toast.error("Error al conectar con el servidor");
+
+      // Si todo está bien, llamar al callback de éxito
+      onSuccess(data.student.name, data.student.subjects);
+    } catch (error: any) {
+      setError(error.message);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 p-6 sm:p-10 bg-white rounded-xl shadow-lg">
+    <div className="min-h-screen flex text-black items-center justify-center bg-gray-100 py-6 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-6 bg-white p-6 sm:p-8 rounded-xl shadow-lg">
         <div>
-          <h2 className="mt-6 text-center text-2xl sm:text-3xl font-extrabold text-gray-900">
-            Acceso a Clases en Video
+          <h2 className="text-center text-2xl sm:text-3xl font-bold text-gray-800">
+            Acceso a Video Lecciones
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Ingresa tu código único de estudiante
+          <p className="mt-3 text-center text-base text-gray-700">
+            Ingresa tu código de acceso para ver las clases
           </p>
         </div>
-
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="code" className="sr-only">
-                Código de estudiante
-              </label>
+        <form className="mt-6 space-y-6" onSubmit={handleSubmit}>
+          <div>
+            <label
+              htmlFor="code"
+              className="block text-base font-medium text-gray-800"
+            >
+              Código de acceso
+            </label>
+            <div className="mt-2">
               <input
                 id="code"
                 name="code"
                 type="text"
                 required
-                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Código de estudiante"
+                className="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+                placeholder="Ingresa tu código de acceso"
                 value={code}
-                onChange={(e) => setCode(e.target.value)}
-                disabled={isLoading}
+                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                disabled={loading}
+                autoComplete="off"
+                autoFocus
               />
             </div>
           </div>
 
+          {error && (
+            <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg
+                    className="h-5 w-5 text-red-500"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-base text-red-800 font-medium">{error}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div>
             <button
               type="submit"
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300"
+              disabled={loading}
+              className={`w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white transition-colors duration-200 ${
+                loading
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              }`}
             >
-              {isLoading ? (
-                <span className="flex items-center">
+              {loading ? (
+                <>
                   <svg
                     className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
                     xmlns="http://www.w3.org/2000/svg"
@@ -141,16 +138,15 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     ></path>
                   </svg>
-                  Verificando...
-                </span>
+                  <span className="text-base">Verificando...</span>
+                </>
               ) : (
-                "Acceder"
+                <span className="text-base">Ingresar</span>
               )}
             </button>
           </div>
         </form>
       </div>
-      <Toaster position="top-center" />
     </div>
   );
 }

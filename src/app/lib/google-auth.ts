@@ -22,7 +22,7 @@ const redirectUri =
     ? `${
         nextAuthUrl || "https://my-video-lessons.vercel.app"
       }/api/auth/callback`
-    : "http://localhost:3001/api/auth/callback";
+    : "http://localhost:3002/api/auth/callback";
 
 console.log("URL de redirección configurada:", redirectUri);
 
@@ -49,7 +49,6 @@ export function getAuthUrl(): string {
     );
   }
 
-  const scopes = ["https://www.googleapis.com/auth/drive.readonly"];
   const url = oauth2Client.generateAuthUrl({
     access_type: "offline",
     scope: scopes,
@@ -143,49 +142,80 @@ export async function findSubfolderByName(
   }
 }
 
-export async function listFolderVideos(
-  folderId: string,
-  driveClient: any
-): Promise<any[]> {
+// Cliente OAuth2 para la cuenta de servicio (solo para uso del servidor)
+let serviceAuth: OAuth2Client | null = null;
+
+// Función para obtener o crear el cliente de autenticación de servicio
+export async function getServiceAuth(): Promise<OAuth2Client> {
+  if (serviceAuth) {
+    return serviceAuth;
+  }
+
+  const privateKey = process.env.GOOGLE_SERVICE_PRIVATE_KEY?.replace(
+    /\\n/g,
+    "\n"
+  );
+  const serviceAccountEmail =
+    "my-lessons@fluted-arch-452901-d1.iam.gserviceaccount.com";
+
+  if (!privateKey) {
+    throw new Error("GOOGLE_SERVICE_PRIVATE_KEY no está configurada");
+  }
+
+  // Crear un cliente JWT con la cuenta de servicio
+  const auth = new google.auth.JWT({
+    email: serviceAccountEmail,
+    key: privateKey,
+    scopes: ["https://www.googleapis.com/auth/drive.readonly"],
+  });
+
+  // Autenticar el cliente
+  await auth.authorize();
+  serviceAuth = auth;
+
+  return auth;
+}
+
+// Función para obtener los videos de una carpeta usando la cuenta de servicio
+export async function listFolderVideos(folderId: string): Promise<any[]> {
   try {
     console.log(`Buscando videos en la carpeta con ID: ${folderId}`);
 
-    // Primero verificamos si la carpeta existe
+    const auth = await getServiceAuth();
+    const drive = google.drive({ version: "v3", auth });
+
+    // Verificar que la carpeta existe y tenemos acceso
     try {
-      const folderCheck = await driveClient.files.get({
+      const folderCheck = await drive.files.get({
         fileId: folderId,
         fields: "id,name,mimeType",
       });
-
-      console.log(
-        `Carpeta encontrada: ${folderCheck.data.name} (${folderCheck.data.id})`
-      );
-    } catch (folderError) {
-      console.error(`Error al verificar la carpeta ${folderId}:`, folderError);
-      console.log(
-        "Es posible que la carpeta no exista o no tengas permisos para acceder a ella."
-      );
+      console.log(`Carpeta encontrada: ${folderCheck.data.name}`);
+    } catch (error) {
+      console.error("Error al acceder a la carpeta:", error);
       return [];
     }
 
-    // Ahora buscamos los videos en la carpeta
-    const query = `'${folderId}' in parents and mimeType contains 'video/'`;
-    console.log(`Ejecutando consulta: ${query}`);
-
-    const response = await driveClient.files.list({
-      q: query,
+    // Obtener los videos de la carpeta
+    const response = await drive.files.list({
+      q: `'${folderId}' in parents and mimeType contains 'video/'`,
       fields: "files(id, name, thumbnailLink, createdTime)",
       orderBy: "createdTime desc",
     });
 
     const files = response.data.files || [];
-    console.log(
-      `Se encontraron ${files.length} videos en la carpeta ${folderId}`
-    );
+    console.log(`Se encontraron ${files.length} videos`);
 
-    return files;
+    // Retornar los videos con sus enlaces públicos
+    return files.map((file) => ({
+      id: file.id,
+      name: file.name,
+      link: `https://drive.google.com/file/d/${file.id}/preview`,
+      thumbnailLink: file.thumbnailLink,
+      createdTime: file.createdTime,
+    }));
   } catch (error) {
-    console.error("Error listing folder videos:", error);
+    console.error("Error al listar videos:", error);
     return [];
   }
 }

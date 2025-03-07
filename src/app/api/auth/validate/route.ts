@@ -3,68 +3,36 @@ import { cookies } from "next/headers";
 import { v4 as uuidv4 } from "uuid";
 import students from "@/app/data/students.json";
 import { Student } from "@/app/types";
-import fs from "fs";
-import path from "path";
+import { saveUsedCode, verifyDeviceAccess } from "@/app/lib/sheets";
 
-// Simulamos una base de datos simple para almacenar los códigos ya utilizados
-interface UsedCode {
-  code: string;
-  deviceId: string;
-  subjects?: string[];
-}
-
-const DB_PATH = path.join(process.cwd(), "src/app/data/used_codes.json");
-
-// Función para obtener los códigos utilizados
-function getUsedCodes(): UsedCode[] {
-  try {
-    // En desarrollo, usamos el archivo local
-    if (fs.existsSync(DB_PATH)) {
-      const data = fs.readFileSync(DB_PATH, "utf8");
-      return JSON.parse(data);
-    }
-    return [];
-  } catch (error) {
-    console.error("Error reading used codes:", error);
-    return [];
+// Función para obtener la IP del cliente
+function getClientIp(request: NextRequest): string {
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  if (forwardedFor) {
+    return forwardedFor.split(",")[0].trim();
   }
-}
-
-// Función para guardar un código utilizado
-function saveUsedCode(code: string, deviceId: string, subjects?: string[]) {
-  try {
-    // En desarrollo, guardamos en el archivo local
-    const usedCodes = getUsedCodes();
-
-    // Verificar si el código ya existe
-    const existingIndex = usedCodes.findIndex((item) => item.code === code);
-
-    if (existingIndex >= 0) {
-      // Si existe, actualizar el deviceId
-      usedCodes[existingIndex].deviceId = deviceId;
-      if (subjects) {
-        usedCodes[existingIndex].subjects = subjects;
-      }
-    } else {
-      // Si no existe, añadir nuevo
-      usedCodes.push({ code, deviceId, subjects });
-    }
-
-    // Asegurarse de que el directorio existe
-    const dir = path.dirname(DB_PATH);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-
-    fs.writeFileSync(DB_PATH, JSON.stringify(usedCodes, null, 2));
-  } catch (error) {
-    console.error("Error saving used code:", error);
-  }
+  return request.ip || "unknown";
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const { code, deviceId: clientDeviceId } = await request.json();
+    const body = await request.json();
+    const { code, deviceId: clientDeviceId, fingerprintData } = body;
+
+    // Obtener información del fingerprint y la IP
+    const browserFingerprint =
+      fingerprintData?.browserFingerprint || clientDeviceId;
+    const fingerprintVerified = fingerprintData?.verified || false;
+    const ipAddress = getClientIp(request);
+
+    console.log("Validando código con fingerprint:", {
+      code,
+      browserFingerprint: browserFingerprint
+        ? `${browserFingerprint.substring(0, 10)}...`
+        : "No disponible",
+      fingerprintVerified,
+      ipAddress,
+    });
 
     if (!code) {
       return NextResponse.json(
@@ -99,45 +67,47 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate device ID if not exists
+    // Obtener el token de acceso de las cookies
     const cookieStore = cookies();
-    let deviceId = cookieStore.get("device_id")?.value || clientDeviceId;
+    const accessToken = cookieStore.get("access_token")?.value;
 
-    if (!deviceId) {
-      deviceId = uuidv4();
-    }
-
-    // Verificar si el código ya ha sido utilizado en otro dispositivo
-    // Verificamos usando cookies
-    const studentCodeCookie = cookieStore.get(`student_${code}`)?.value;
-
-    if (studentCodeCookie && studentCodeCookie !== deviceId) {
+    if (!accessToken) {
       return NextResponse.json(
         {
           success: false,
-          message: "Este código ya ha sido utilizado en otro dispositivo",
-          isDeviceUsed: true,
+          message: "No se encontró el token de acceso",
+        },
+        { status: 401 }
+      );
+    }
+
+    // Verificar si el dispositivo está autorizado
+    const accessVerification = await verifyDeviceAccess(
+      accessToken,
+      code,
+      browserFingerprint,
+      ipAddress
+    );
+
+    if (!accessVerification.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: accessVerification.reason,
         },
         { status: 403 }
       );
     }
 
-    // En desarrollo, también verificamos con el archivo
-    if (process.env.NODE_ENV !== "production") {
-      const usedCodes = getUsedCodes();
-      const existingCode = usedCodes.find((item) => item.code === code);
-
-      if (existingCode && existingCode.deviceId !== deviceId) {
-        return NextResponse.json(
-          {
-            success: false,
-            message: "Este código ya ha sido utilizado en otro dispositivo",
-            isDeviceUsed: true,
-          },
-          { status: 403 }
-        );
-      }
-    }
+    // Guardar o actualizar la información del código en Google Sheets
+    await saveUsedCode(accessToken, {
+      code,
+      deviceId: clientDeviceId || uuidv4(),
+      browserFingerprint,
+      fingerprintVerified,
+      subjects: student.subjects || [],
+      ipAddress,
+    });
 
     // Store device ID and student code in cookies
     const cookieOptions = {
@@ -153,14 +123,25 @@ export async function POST(request: NextRequest) {
       success: true,
       student: {
         ...student,
-        deviceId,
+        deviceId: clientDeviceId,
+        browserFingerprint: browserFingerprint
+          ? `${browserFingerprint.substring(0, 10)}...`
+          : null,
+        fingerprintVerified,
       },
     });
 
     // Establecer las cookies en la respuesta
-    response.cookies.set("device_id", deviceId, cookieOptions);
+    response.cookies.set("device_id", clientDeviceId, cookieOptions);
     response.cookies.set("student_code", code, cookieOptions);
-    response.cookies.set(`student_${code}`, deviceId, cookieOptions);
+
+    // Almacenar el fingerprint en una cookie
+    if (browserFingerprint) {
+      response.cookies.set("browser_fingerprint", browserFingerprint, {
+        ...cookieOptions,
+        httpOnly: false, // No es httpOnly para que pueda ser accedido por JavaScript para verificación
+      });
+    }
 
     // Guardar las materias permitidas en una cookie
     if (student.subjects && student.subjects.length > 0) {
@@ -171,11 +152,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Guardar el código como utilizado (solo en desarrollo)
-    if (process.env.NODE_ENV !== "production") {
-      saveUsedCode(code, deviceId, student.subjects);
-    }
-
     return response;
   } catch (error) {
     console.error("Validation error:", error);
@@ -183,6 +159,7 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         message: "Error al validar el código",
+        error: error instanceof Error ? error.message : "Error desconocido",
       },
       { status: 500 }
     );

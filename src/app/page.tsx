@@ -1,308 +1,99 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Subject, Video, Student } from "./types";
-import Sidebar from "./components/Sidebar";
-import VideoPlayer from "./components/VideoPlayer";
+import { useState, useEffect } from "react";
 import LoginForm from "./components/LoginForm";
-import WelcomeScreen from "./components/WelcomeScreen";
-import { Toaster } from "react-hot-toast";
-import toast from "react-hot-toast";
-import { useSearchParams } from "next/navigation";
+import VideoPlayer from "./components/VideoPlayer";
+import Sidebar from "./components/Sidebar";
+import { Subject, Video } from "./types";
 
 export default function Home() {
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
-  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
-  const [isLoading, setIsLoading] = useState(true); // Iniciar como true para mostrar carga inicial
-  const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [student, setStudent] = useState<Student | null>(null);
-  const [showWelcome, setShowWelcome] = useState(false);
+  const [studentName, setStudentName] = useState("");
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
+  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  // Obtener parámetros de URL para errores de autenticación
-  const searchParams = useSearchParams();
-  const authError = searchParams.get("authError");
-  const errorDescription = searchParams.get("errorDescription");
-  const errorDetails = searchParams.get("errorDetails");
-
+  // Cargar videos cuando el usuario está autenticado
   useEffect(() => {
-    // Mostrar errores de autenticación si existen
-    if (authError) {
-      const errorMessage = errorDescription || errorDetails || authError;
-      toast.error(`Error de autenticación: ${errorMessage}`, {
-        duration: 6000,
-      });
-      console.error("Error de autenticación:", {
-        authError,
-        errorDescription,
-        errorDetails,
-      });
+    if (isAuthenticated) {
+      loadVideos();
     }
-  }, [authError, errorDescription, errorDetails]);
+  }, [isAuthenticated]);
 
-  useEffect(() => {
-    // Check if student is already logged in
-    const checkAuth = async () => {
-      try {
-        // Primero verificamos si hay información en localStorage
-        const storedCode = localStorage.getItem("student_code");
-        const storedDeviceId = localStorage.getItem("device_id");
-        const storedSubjects = localStorage.getItem("allowed_subjects");
-
-        // Preparar los headers
-        const headers: HeadersInit = {};
-        if (storedDeviceId) headers["X-Device-Id"] = storedDeviceId;
-        if (storedCode) headers["X-Student-Code"] = storedCode;
-        if (storedSubjects) headers["X-Allowed-Subjects"] = storedSubjects;
-
-        // Si tenemos información en localStorage, intentamos usarla
-        if (storedCode && storedDeviceId && storedSubjects) {
-          try {
-            // Intentar obtener los videos usando las credenciales almacenadas
-            const response = await fetch("/api/drive/videos", { headers });
-            const data = await response.json();
-
-            if (data.success) {
-              setIsAuthenticated(true);
-              setSubjects(data.subjects);
-
-              // Reconstruir la información del estudiante desde localStorage
-              const parsedSubjects = JSON.parse(storedSubjects);
-              setStudent({
-                code: storedCode,
-                name: "Usuario",
-                authorized: true,
-                deviceId: storedDeviceId,
-                subjects: parsedSubjects,
-              });
-
-              setIsLoading(false);
-              return;
-            }
-          } catch (err) {
-            console.log(
-              "Error al verificar autenticación con localStorage:",
-              err
-            );
-            // Continuamos con la verificación normal si falla
-          }
-        }
-
-        // Si no hay información en localStorage o falló la verificación, intentamos con la API
-        const response = await fetch("/api/drive/videos", { headers });
-        const data = await response.json();
-
-        if (data.success) {
-          setIsAuthenticated(true);
-          setSubjects(data.subjects);
-        }
-      } catch (err) {
-        // Not authenticated, will show login form
-        console.log("User not authenticated");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
-
-  // Añadir un useEffect para seleccionar automáticamente la primera materia y el primer video
-  useEffect(() => {
-    if (subjects.length > 0 && !selectedSubject) {
-      console.log(
-        "Seleccionando automáticamente la primera materia:",
-        subjects[0]
-      );
-      setSelectedSubject(subjects[0].id);
-
-      if (subjects[0].videos.length > 0) {
-        console.log(
-          "Seleccionando automáticamente el primer video:",
-          subjects[0].videos[0]
-        );
-        setSelectedVideo(subjects[0].videos[0]);
-      }
-    }
-  }, [subjects, selectedSubject]);
-
-  const handleLoginSuccess = async (student: Student) => {
-    setStudent(student);
-    setIsAuthenticated(true);
-    setShowWelcome(true);
-  };
-
-  const handleContinue = async () => {
-    setShowWelcome(false);
-    await fetchVideos();
-  };
-
-  const fetchVideos = async () => {
-    setIsLoading(true);
+  // Cargar videos del servidor
+  const loadVideos = async () => {
     try {
-      // Obtener información de localStorage
-      const deviceId = localStorage.getItem("device_id");
-      const studentCode = localStorage.getItem("student_code");
-      const allowedSubjects = localStorage.getItem("allowed_subjects");
-
-      console.log("Información de localStorage:", {
-        deviceId,
-        studentCode,
-        allowedSubjects,
-      });
-
-      // Preparar los headers
-      const headers: HeadersInit = {};
-      if (deviceId) headers["X-Device-Id"] = deviceId;
-      if (studentCode) headers["X-Student-Code"] = studentCode;
-      if (allowedSubjects) headers["X-Allowed-Subjects"] = allowedSubjects;
-
-      console.log(
-        "Realizando petición a /api/drive/videos con headers:",
-        headers
-      );
-      const response = await fetch("/api/drive/videos", { headers });
+      setLoading(true);
+      const response = await fetch("/api/drive/videos");
       const data = await response.json();
-      console.log("Respuesta de /api/drive/videos:", data);
 
-      if (!data.success) {
-        console.log("La petición no fue exitosa:", data);
-        // Verificar si necesitamos autenticación
-        if (response.status === 401 && data.redirectUrl) {
-          console.log("Redirigiendo a autenticación:", data.redirectUrl);
-          // Iniciar el proceso de autenticación
-          const authResponse = await fetch(data.redirectUrl);
-          const authData = await authResponse.json();
-
-          if (authData.success && authData.url) {
-            // Redirigir al usuario a la URL de autenticación de Google
-            window.location.href = authData.url;
-            return;
-          }
-        }
-
-        // Si falla la API por otras razones, intentamos usar los datos almacenados en localStorage
-        const storedSubjects = localStorage.getItem("allowed_subjects");
-        if (storedSubjects) {
-          const parsedSubjects = JSON.parse(storedSubjects);
-          console.log(
-            "Usando datos almacenados en localStorage:",
-            parsedSubjects
-          );
-          // Aquí deberíamos tener una lógica para cargar videos desde localStorage si es posible
-          // Por ahora, solo mostramos un mensaje
-          toast.error(
-            "No se pudieron cargar los videos desde el servidor. Intente recargar la página."
-          );
-        } else {
-          throw new Error(data.message || "Failed to fetch videos");
-        }
-      } else {
-        console.log("Videos cargados correctamente:", data.subjects);
-        setSubjects(data.subjects);
+      if (!response.ok) {
+        throw new Error(data.message || "Error al cargar los videos");
       }
-    } catch (err) {
-      console.error("Error al cargar videos:", err);
-      setError(err instanceof Error ? err.message : "An error occurred");
-      toast.error("Error al cargar los videos. Por favor, intente nuevamente.");
+
+      setSubjects(data.subjects);
+
+      // Seleccionar automáticamente el primer subject y video si están disponibles
+      if (data.subjects.length > 0) {
+        const firstSubject = data.subjects[0];
+        setSelectedSubject(firstSubject);
+        if (firstSubject.videos.length > 0) {
+          setSelectedVideo(firstSubject.videos[0]);
+        }
+      }
+    } catch (error) {
+      console.error("Error loading videos:", error);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
+  };
+
+  const handleLoginSuccess = (name: string, allowedSubjects: string[]) => {
+    setStudentName(name);
+    setIsAuthenticated(true);
   };
 
   const handleSubjectSelect = (subject: Subject) => {
-    console.log("Materia seleccionada:", subject);
-    setSelectedSubject(subject.id);
-    setSelectedVideo(null);
+    setSelectedSubject(subject);
+    if (subject.videos.length > 0) {
+      setSelectedVideo(subject.videos[0]);
+    } else {
+      setSelectedVideo(null);
+    }
   };
 
   const handleVideoSelect = (video: Video) => {
-    console.log("Video seleccionado:", video);
     setSelectedVideo(video);
   };
 
-  // Función para cerrar sesión
-  const handleLogout = () => {
-    console.log("Cerrando sesión...");
+  const handleLogout = async () => {
+    try {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+      });
 
-    // Eliminar cookies
-    document.cookie =
-      "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    document.cookie =
-      "refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    document.cookie =
-      "device_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    document.cookie =
-      "student_code=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    document.cookie =
-      "allowed_subjects=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      if (!response.ok) {
+        throw new Error("Error al cerrar sesión");
+      }
 
-    // Eliminar datos del localStorage
-    localStorage.removeItem("student_code");
-    localStorage.removeItem("device_id");
-    localStorage.removeItem("allowed_subjects");
-
-    // Actualizar el estado
-    setIsAuthenticated(false);
-    setStudent(null);
-    setSubjects([]);
-    setSelectedSubject(null);
-    setSelectedVideo(null);
-
-    // Mostrar mensaje de éxito
-    toast.success("Sesión cerrada correctamente");
+      // Limpiar el estado y redirigir al login
+      setIsAuthenticated(false);
+      setStudentName("");
+      setSubjects([]);
+      setSelectedSubject(null);
+      setSelectedVideo(null);
+    } catch (error) {
+      console.error("Error durante el logout:", error);
+    }
   };
 
-  // Mostrar spinner mientras se carga
-  if (isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
-
-  // Show login form if not authenticated
   if (!isAuthenticated) {
-    return <LoginForm onLoginSuccess={handleLoginSuccess} />;
-  }
-
-  // Show welcome screen after login
-  if (showWelcome && student) {
-    return <WelcomeScreen student={student} onContinue={handleContinue} />;
-  }
-
-  // Añadir log para ver el estado actual
-  console.log("Estado actual:", {
-    subjects,
-    selectedSubject,
-    selectedVideo,
-    isAuthenticated,
-    student,
-  });
-
-  if (error) {
-    return (
-      <div className="flex h-screen items-center justify-center p-4">
-        <div className="text-red-500 text-center">
-          {error === "Not authenticated" ? (
-            <button
-              onClick={() => (window.location.href = "/api/auth")}
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-            >
-              Iniciar sesión con Google
-            </button>
-          ) : (
-            error
-          )}
-        </div>
-      </div>
-    );
+    return <LoginForm onSuccess={handleLoginSuccess} />;
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 text-black">
+    <div className="flex h-screen bg-gray-50">
       <Sidebar
         subjects={subjects}
         selectedSubject={selectedSubject}
@@ -310,19 +101,49 @@ export default function Home() {
         onSubjectSelect={handleSubjectSelect}
         onVideoSelect={handleVideoSelect}
         onLogout={handleLogout}
+        studentName={studentName}
       />
-      <main className="flex-1 p-4 overflow-auto">
-        {selectedVideo ? (
-          <VideoPlayer video={selectedVideo} />
+
+      <main className="flex-1 overflow-auto">
+        {loading ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-4 text-base text-gray-700 font-medium">
+                Cargando videos...
+              </p>
+            </div>
+          </div>
+        ) : subjects.length === 0 ? (
+          <div className="flex items-center justify-center h-full p-6">
+            <div className="text-center max-w-md bg-white rounded-xl shadow-sm p-8">
+              <svg
+                className="mx-auto h-12 w-12 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"
+                />
+              </svg>
+              <h3 className="mt-4 text-xl text-gray-700 font-medium">
+                No hay videos disponibles
+              </h3>
+              <p className="mt-2 text-base text-gray-600">
+                Vuelve a intentarlo más tarde
+              </p>
+            </div>
+          </div>
         ) : (
-          <div className="flex h-full items-center justify-center">
-            <p className="text-xl text-gray-500">
-              Selecciona una clase para comenzar
-            </p>
+          <div className="p-6">
+            <VideoPlayer video={selectedVideo} />
           </div>
         )}
       </main>
-      <Toaster position="top-center" />
     </div>
   );
 }

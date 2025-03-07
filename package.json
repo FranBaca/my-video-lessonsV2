@@ -10,6 +10,7 @@
     "prepare-deploy": "mkdir -p src/app/data && echo '[]' > src/app/data/used_codes.json"
   },
   "dependencies": {
+    "@fingerprintjs/fingerprintjs": "^4.6.1",
     "cookie": "^0.6.0",
     "encoding": "^0.1.13",
     "google-auth-library": "^9.6.3",
