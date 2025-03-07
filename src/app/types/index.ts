@@ -4,6 +4,7 @@ export interface Video {
   link: string;
   thumbnailLink?: string;
   createdTime: string;
+  mimeType?: string;
 }
 
 export interface Subject {

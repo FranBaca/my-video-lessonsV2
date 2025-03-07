@@ -51,12 +51,12 @@
     "code": "TESTUSER123",
     "name": "Usuario de Prueba",
     "authorized": true,
-    "subjects": ["anatomia", "histologia"]
+    "subjects": ["anatomia", "histologia", "fisiologia"]
   },
   {
     "code": "TESTUSER1234",
     "name": "Usuario de Prueba 2",
     "authorized": true,
-    "subjects": ["anatomia", "histologia"]
+    "subjects": ["anatomia", "histologia", "fisiologia"]
   }
 ] 
