@@ -40,7 +40,7 @@ export default function VideoPlayer({ video }: VideoPlayerProps) {
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col mt-10 md:mt-0">
       <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
         <h1 className="text-2xl font-bold text-gray-800 mb-2">{video.name}</h1>
         <div className="h-px bg-gray-200 w-full mb-6" />

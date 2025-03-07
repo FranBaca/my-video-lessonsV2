@@ -81,7 +81,7 @@ export default function Sidebar({
       >
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="p-6 border-b border-gray-200">
+          <div className="p-6 mt-10 md:mt-0 border-b border-gray-200">
             <h2 className="text-xl font-semibold text-gray-800 truncate">
               {studentName}
             </h2>
