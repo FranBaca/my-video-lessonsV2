@@ -32,19 +32,15 @@ export async function generateFingerprint(): Promise<string> {
       .map((plugin) => plugin.name)
       .join(",");
 
-    // Comprobar características de WebGL si está disponible
-    let webglInfo = "";
-    try {
-      const canvas = document.createElement("canvas");
-      const gl =
-        canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
-      if (gl) {
-        const renderer = gl.getParameter(gl.RENDERER);
-        const vendor = gl.getParameter(gl.VENDOR);
-        webglInfo = `${vendor}-${renderer}`;
-      }
-    } catch (e) {
-      webglInfo = "webgl-not-available";
+    // Obtener información de WebGL
+    let webglInfo = "no-webgl";
+    const canvas = document.createElement("canvas");
+    const gl =
+      canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+    if (gl && gl instanceof WebGLRenderingContext) {
+      const renderer = gl.getParameter(gl.RENDERER);
+      const vendor = gl.getParameter(gl.VENDOR);
+      webglInfo = `${vendor}-${renderer}`;
     }
 
     // Comprobar soporte de características específicas
