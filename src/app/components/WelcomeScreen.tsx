@@ -1,9 +1,13 @@
 "use client";
 
-import { Student } from "@/app/types";
+import { MATERIAS } from "@/app/lib/sheets";
 
 interface WelcomeScreenProps {
-  student: Student;
+  student: {
+    name: string;
+    code: string;
+    subjects?: string[];
+  };
   onContinue: () => void;
 }
 
@@ -11,17 +15,26 @@ export default function WelcomeScreen({
   student,
   onContinue,
 }: WelcomeScreenProps) {
-  // Determinar el tipo de acceso
-  const hasAnatomia = student.subjects?.includes("anatomia");
-  const hasHistologia = student.subjects?.includes("histologia");
+  // Determinar el tipo de acceso usando las materias normalizadas
+  const hasAnatomia = student.subjects?.includes(MATERIAS.ANATOMIA);
+  const hasHistologia = student.subjects?.includes(MATERIAS.HISTOLOGIA);
+  const hasFisiologia = student.subjects?.includes(MATERIAS.FISIOLOGIA);
 
   let accessType = "";
-  if (hasAnatomia && hasHistologia) {
+  if (hasAnatomia && hasHistologia && hasFisiologia) {
+    accessType = "completo a Anatomía, Histología y Fisiología";
+  } else if (hasAnatomia && hasHistologia) {
     accessType = "completo a Anatomía e Histología";
+  } else if (hasAnatomia && hasFisiologia) {
+    accessType = "completo a Anatomía y Fisiología";
+  } else if (hasHistologia && hasFisiologia) {
+    accessType = "completo a Histología y Fisiología";
   } else if (hasAnatomia) {
     accessType = "a Anatomía";
   } else if (hasHistologia) {
     accessType = "a Histología";
+  } else if (hasFisiologia) {
+    accessType = "a Fisiología";
   }
 
   return (
@@ -40,9 +53,10 @@ export default function WelcomeScreen({
 
             <p className="text-lg text-gray-700">Tienes acceso {accessType}.</p>
 
-            {hasAnatomia && hasHistologia && (
+            {student.subjects && student.subjects.length > 1 && (
               <p className="text-sm text-gray-500 mt-2">
-                Podrás seleccionar entre ambas materias en el menú lateral.
+                Podrás seleccionar entre las materias disponibles en el menú
+                lateral.
               </p>
             )}
 

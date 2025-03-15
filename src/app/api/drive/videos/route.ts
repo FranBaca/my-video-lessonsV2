@@ -2,21 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getServiceAuth, listFolderVideos } from "@/app/lib/google-auth";
 import { Subject, Video } from "@/app/types";
-import students from "@/app/data/students.json";
-import { Student } from "@/app/types";
+import { MATERIAS } from "@/app/lib/sheets";
 
 // Definir los IDs de las carpetas
 const FOLDER_IDS = {
-  anatomia: process.env.GOOGLE_DRIVE_FOLDER_MATH!,
-  histologia: process.env.GOOGLE_DRIVE_FOLDER_SCIENCE!,
-  fisiologia: process.env.GOOGLE_DRIVE_FOLDER_PHYSIOLOGY!,
+  [MATERIAS.ANATOMIA]: process.env.GOOGLE_DRIVE_FOLDER_MATH!,
+  [MATERIAS.HISTOLOGIA]: process.env.GOOGLE_DRIVE_FOLDER_SCIENCE!,
+  [MATERIAS.FISIOLOGIA]: process.env.GOOGLE_DRIVE_FOLDER_PHYSIOLOGY!,
 };
 
 // Verificar que los IDs de las carpetas estén definidos
 console.log("IDs de carpetas configurados:", {
-  anatomia: process.env.GOOGLE_DRIVE_FOLDER_MATH || "No definido",
-  histologia: process.env.GOOGLE_DRIVE_FOLDER_SCIENCE || "No definido",
-  fisiologia: process.env.GOOGLE_DRIVE_FOLDER_PHYSIOLOGY || "No definido",
+  [MATERIAS.ANATOMIA]: process.env.GOOGLE_DRIVE_FOLDER_MATH || "No definido",
+  [MATERIAS.HISTOLOGIA]:
+    process.env.GOOGLE_DRIVE_FOLDER_SCIENCE || "No definido",
+  [MATERIAS.FISIOLOGIA]:
+    process.env.GOOGLE_DRIVE_FOLDER_PHYSIOLOGY || "No definido",
 });
 
 export async function GET(request: NextRequest) {
@@ -31,18 +32,6 @@ export async function GET(request: NextRequest) {
         {
           success: false,
           message: "No student code found",
-        },
-        { status: 403 }
-      );
-    }
-
-    // Verificar que el estudiante existe y está autorizado
-    const student = (students as Student[]).find((s) => s.code === studentCode);
-    if (!student || !student.authorized) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Unauthorized student",
         },
         { status: 403 }
       );
@@ -85,14 +74,25 @@ export async function GET(request: NextRequest) {
         createdTime: file.createdTime,
       }));
 
+      // Convertir el nombre normalizado a nombre de presentación
+      let displayName = "";
+      switch (subjectName) {
+        case MATERIAS.ANATOMIA:
+          displayName = "Anatomía";
+          break;
+        case MATERIAS.HISTOLOGIA:
+          displayName = "Histología";
+          break;
+        case MATERIAS.FISIOLOGIA:
+          displayName = "Fisiología";
+          break;
+        default:
+          displayName = subjectName;
+      }
+
       subjects.push({
         id: folderId,
-        name:
-          subjectName === "anatomia"
-            ? "Anatomía"
-            : subjectName === "histologia"
-            ? "Histología"
-            : "Fisiología",
+        name: displayName,
         videos,
       });
     }
@@ -101,7 +101,6 @@ export async function GET(request: NextRequest) {
     const response = NextResponse.json({
       success: true,
       subjects,
-      studentName: student.name,
     });
 
     return response;
