@@ -13,24 +13,7 @@ interface UsedCode {
 
 // ID de la hoja de cálculo (necesitarás crear una y poner su ID en las variables de entorno)
 const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_ID;
-const STUDENTS_RANGE = "Students!A2:D"; // Solo necesitamos 4 columnas: Código, Nombre, Materias, Fingerprint
-const USED_CODES_RANGE = "UsedCodes!A2:H"; // Registro de uso
-
-// Constantes para las materias disponibles
-export const MATERIAS = {
-  ANATOMIA: "anatomia",
-  HISTOLOGIA: "histologia",
-  FISIOLOGIA: "fisiologia",
-  // Agregar más materias según sea necesario
-};
-
-// Función para normalizar el nombre de una materia
-function normalizarMateria(materia: string): string {
-  return materia
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, ""); // Elimina acentos
-}
+const USED_CODES_RANGE = "UsedCodes!A2:H"; // Empezamos desde A2 para dejar espacio para los encabezados
 
 // Función para inicializar la hoja de cálculo
 async function initializeSpreadsheet(auth: OAuth2Client) {
@@ -220,103 +203,5 @@ export async function verifyDeviceAccess(
       allowed: false,
       reason: "Error al verificar el acceso. Por favor, intente nuevamente.",
     };
-  }
-}
-
-// Función para verificar si un código de estudiante existe y está autorizado
-export async function verifyStudentCode(
-  accessToken: string,
-  code: string
-): Promise<{
-  exists: boolean;
-  authorized: boolean;
-  name?: string;
-  subjects?: string[];
-  browserFingerprint?: string;
-  fingerprintVerified: boolean;
-}> {
-  const auth = new OAuth2Client();
-  auth.setCredentials({ access_token: accessToken });
-  const sheets = google.sheets({ version: "v4", auth });
-
-  try {
-    // Buscar el código en la hoja de estudiantes
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
-      range: STUDENTS_RANGE,
-    });
-
-    const rows = response.data.values || [];
-    const studentRow = rows.find((row) => row[0] === code);
-
-    if (!studentRow) {
-      return {
-        exists: false,
-        authorized: false,
-        fingerprintVerified: false,
-      };
-    }
-
-    // Normalizar las materias del estudiante
-    let materias: string[] = [];
-    try {
-      const materiasRaw = JSON.parse(studentRow[2] || "[]");
-      materias = materiasRaw.map((materia: string) =>
-        normalizarMateria(materia)
-      );
-    } catch (error) {
-      console.error("Error al parsear materias:", error);
-      materias = [];
-    }
-
-    return {
-      exists: true,
-      authorized: true,
-      name: studentRow[1],
-      subjects: materias,
-      browserFingerprint: studentRow[3] || undefined,
-      fingerprintVerified: Boolean(studentRow[3]),
-    };
-  } catch (error) {
-    console.error("Error al verificar código de estudiante:", error);
-    throw error;
-  }
-}
-
-export async function updateStudent(
-  accessToken: string,
-  code: string,
-  browserFingerprint: string
-): Promise<void> {
-  const auth = new OAuth2Client();
-  auth.setCredentials({ access_token: accessToken });
-  const sheets = google.sheets({ version: "v4", auth });
-
-  try {
-    // Buscar el código en la hoja de estudiantes
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
-      range: STUDENTS_RANGE,
-    });
-
-    const rows = response.data.values || [];
-    const rowIndex = rows.findIndex((row) => row[0] === code);
-
-    if (rowIndex === -1) {
-      throw new Error("Estudiante no encontrado");
-    }
-
-    // Actualizar solo la columna del fingerprint (columna D)
-    await sheets.spreadsheets.values.update({
-      spreadsheetId: SPREADSHEET_ID,
-      range: `Students!D${rowIndex + 2}`,
-      valueInputOption: "RAW",
-      requestBody: {
-        values: [[browserFingerprint]],
-      },
-    });
-  } catch (error) {
-    console.error("Error al actualizar estudiante:", error);
-    throw error;
   }
 }
