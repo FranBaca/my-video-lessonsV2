@@ -126,44 +126,53 @@ export default function Sidebar({
 
                   {selectedSubject?.id === subject.id && (
                     <div className="ml-4 space-y-1">
-                      {subject.videos.map((video) => (
-                        <button
-                          key={video.id}
-                          onClick={() => {
-                            onVideoSelect(video);
-                            if (isSmallScreen) setIsMobileMenuOpen(false);
-                          }}
-                          className={`w-full text-left px-4 py-2 rounded-lg transition-colors duration-200 ${
-                            selectedVideo?.id === video.id
-                              ? "bg-gray-100 text-blue-700"
-                              : "text-gray-600 hover:bg-gray-50"
-                          }`}
-                        >
-                          <div className="flex items-center">
-                            <svg
-                              className="w-4 h-4 mr-2"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-                              />
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                              />
-                            </svg>
-                            <span className="text-sm truncate">
-                              {video.name}
-                            </span>
+                      {subject.sections.map((section) => (
+                        <div key={section.id} className="mb-4">
+                          <div className="text-sm font-medium text-gray-900 mb-2">
+                            {section.name}
                           </div>
-                        </button>
+                          <div className="space-y-1">
+                            {section.videos.map((video) => (
+                              <button
+                                key={video.id}
+                                onClick={() => {
+                                  onVideoSelect(video);
+                                  if (isSmallScreen) setIsMobileMenuOpen(false);
+                                }}
+                                className={`w-full text-left px-4 py-2 rounded-lg transition-colors duration-200 ${
+                                  selectedVideo?.id === video.id
+                                    ? "bg-gray-100 text-blue-700"
+                                    : "text-gray-600 hover:bg-gray-50"
+                                }`}
+                              >
+                                <div className="flex items-center">
+                                  <svg
+                                    className="w-4 h-4 mr-2"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                                    />
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    />
+                                  </svg>
+                                  <span className="text-sm truncate">
+                                    {video.name}
+                                  </span>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
                       ))}
                     </div>
                   )}

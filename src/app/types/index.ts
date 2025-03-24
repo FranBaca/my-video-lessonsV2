@@ -7,10 +7,16 @@ export interface Video {
   mimeType?: string;
 }
 
-export interface Subject {
+export interface Section {
   id: string;
   name: string;
   videos: Video[];
+}
+
+export interface Subject {
+  id: string;
+  name: string;
+  sections: Section[];
 }
 
 export interface Student {

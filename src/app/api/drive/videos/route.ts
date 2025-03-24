@@ -75,15 +75,7 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
-      const files = await listFolderVideos(folderId);
-
-      const videos: Video[] = files.map((file) => ({
-        id: file.id,
-        name: file.name,
-        link: `https://drive.google.com/file/d/${file.id}/preview`,
-        thumbnailLink: file.thumbnailLink,
-        createdTime: file.createdTime,
-      }));
+      const sections = await listFolderVideos(folderId);
 
       subjects.push({
         id: folderId,
@@ -93,7 +85,7 @@ export async function GET(request: NextRequest) {
             : subjectName === "histologia"
             ? "Histología"
             : "Fisiología",
-        videos,
+        sections,
       });
     }
 

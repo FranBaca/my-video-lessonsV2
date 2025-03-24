@@ -56,41 +56,50 @@ export default function SubjectList({
             {selectedSubject?.id === subject.id && (
               <div
                 id={`videos-${subject.id}`}
-                className="mt-2 space-y-1 pl-2"
+                className="mt-2 space-y-1"
                 role="region"
                 aria-label={`Videos de ${subject.name}`}
               >
-                {subject.videos.map((video) => (
-                  <button
-                    key={video.id}
-                    onClick={() => onVideoSelect(video)}
-                    className="group w-full text-left px-4 py-2 rounded-lg transition-colors duration-200 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  >
-                    <div className="flex items-center">
-                      <svg
-                        className="h-4 w-4 text-gray-400 group-hover:text-blue-500 mr-2"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                      <span className="text-sm text-gray-700 group-hover:text-blue-600">
-                        {video.name}
-                      </span>
+                {subject.sections?.map((section) => (
+                  <div key={section.id} className="pl-4">
+                    <div className="text-sm font-medium text-gray-900 mb-2 mt-4">
+                      {section.name}
                     </div>
-                  </button>
+                    <div className="space-y-1">
+                      {section.videos.map((video) => (
+                        <button
+                          key={video.id}
+                          onClick={() => onVideoSelect(video)}
+                          className="group w-full text-left px-4 py-2 rounded-lg transition-colors duration-200 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        >
+                          <div className="flex items-center">
+                            <svg
+                              className="h-4 w-4 text-gray-400 group-hover:text-blue-500 mr-2"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                              />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
+                            </svg>
+                            <span className="text-sm text-gray-700 group-hover:text-blue-600">
+                              {video.name}
+                            </span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             )}

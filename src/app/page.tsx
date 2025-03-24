@@ -23,23 +23,18 @@ export default function Home() {
 
   // Cargar videos del servidor
   const loadVideos = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       const response = await fetch("/api/drive/videos");
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Error al cargar los videos");
-      }
-
-      setSubjects(data.subjects);
-
-      // Seleccionar automáticamente el primer subject y video si están disponibles
-      if (data.subjects.length > 0) {
-        const firstSubject = data.subjects[0];
-        setSelectedSubject(firstSubject);
-        if (firstSubject.videos.length > 0) {
-          setSelectedVideo(firstSubject.videos[0]);
+      setSubjects(data);
+      if (data.length > 0) {
+        setSelectedSubject(data[0]);
+        if (
+          data[0].sections.length > 0 &&
+          data[0].sections[0].videos.length > 0
+        ) {
+          setSelectedVideo(data[0].sections[0].videos[0]);
         }
       }
     } catch (error) {
@@ -56,8 +51,8 @@ export default function Home() {
 
   const handleSubjectSelect = (subject: Subject) => {
     setSelectedSubject(subject);
-    if (subject.videos.length > 0) {
-      setSelectedVideo(subject.videos[0]);
+    if (subject.sections.length > 0 && subject.sections[0].videos.length > 0) {
+      setSelectedVideo(subject.sections[0].videos[0]);
     } else {
       setSelectedVideo(null);
     }

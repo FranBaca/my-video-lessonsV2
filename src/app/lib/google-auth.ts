@@ -142,22 +142,51 @@ export async function listFolderVideos(folderId: string): Promise<any[]> {
       return [];
     }
 
-    // Obtener los videos de la carpeta
-    const response = await drive.files.list({
-      q: `'${folderId}' in parents and mimeType contains 'video/'`,
-      fields: "files(id, name, thumbnailLink, createdTime, mimeType)",
-      orderBy: "createdTime desc",
+    // Obtener todas las subcarpetas de la carpeta principal
+    const foldersResponse = await drive.files.list({
+      q: `'${folderId}' in parents and mimeType = 'application/vnd.google-apps.folder'`,
+      fields: "files(id, name)",
+      orderBy: "name",
     });
 
-    const files = response.data.files || [];
+    const subfolders = foldersResponse.data.files || [];
 
-    return files.map((file) => ({
-      id: file.id,
-      name: file.name,
-      thumbnailLink: file.thumbnailLink,
-      createdTime: file.createdTime,
-      mimeType: file.mimeType,
-    }));
+    // Si no hay subcarpetas, buscar videos directamente en la carpeta principal
+    if (subfolders.length === 0) {
+      const videosResponse = await drive.files.list({
+        q: `'${folderId}' in parents and mimeType contains 'video/'`,
+        fields: "files(id, name, thumbnailLink, createdTime, mimeType)",
+        orderBy: "name",
+      });
+
+      return [
+        {
+          id: folderId,
+          name: "Videos",
+          videos: videosResponse.data.files || [],
+        },
+      ];
+    }
+
+    // Si hay subcarpetas, obtener los videos de cada una
+    const sections = await Promise.all(
+      subfolders.map(async (folder) => {
+        const videosResponse = await drive.files.list({
+          q: `'${folder.id}' in parents and mimeType contains 'video/'`,
+          fields: "files(id, name, thumbnailLink, createdTime, mimeType)",
+          orderBy: "name",
+        });
+
+        return {
+          id: folder.id,
+          name: folder.name,
+          videos: videosResponse.data.files || [],
+        };
+      })
+    );
+
+    // Filtrar secciones que tienen videos
+    return sections.filter((section) => section.videos.length > 0);
   } catch (error) {
     console.error("Error al listar videos:", error);
     return [];
