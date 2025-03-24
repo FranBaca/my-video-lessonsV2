@@ -58,5 +58,11 @@
     "name": "Usuario de Prueba 2",
     "authorized": true,
     "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "JUAN123",
+    "name": "Juan Perez",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
   }
 ] 
