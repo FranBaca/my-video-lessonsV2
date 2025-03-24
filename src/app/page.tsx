@@ -27,14 +27,27 @@ export default function Home() {
     try {
       const response = await fetch("/api/drive/videos");
       const data = await response.json();
-      setSubjects(data);
-      if (data.length > 0) {
-        setSelectedSubject(data[0]);
+
+      console.log("API Response:", {
+        fullData: data,
+        success: data.success,
+        subjectsType: typeof data.subjects,
+        isSubjectsArray: Array.isArray(data.subjects),
+        subjects: data.subjects,
+      });
+
+      if (!data.success) {
+        throw new Error(data.message || "Error al cargar los videos");
+      }
+
+      setSubjects(data.subjects);
+      if (data.subjects.length > 0) {
+        setSelectedSubject(data.subjects[0]);
         if (
-          data[0].sections.length > 0 &&
-          data[0].sections[0].videos.length > 0
+          data.subjects[0].sections.length > 0 &&
+          data.subjects[0].sections[0].videos.length > 0
         ) {
-          setSelectedVideo(data[0].sections[0].videos[0]);
+          setSelectedVideo(data.subjects[0].sections[0].videos[0]);
         }
       }
     } catch (error) {
