@@ -64,5 +64,317 @@
     "name": "Juan Perez",
     "authorized": true,
     "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "AUGUSTODANIELBRITO",
+    "name": "Augusto Daniel Brito",
+    "authorized": true,
+    "subjects": ["histologia"]
+  },
+  {
+    "code": "CANDEROBLES",
+    "name": "Cande Robles",
+    "authorized": true,
+    "subjects": ["histologia"]
+  },
+  {
+    "code": "GUILLELOUZA",
+    "name": "Guille Louza",
+    "authorized": true,
+    "subjects": ["histologia"]
+  },
+  {
+    "code": "INGRIDDELGADILLO",
+    "name": "Ingrid Delgadillo",
+    "authorized": true,
+    "subjects": ["histologia"]
+  },
+  {
+    "code": "SABRINAGARCIA",
+    "name": "Sabrina Garcia",
+    "authorized": true,
+    "subjects": ["histologia"]
+  },
+  {
+    "code": "YONATHANDIAZ",
+    "name": "Yonathan Diaz",
+    "authorized": true,
+    "subjects": ["histologia"]
+  },
+  {
+    "code": "ABRILCAMPOS",
+    "name": "Abril Campos",
+    "authorized": true,
+    "subjects": ["histologia", "fisiologia"]
+  },
+  {
+    "code": "AGUSTINADIAZ",
+    "name": "Agustina Diaz",
+    "authorized": true,
+    "subjects": ["histologia", "fisiologia"]
+  },
+  {
+    "code": "CAMISANCHEZ",
+    "name": "Cami Sanchez",
+    "authorized": true,
+    "subjects": ["histologia", "fisiologia"]
+  },
+  {
+    "code": "EXEQUIELFIRME",
+    "name": "Exequiel Firme",
+    "authorized": true,
+    "subjects": ["histologia", "fisiologia"]
+  },
+  {
+    "code": "IRENEGONZALES",
+    "name": "Irene Gonzales",
+    "authorized": true,
+    "subjects": ["histologia", "fisiologia"]
+  },
+  {
+    "code": "MARIANELAVALENZUELA",
+    "name": "Marianela Valenzuela",
+    "authorized": true,
+    "subjects": ["histologia", "fisiologia"]
+  },
+  {
+    "code": "AMANDALEVINCASAÑAS",
+    "name": "Amanda Levin Casañas",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "ANAAMADO",
+    "name": "Ana Amado",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "AYNARAJEZPINTO",
+    "name": "Aynara Jerez Pinto",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "CAMILALASTRA",
+    "name": "Camila Lastra",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "CAMILAALE",
+    "name": "Camila Ale",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "CANDEMORALES",
+    "name": "Cande Morales",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "CONCEPCIONLOGARZO",
+    "name": "Concepcion Logarzo",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "DIEGOSOSA",
+    "name": "Diego Sosa",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "ELSALARREINA",
+    "name": "Elsa Larreina",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "EMILIAGIACOBBE",
+    "name": "Emilia Giacobbe",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "EVAGARCIA",
+    "name": "Eva Garcia",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "GONZALOLAMAS",
+    "name": "Gonzalo Lamas",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "GUADAOLIVERA",
+    "name": "Guada Olivera",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "IGNACIOMARTINEZ",
+    "name": "Ignacio Martinez",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "ITALOPAPETTI",
+    "name": "Italo Papetti",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "JAVIERGARCIA",
+    "name": "Javier Garcia",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "JOSEMARIARIOSMARTORELL",
+    "name": "Jose Maria Rios Martorell",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "JULICOLQUE",
+    "name": "Juli Colque",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "LOURDESJIMENEZ",
+    "name": "Lourdes Jimenez",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "LUCCATERNAVASIO",
+    "name": "Lucca Ternavasio",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "MARIANOQUINTANA",
+    "name": "Mariano Quintana",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "MICAELABARBIERI",
+    "name": "Micaela Barbieri",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "MILIAVILA",
+    "name": "Mili Avila",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "MILILEDESMA",
+    "name": "Mili Ledesma",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "MILIMARTINEZ",
+    "name": "Mili Martinez",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "NAIRGRAMAJO",
+    "name": "Nair Gramajo",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "NAYLAPACELLO",
+    "name": "Nayla Pacello",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "PRINCESAAVILA",
+    "name": "Princesa Avila",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "ROCIOCHECA",
+    "name": "Rocio Checa",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "SOFIAARAGON",
+    "name": "Sofia Aragon",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "SOFIADISTEFANO",
+    "name": "Sofia Di Stefano",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "SOFIABARRAZA",
+    "name": "Sofia Barraza",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "TATIANADAZA",
+    "name": "Tatiana Daza",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "TIZIANAOSORES",
+    "name": "Tiziana Osores",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "VALENTINAALBORNOZ",
+    "name": "Valentina Albornoz",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "VALENTINAALANIS",
+    "name": "Valentina Alanis",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "VICTORIAVARGAS",
+    "name": "Victoria Vargas",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia"]
+  },
+  {
+    "code": "CRISTIANCALVIÑO",
+    "name": "Cristian Calviño",
+    "authorized": true,
+    "subjects": ["anatomia"]
+  },
+  {
+    "code": "SOFIACRIVERO",
+    "name": "Sofia C Rivero",
+    "authorized": true,
+    "subjects": ["fisiologia"]
+  },
+  {
+    "code": "TOMASOCAMPO",
+    "name": "Tomas Ocampo",
+    "authorized": true,
+    "subjects": ["fisiologia"]
   }
 ] 
