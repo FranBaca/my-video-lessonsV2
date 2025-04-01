@@ -14,6 +14,38 @@ export default function Home() {
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Verificar si ya hay una sesión activa al cargar la página
+  useEffect(() => {
+    const checkExistingSession = async () => {
+      try {
+        // Verificar si existen las cookies de sesión
+        const response = await fetch("/api/drive/videos");
+        const data = await response.json();
+
+        if (data.success) {
+          setIsAuthenticated(true);
+          setStudentName(data.studentName || "");
+          setSubjects(data.subjects || []);
+
+          if (data.subjects && data.subjects.length > 0) {
+            setSelectedSubject(data.subjects[0]);
+            if (
+              data.subjects[0].sections.length > 0 &&
+              data.subjects[0].sections[0].videos.length > 0
+            ) {
+              setSelectedVideo(data.subjects[0].sections[0].videos[0]);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error checking session:", error);
+        // Si hay un error, no haremos nada y dejamos que se muestre el formulario de login
+      }
+    };
+
+    checkExistingSession();
+  }, []);
+
   // Cargar videos cuando el usuario está autenticado
   useEffect(() => {
     if (isAuthenticated) {

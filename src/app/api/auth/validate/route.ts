@@ -17,7 +17,12 @@ function getClientIp(request: NextRequest): string {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { code, deviceId: clientDeviceId, fingerprintData } = body;
+    const {
+      code,
+      deviceId: clientDeviceId,
+      fingerprintData,
+      rememberSession = true,
+    } = body;
 
     // Obtener información del fingerprint y la IP
     const browserFingerprint =
@@ -32,6 +37,7 @@ export async function POST(request: NextRequest) {
         : "No disponible",
       fingerprintVerified,
       ipAddress,
+      rememberSession,
     });
 
     if (!code) {
@@ -114,7 +120,7 @@ export async function POST(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict" as "strict",
-      maxAge: 30 * 24 * 60 * 60, // 30 days
+      maxAge: rememberSession ? 30 * 24 * 60 * 60 : 24 * 60 * 60, // 30 días si se recuerda la sesión, 1 día si no
       path: "/",
     };
 
