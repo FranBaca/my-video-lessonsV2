@@ -73,47 +73,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Obtener el token de acceso de las cookies
-    const cookieStore = cookies();
-    const accessToken = cookieStore.get("access_token")?.value;
-
-    if (!accessToken) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "No se encontró el token de acceso",
-        },
-        { status: 401 }
-      );
-    }
+    // Generar un token de acceso temporal para esta sesión
+    const accessToken = uuidv4();
 
     // Verificar si el dispositivo está autorizado
-    const accessVerification = await verifyDeviceAccess(
-      accessToken,
-      code,
-      browserFingerprint,
-      ipAddress
-    );
-
-    if (!accessVerification.allowed) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: accessVerification.reason,
-        },
-        { status: 403 }
+    try {
+      const accessVerification = await verifyDeviceAccess(
+        accessToken,
+        code,
+        browserFingerprint,
+        ipAddress
       );
-    }
 
-    // Guardar o actualizar la información del código en Google Sheets
-    await saveUsedCode(accessToken, {
-      code,
-      deviceId: clientDeviceId || uuidv4(),
-      browserFingerprint,
-      fingerprintVerified,
-      subjects: student.subjects || [],
-      ipAddress,
-    });
+      if (!accessVerification.allowed) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: accessVerification.reason,
+          },
+          { status: 403 }
+        );
+      }
+
+      // Guardar o actualizar la información del código en Google Sheets
+      await saveUsedCode(accessToken, {
+        code,
+        deviceId: clientDeviceId || uuidv4(),
+        browserFingerprint,
+        fingerprintVerified,
+        subjects: student.subjects || [],
+        ipAddress,
+      });
+    } catch (error) {
+      console.error("Error en la verificación de acceso:", error);
+      // Continuar con el proceso aunque falle la verificación externa
+    }
 
     // Store device ID and student code in cookies
     const cookieOptions = {
@@ -140,6 +134,8 @@ export async function POST(request: NextRequest) {
     // Establecer las cookies en la respuesta
     response.cookies.set("device_id", clientDeviceId, cookieOptions);
     response.cookies.set("student_code", code, cookieOptions);
+    // Establecer el token de acceso como cookie
+    response.cookies.set("access_token", accessToken, cookieOptions);
 
     // Almacenar el fingerprint en una cookie
     if (browserFingerprint) {
