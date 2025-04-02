@@ -376,5 +376,41 @@
     "name": "Tomas Ocampo",
     "authorized": true,
     "subjects": ["fisiologia"]
+  },
+  {
+    "code": "IRISCHUQUITARQUI",
+    "name": "Iris Chuquitarqui",
+    "authorized": true,
+    "subjects": ["fisiologia", "anatomia", "histologia"]
+  },
+  {
+    "code": "MILAGROSGUERRERO",
+    "name": "Milagros Guerrero",
+    "authorized": true,
+    "subjects": ["fisiologia", "anatomia", "histologia"]
+  },
+  {
+    "code": "CAMILAFIGUEROA",
+    "name": "Camila Figueroa",
+    "authorized": true,
+    "subjects": ["fisiologia", "anatomia", "histologia"]
+  },
+  {
+    "code": "SERGIOBUTELER",
+    "name": "Sergio Buteler",
+    "authorized": true,
+    "subjects": ["fisiologia", "anatomia", "histologia"]
+  },
+  {
+    "code": "ANALUCASTRO",
+    "name": "Ana Lu Castro",
+    "authorized": true,
+    "subjects": ["histologia"]
+  },
+  {
+    "code": "EMILIAGUERRA",
+    "name": "Emilia Guerra",
+    "authorized": true,
+    "subjects": [ "histologia"]
   }
 ] 
