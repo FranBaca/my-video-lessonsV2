@@ -7,6 +7,7 @@ export function middleware(request: NextRequest) {
     "/api/auth/verify",
     "/api/auth/validate",
     "/api/auth/callback",
+    "/api/auth/refresh",
   ];
   if (publicPaths.some((path) => request.nextUrl.pathname.startsWith(path))) {
     return NextResponse.next();

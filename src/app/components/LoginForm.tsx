@@ -28,8 +28,10 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Cache-Control": "no-cache",
         },
         body: JSON.stringify({ code, fingerprint }),
+        cache: "no-store",
       });
 
       const data = await response.json();

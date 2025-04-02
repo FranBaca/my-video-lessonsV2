@@ -17,12 +17,24 @@ export default function Home() {
 
   // Referencia para el intervalo de refresco de sesión
   const sessionRefreshInterval = useRef<NodeJS.Timeout | null>(null);
+  const sessionCheckAttempted = useRef(false);
 
   // Verificar si hay una sesión existente al cargar la página
   useEffect(() => {
+    // Prevenir múltiples intentos de verificación de sesión
+    if (sessionCheckAttempted.current) return;
+    sessionCheckAttempted.current = true;
+
     const checkExistingSession = async () => {
       try {
-        const response = await fetch("/api/auth/refresh");
+        const response = await fetch("/api/auth/refresh", {
+          // Usar no-cache para evitar problemas con la caché
+          cache: "no-store",
+          headers: {
+            "Cache-Control": "no-cache",
+          },
+        });
+
         if (response.ok) {
           const data = await response.json();
           if (data.success) {
@@ -71,7 +83,14 @@ export default function Home() {
   // Función para refrescar la sesión
   const refreshSession = async () => {
     try {
-      const response = await fetch("/api/auth/refresh");
+      const response = await fetch("/api/auth/refresh", {
+        // Usar no-cache para evitar problemas con la caché
+        cache: "no-store",
+        headers: {
+          "Cache-Control": "no-cache",
+        },
+      });
+
       if (!response.ok) {
         throw new Error("Error al refrescar la sesión");
       }

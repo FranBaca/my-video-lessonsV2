@@ -3,6 +3,13 @@ import students from "@/app/data/students.json";
 import { Student } from "@/app/types";
 
 export async function GET(request: NextRequest) {
+  // Agregar encabezados para evitar caché
+  const headers = {
+    "Cache-Control": "no-store, max-age=0, must-revalidate",
+    Pragma: "no-cache",
+    Expires: "0",
+  };
+
   try {
     // Obtener el código de estudiante de la cookie
     const studentCode = request.cookies.get("student_code")?.value;
@@ -11,14 +18,14 @@ export async function GET(request: NextRequest) {
       "browser_fingerprint"
     )?.value;
 
-    // Si no hay código, devolver error
+    // Si no hay código, devolver error sin redireccionar
     if (!studentCode) {
       return NextResponse.json(
         {
           success: false,
           message: "No se encontró una sesión activa",
         },
-        { status: 401 }
+        { status: 401, headers }
       );
     }
 
@@ -30,7 +37,7 @@ export async function GET(request: NextRequest) {
           success: false,
           message: "Estudiante no encontrado o no autorizado",
         },
-        { status: 403 }
+        { status: 403, headers }
       );
     }
 
@@ -43,14 +50,17 @@ export async function GET(request: NextRequest) {
       path: "/",
     };
 
-    const response = NextResponse.json({
-      success: true,
-      message: "Sesión renovada correctamente",
-      student: {
-        name: student.name,
-        subjects: student.subjects,
+    const response = NextResponse.json(
+      {
+        success: true,
+        message: "Sesión renovada correctamente",
+        student: {
+          name: student.name,
+          subjects: student.subjects,
+        },
       },
-    });
+      { headers }
+    );
 
     // Renovar todas las cookies relacionadas con la sesión
     response.cookies.set("student_code", studentCode, cookieOptions);
@@ -84,7 +94,7 @@ export async function GET(request: NextRequest) {
         details:
           process.env.NODE_ENV === "development" ? error.toString() : undefined,
       },
-      { status: 500 }
+      { status: 500, headers }
     );
   }
 }
