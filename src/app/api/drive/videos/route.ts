@@ -12,12 +12,6 @@ const FOLDER_IDS = {
   fisiologia: process.env.GOOGLE_DRIVE_FOLDER_PHYSIOLOGY!,
 };
 
-// Verificar que los IDs de las carpetas estén definidos
-console.log("IDs de carpetas configurados:", {
-  anatomia: process.env.GOOGLE_DRIVE_FOLDER_MATH || "No definido",
-  histologia: process.env.GOOGLE_DRIVE_FOLDER_SCIENCE || "No definido",
-  fisiologia: process.env.GOOGLE_DRIVE_FOLDER_PHYSIOLOGY || "No definido",
-});
 
 export async function GET(request: NextRequest) {
   try {
