@@ -9,32 +9,16 @@ export default function VideoPlayer({ video }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [useFallback, setUseFallback] = useState(false);
 
   useEffect(() => {
     if (video) {
       setIsLoading(true);
       setError(null);
-      setUseFallback(false);
-      if (videoRef.current) {
-        videoRef.current.load();
-      }
     }
   }, [video?.id]);
 
-  const handleLoadStart = () => {
-    setIsLoading(true);
-    setError(null);
-  };
-
-  const handleCanPlay = () => {
+  const handleLoadingComplete = () => {
     setIsLoading(false);
-  };
-
-  const handleError = () => {
-    setIsLoading(false);
-    setError("Error al cargar el video. Intentando método alternativo...");
-    setUseFallback(true);
   };
 
   if (!video) {
@@ -77,7 +61,7 @@ export default function VideoPlayer({ video }: VideoPlayerProps) {
         <h1 className="text-2xl font-bold text-gray-800 mb-2">{video.name}</h1>
         <div className="h-px bg-gray-200 w-full mb-6" />
         <div className="aspect-video w-full max-w-5xl mx-auto bg-black rounded-xl overflow-hidden shadow-lg relative">
-          {isLoading && !useFallback && (
+          {isLoading && (
             <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10">
               <div className="flex flex-col items-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
@@ -85,41 +69,34 @@ export default function VideoPlayer({ video }: VideoPlayerProps) {
               </div>
             </div>
           )}
-          {error && !useFallback && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10">
-              <div className="text-center p-4">
-                <p className="text-white mb-4">{error}</p>
-              </div>
-            </div>
-          )}
           <div className="relative w-full h-full">
-            {!useFallback ? (
-              <video
-                ref={videoRef}
-                key={video.id}
-                className="w-full h-full"
-                controls
-                controlsList="nodownload"
-                playsInline
-                preload="metadata"
-                onLoadStart={handleLoadStart}
-                onCanPlay={handleCanPlay}
-                onError={handleError}
-              >
-                <source
-                  src={`/api/drive/proxy/${video.id}`}
-                  type={video.mimeType || "video/mp4"}
-                />
-                Tu navegador no soporta la reproducción de videos.
-              </video>
-            ) : (
+            <div className="embed-container">
               <iframe
                 src={`https://drive.google.com/file/d/${video.id}/preview`}
                 className="w-full h-full"
                 allow="autoplay; encrypted-media"
                 allowFullScreen
+                onLoad={handleLoadingComplete}
               />
-            )}
+            </div>
+
+            <style jsx>{`
+              .embed-container {
+                position: relative;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+              }
+
+              .embed-container iframe {
+                position: absolute;
+                top: -60px;
+                left: 0;
+                width: 100%;
+                height: calc(100% + 60px);
+                border: 0;
+              }
+            `}</style>
           </div>
         </div>
       </div>
