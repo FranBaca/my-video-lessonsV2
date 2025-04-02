@@ -3,9 +3,8 @@ import { cookies } from "next/headers";
 import { v4 as uuidv4 } from "uuid";
 import students from "@/app/data/students.json";
 import { Student } from "@/app/types";
-import { saveUsedCode, verifyDeviceAccess } from "@/app/lib/sheets";
-import { getServiceAuth } from "@/app/lib/service-auth";
-import { OAuth2Client } from "google-auth-library";
+import { google } from "googleapis";
+import { JWT } from "google-auth-library";
 
 // Función para obtener la IP del cliente
 function getClientIp(request: NextRequest): string {
@@ -14,6 +13,95 @@ function getClientIp(request: NextRequest): string {
     return forwardedFor.split(",")[0].trim();
   }
   return request.ip || "unknown";
+}
+
+// Configuración de la cuenta de servicio para Google Sheets
+const SPREADSHEET_ID =
+  process.env.GOOGLE_SHEETS_ID ||
+  "16coLs8qv4BU_CwphqlvE_LWNEAV50nIQ8VaM2SdsuRs";
+const SERVICE_ACCOUNT_EMAIL =
+  "my-lessons@fluted-arch-452901-d1.iam.gserviceaccount.com";
+const SCOPES = ["https://www.googleapis.com/auth/spreadsheets"];
+
+// Inicializar cliente de Google Sheets con autenticación JWT
+async function getAuthClient() {
+  const privateKey = process.env.GOOGLE_SERVICE_PRIVATE_KEY?.replace(
+    /\\n/g,
+    "\n"
+  );
+
+  if (!privateKey) {
+    throw new Error("GOOGLE_SERVICE_PRIVATE_KEY no está configurado");
+  }
+
+  const auth = new JWT({
+    email: SERVICE_ACCOUNT_EMAIL,
+    key: privateKey,
+    scopes: SCOPES,
+  });
+
+  await auth.authorize();
+  return auth;
+}
+
+// Verificar si el código ya está en uso y validar el fingerprint
+async function verifyCodeFingerprint(code: string, fingerprint: string) {
+  try {
+    const auth = await getAuthClient();
+    const sheets = google.sheets({ version: "v4", auth });
+
+    // Obtener datos de la hoja
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: "UsedCodes!A2:C",
+    });
+
+    const rows = response.data.values || [];
+    const existingCode = rows.find((row) => row[0] === code);
+
+    if (!existingCode) {
+      // Código no usado, registrarlo
+      await sheets.spreadsheets.values.append({
+        spreadsheetId: SPREADSHEET_ID,
+        range: "UsedCodes!A:C",
+        valueInputOption: "USER_ENTERED",
+        requestBody: {
+          values: [[code, fingerprint, new Date().toISOString()]],
+        },
+      });
+      return { valid: true, firstTime: true };
+    }
+
+    // Código ya usado, verificar fingerprint
+    const savedFingerprint = existingCode[1];
+
+    if (savedFingerprint === fingerprint) {
+      // Actualizar fecha de último acceso
+      const rowIndex = rows.findIndex((row) => row[0] === code) + 2; // +2 porque empezamos desde A2
+
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `UsedCodes!C${rowIndex}`,
+        valueInputOption: "USER_ENTERED",
+        requestBody: {
+          values: [[new Date().toISOString()]],
+        },
+      });
+
+      return { valid: true, firstTime: false };
+    }
+
+    // Fingerprint diferente, acceso no permitido
+    return {
+      valid: false,
+      reason:
+        "Este código ya está en uso en otro dispositivo. Por razones de seguridad, cada código solo puede ser utilizado en un dispositivo.",
+    };
+  } catch (error) {
+    console.error("Error verificando código en Google Sheets:", error);
+    // Si hay error de verificación, permitimos el acceso pero registramos el error
+    return { valid: true, firstTime: true, error: true };
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -52,7 +140,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find student with the provided code
+    // Buscar estudiante con el código proporcionado
     const student = (students as Student[]).find((s) => s.code === code);
 
     if (!student) {
@@ -75,72 +163,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Obtener un token de acceso válido para Google Sheets
-    let auth: OAuth2Client;
-    let accessToken: string;
-    try {
-      auth = await getServiceAuth();
-      // Obtener el token de acceso de la instancia autenticada
-      const credentials = await auth.getAccessToken();
-      accessToken = credentials.token || "";
+    // Verificar si el código ya está en uso en otro dispositivo
+    const verification = await verifyCodeFingerprint(code, browserFingerprint);
 
-      if (!accessToken) {
-        throw new Error("No se pudo obtener un token de acceso válido");
-      }
-    } catch (error) {
-      console.error("Error al obtener token de servicio:", error);
+    if (!verification.valid) {
       return NextResponse.json(
         {
           success: false,
-          message: "Error de autenticación del servicio",
+          message: verification.reason || "No autorizado para usar este código",
         },
-        { status: 500 }
+        { status: 403 }
       );
     }
 
-    // Verificar si el dispositivo está autorizado
-    try {
-      const accessVerification = await verifyDeviceAccess(
-        accessToken,
-        code,
-        browserFingerprint,
-        ipAddress
-      );
-
-      if (!accessVerification.allowed) {
-        return NextResponse.json(
-          {
-            success: false,
-            message: accessVerification.reason,
-          },
-          { status: 403 }
-        );
-      }
-
-      // Guardar o actualizar la información del código en Google Sheets
-      const saveResult = await saveUsedCode(accessToken, {
-        code,
-        deviceId: clientDeviceId || uuidv4(),
-        browserFingerprint,
-        fingerprintVerified,
-        subjects: student.subjects || [],
-        ipAddress,
-      });
-
-      if (!saveResult) {
-        console.warn("No se pudo guardar la información en Google Sheets");
-      }
-    } catch (error) {
-      console.error("Error en la verificación o guardado de acceso:", error);
-      // No interrumpir el flujo, pero registrar el error
-    }
-
-    // Store device ID and student code in cookies
+    // Si llegamos aquí, la autenticación es exitosa
+    // Configurar cookies para mantener la sesión
     const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict" as "strict",
-      maxAge: rememberSession ? 30 * 24 * 60 * 60 : 24 * 60 * 60, // 30 días si se recuerda la sesión, 1 día si no
+      maxAge: rememberSession ? 30 * 24 * 60 * 60 : 24 * 60 * 60, // 30 días o 1 día
       path: "/",
     };
 
@@ -160,16 +202,12 @@ export async function POST(request: NextRequest) {
     // Establecer las cookies en la respuesta
     response.cookies.set("device_id", clientDeviceId, cookieOptions);
     response.cookies.set("student_code", code, cookieOptions);
-    // Establecer el token de acceso como cookie si se obtuvo correctamente
-    if (accessToken) {
-      response.cookies.set("access_token", accessToken, cookieOptions);
-    }
 
     // Almacenar el fingerprint en una cookie
     if (browserFingerprint) {
       response.cookies.set("browser_fingerprint", browserFingerprint, {
         ...cookieOptions,
-        httpOnly: false, // No es httpOnly para que pueda ser accedido por JavaScript para verificación
+        httpOnly: false, // No es httpOnly para acceso JavaScript
       });
     }
 
