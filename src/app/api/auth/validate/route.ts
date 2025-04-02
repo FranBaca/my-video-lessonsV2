@@ -4,6 +4,8 @@ import { v4 as uuidv4 } from "uuid";
 import students from "@/app/data/students.json";
 import { Student } from "@/app/types";
 import { saveUsedCode, verifyDeviceAccess } from "@/app/lib/sheets";
+import { getServiceAuth } from "@/app/lib/service-auth";
+import { OAuth2Client } from "google-auth-library";
 
 // Función para obtener la IP del cliente
 function getClientIp(request: NextRequest): string {
@@ -73,8 +75,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generar un token de acceso temporal para esta sesión
-    const accessToken = uuidv4();
+    // Obtener un token de acceso válido para Google Sheets
+    let auth: OAuth2Client;
+    let accessToken: string;
+    try {
+      auth = await getServiceAuth();
+      // Obtener el token de acceso de la instancia autenticada
+      const credentials = await auth.getAccessToken();
+      accessToken = credentials.token || "";
+
+      if (!accessToken) {
+        throw new Error("No se pudo obtener un token de acceso válido");
+      }
+    } catch (error) {
+      console.error("Error al obtener token de servicio:", error);
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Error de autenticación del servicio",
+        },
+        { status: 500 }
+      );
+    }
 
     // Verificar si el dispositivo está autorizado
     try {
@@ -96,7 +118,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Guardar o actualizar la información del código en Google Sheets
-      await saveUsedCode(accessToken, {
+      const saveResult = await saveUsedCode(accessToken, {
         code,
         deviceId: clientDeviceId || uuidv4(),
         browserFingerprint,
@@ -104,9 +126,13 @@ export async function POST(request: NextRequest) {
         subjects: student.subjects || [],
         ipAddress,
       });
+
+      if (!saveResult) {
+        console.warn("No se pudo guardar la información en Google Sheets");
+      }
     } catch (error) {
-      console.error("Error en la verificación de acceso:", error);
-      // Continuar con el proceso aunque falle la verificación externa
+      console.error("Error en la verificación o guardado de acceso:", error);
+      // No interrumpir el flujo, pero registrar el error
     }
 
     // Store device ID and student code in cookies
@@ -134,8 +160,10 @@ export async function POST(request: NextRequest) {
     // Establecer las cookies en la respuesta
     response.cookies.set("device_id", clientDeviceId, cookieOptions);
     response.cookies.set("student_code", code, cookieOptions);
-    // Establecer el token de acceso como cookie
-    response.cookies.set("access_token", accessToken, cookieOptions);
+    // Establecer el token de acceso como cookie si se obtuvo correctamente
+    if (accessToken) {
+      response.cookies.set("access_token", accessToken, cookieOptions);
+    }
 
     // Almacenar el fingerprint en una cookie
     if (browserFingerprint) {
