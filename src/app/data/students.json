@@ -363,7 +363,7 @@
     "code": "CRISTIANCALVIÑO",
     "name": "Cristian Calviño",
     "authorized": true,
-    "subjects": ["anatomia"]
+    "subjects": ["anatomia", "histologia", "fisiologia"]
   },
   {
     "code": "SOFIACRIVERO",
@@ -412,5 +412,11 @@
     "name": "Emilia Guerra",
     "authorized": true,
     "subjects": [ "histologia"]
+  },
+  {
+    "code": "VIRGINIAGARZON",
+    "name": "Virginia Garzon",
+    "authorized": true,
+    "subjects": ["fisiologia", "anatomia", "histologia"]
   }
 ] 
