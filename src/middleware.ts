@@ -2,31 +2,19 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
-  // Verificar si es una ruta pública que no requiere autenticación
-  const publicPaths = [
-    "/api/auth/verify",
-    "/api/auth/validate",
-    "/api/auth/callback",
-    "/api/auth/refresh",
-  ];
-  if (publicPaths.some((path) => request.nextUrl.pathname.startsWith(path))) {
-    return NextResponse.next();
-  }
-
   // Comprobar si el usuario está autenticado verificando la cookie
   const studentCode = request.cookies.get("student_code")?.value;
 
-  // Si no hay código de estudiante y no es una ruta pública, redirigir a la página principal
-  // donde se mostrará el formulario de inicio de sesión
-  if (!studentCode && !request.nextUrl.pathname.startsWith("/api/auth")) {
+  // Si no hay código de estudiante, redirigir a la página principal
+  if (!studentCode) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
-  // Continuar con la solicitud
+  // Si hay código de estudiante, continuar con la solicitud y renovar cookies
   const response = NextResponse.next();
 
-  // Renovar las cookies si existen y la ruta no es de logout
-  if (studentCode && !request.nextUrl.pathname.startsWith("/api/auth/logout")) {
+  // Renovar las cookies (excepto en logout)
+  if (!request.nextUrl.pathname.startsWith("/api/auth/logout")) {
     const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -63,10 +51,15 @@ export function middleware(request: NextRequest) {
   return response;
 }
 
+// Configurar el matcher para excluir explícitamente las rutas públicas
+// y solo aplicar el middleware a rutas que requieren autenticación
 export const config = {
   matcher: [
-    // Rutas que requieren o pueden requerir autenticación
-    "/",
-    "/api/:path*",
+    // Rutas que requieren autenticación
+    "/api/drive/:path*",
+    "/api/admin/:path*",
+
+    // Excluir explícitamente rutas de autenticación y la página principal
+    "/((?!api/auth|_next/static|_next/image|favicon.ico).*)",
   ],
 };

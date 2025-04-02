@@ -27,11 +27,28 @@ export default function Home() {
 
     const checkExistingSession = async () => {
       try {
+        // Intentar obtener las cookies directamente del navegador
+        // antes de hacer una llamada al servidor
+        const cookies = document.cookie.split(";").reduce((acc, cookie) => {
+          const [key, value] = cookie.trim().split("=");
+          acc[key] = value;
+          return acc;
+        }, {} as Record<string, string>);
+
+        // Si no hay cookie de student_code, no seguir con la llamada al servidor
+        if (!cookies.student_code) {
+          setCheckingSession(false);
+          return;
+        }
+
+        // Solo si hay una cookie de sesión, intentar validarla
         const response = await fetch("/api/auth/refresh", {
-          // Usar no-cache para evitar problemas con la caché
+          method: "GET",
           cache: "no-store",
           headers: {
-            "Cache-Control": "no-cache",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            Pragma: "no-cache",
+            Expires: "0",
           },
         });
 
@@ -84,10 +101,12 @@ export default function Home() {
   const refreshSession = async () => {
     try {
       const response = await fetch("/api/auth/refresh", {
-        // Usar no-cache para evitar problemas con la caché
+        method: "GET",
         cache: "no-store",
         headers: {
-          "Cache-Control": "no-cache",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
         },
       });
 
@@ -103,8 +122,6 @@ export default function Home() {
       console.log("Sesión refrescada correctamente");
     } catch (error) {
       console.error("Error al refrescar la sesión:", error);
-      // Si hay un error grave de sesión, podríamos mostrar un mensaje o cerrar sesión
-      // pero preferimos mantener la experiencia de usuario sin interrupciones
     }
   };
 
