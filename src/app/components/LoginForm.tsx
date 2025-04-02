@@ -23,17 +23,13 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
       const result = await fp.get();
       const fingerprint = result.visitorId;
 
-      // Enviar código y fingerprint al servidor con cabeceras estrictas anti-caché
+      // Enviar código y fingerprint al servidor
       const response = await fetch("/api/auth/verify", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          Pragma: "no-cache",
-          Expires: "0",
         },
         body: JSON.stringify({ code, fingerprint }),
-        cache: "no-store",
       });
 
       const data = await response.json();
