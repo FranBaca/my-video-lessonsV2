@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import students from "@/app/data/students.json";
 import { Student } from "@/app/types";
 import { saveUsedCode, verifyDeviceAccess } from "@/app/lib/sheets";
+import { getServiceAuth } from "@/app/lib/google-auth";
 
 // Función para obtener la IP del cliente
 function getClientIp(request: NextRequest): string {
@@ -73,8 +74,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generar un token de acceso temporal para esta sesión
-    const accessToken = uuidv4();
+    // Obtener un token de acceso válido para Google Sheets
+    let accessToken;
+    try {
+      const auth = await getServiceAuth();
+      const credentials = await auth.getAccessToken();
+      accessToken = credentials.token || "";
+
+      if (!accessToken) {
+        throw new Error("No se pudo obtener un token de acceso válido");
+      }
+    } catch (error) {
+      console.error("Error al obtener token de servicio:", error);
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Error al autenticar con Google Sheets. Contacte al administrador.",
+        },
+        { status: 500 }
+      );
+    }
 
     // Verificar si el dispositivo está autorizado
     try {
@@ -96,7 +116,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Guardar o actualizar la información del código en Google Sheets
-      await saveUsedCode(accessToken, {
+      const saveResult = await saveUsedCode(accessToken, {
         code,
         deviceId: clientDeviceId || uuidv4(),
         browserFingerprint,
@@ -104,9 +124,20 @@ export async function POST(request: NextRequest) {
         subjects: student.subjects || [],
         ipAddress,
       });
+
+      if (!saveResult) {
+        throw new Error("No se pudo registrar el código en la base de datos");
+      }
     } catch (error) {
-      console.error("Error en la verificación de acceso:", error);
-      // Continuar con el proceso aunque falle la verificación externa
+      console.error("Error en la verificación/registro:", error);
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Error al verificar o registrar el código. Por favor, intente nuevamente.",
+        },
+        { status: 500 }
+      );
     }
 
     // Store device ID and student code in cookies
