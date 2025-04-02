@@ -11,7 +11,6 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [rememberSession, setRememberSession] = useState(true);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,25 +23,13 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
       const result = await fp.get();
       const fingerprint = result.visitorId;
 
-      // Incluimos deviceId como apoyo para la persistencia de sesión
-      const deviceId = localStorage.getItem("deviceId") || crypto.randomUUID();
-      localStorage.setItem("deviceId", deviceId);
-
-      // Enviar código, fingerprint y opción de recordar sesión al servidor
-      const response = await fetch("/api/auth/validate", {
+      // Enviar código y fingerprint al servidor
+      const response = await fetch("/api/auth/verify", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          code,
-          deviceId,
-          fingerprintData: {
-            browserFingerprint: fingerprint,
-            verified: true,
-          },
-          rememberSession,
-        }),
+        body: JSON.stringify({ code, fingerprint }),
       });
 
       const data = await response.json();
@@ -52,7 +39,7 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
       }
 
       // Si todo está bien, llamar al callback de éxito
-      onSuccess(data.student.name, data.student.subjects || []);
+      onSuccess(data.student.name, data.student.subjects);
     } catch (error: any) {
       setError(error.message);
     } finally {
@@ -94,23 +81,6 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
                 autoFocus
               />
             </div>
-          </div>
-
-          <div className="flex items-center mt-3">
-            <input
-              id="remember-session"
-              name="remember-session"
-              type="checkbox"
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              checked={rememberSession}
-              onChange={(e) => setRememberSession(e.target.checked)}
-            />
-            <label
-              htmlFor="remember-session"
-              className="ml-2 block text-sm text-gray-700"
-            >
-              Recordar mi sesión en este dispositivo
-            </label>
           </div>
 
           {error && (
