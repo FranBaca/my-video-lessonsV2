@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import LoginForm from "./components/LoginForm";
 import VideoPlayer from "./components/VideoPlayer";
 import Sidebar from "./components/Sidebar";
@@ -13,13 +13,81 @@ export default function Home() {
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  // Referencia para el intervalo de refresco de sesión
+  const sessionRefreshInterval = useRef<NodeJS.Timeout | null>(null);
+
+  // Verificar si hay una sesión existente al cargar la página
+  useEffect(() => {
+    const checkExistingSession = async () => {
+      try {
+        const response = await fetch("/api/auth/refresh");
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            handleLoginSuccess(data.student.name, data.student.subjects);
+          }
+        }
+      } catch (error) {
+        console.error("Error al verificar sesión existente:", error);
+      } finally {
+        setCheckingSession(false);
+      }
+    };
+
+    checkExistingSession();
+  }, []);
 
   // Cargar videos cuando el usuario está autenticado
   useEffect(() => {
     if (isAuthenticated) {
       loadVideos();
+      startSessionRefresh();
     }
+
+    // Limpiar el intervalo cuando se desmonta el componente o el usuario cierra sesión
+    return () => {
+      if (sessionRefreshInterval.current) {
+        clearInterval(sessionRefreshInterval.current);
+        sessionRefreshInterval.current = null;
+      }
+    };
   }, [isAuthenticated]);
+
+  // Iniciar el mecanismo de refresco de sesión
+  const startSessionRefresh = () => {
+    // Refrescar la sesión cada 10 minutos (600000 ms)
+    sessionRefreshInterval.current = setInterval(refreshSession, 600000);
+
+    // También refrescar cuando el usuario vuelve a la pestaña
+    window.addEventListener("focus", refreshSession);
+
+    return () => {
+      window.removeEventListener("focus", refreshSession);
+    };
+  };
+
+  // Función para refrescar la sesión
+  const refreshSession = async () => {
+    try {
+      const response = await fetch("/api/auth/refresh");
+      if (!response.ok) {
+        throw new Error("Error al refrescar la sesión");
+      }
+
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.message || "Error al refrescar la sesión");
+      }
+
+      console.log("Sesión refrescada correctamente");
+    } catch (error) {
+      console.error("Error al refrescar la sesión:", error);
+      // Si hay un error grave de sesión, podríamos mostrar un mensaje o cerrar sesión
+      // pero preferimos mantener la experiencia de usuario sin interrupciones
+    }
+  };
 
   // Cargar videos del servidor
   const loadVideos = async () => {
@@ -91,10 +159,27 @@ export default function Home() {
       setSubjects([]);
       setSelectedSubject(null);
       setSelectedVideo(null);
+
+      // Limpiar el intervalo de refresco de sesión
+      if (sessionRefreshInterval.current) {
+        clearInterval(sessionRefreshInterval.current);
+        sessionRefreshInterval.current = null;
+      }
     } catch (error) {
       console.error("Error durante el logout:", error);
     }
   };
+
+  if (checkingSession) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Verificando sesión...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <LoginForm onSuccess={handleLoginSuccess} />;
