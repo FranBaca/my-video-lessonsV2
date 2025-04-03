@@ -18,6 +18,8 @@ const privateKey = process.env.GOOGLE_SERVICE_PRIVATE_KEY?.replace(
   /\\n/g,
   "\n"
 );
+/* 
+// CÓDIGO COMENTADO TEMPORALMENTE - VERIFICACIÓN CON GOOGLE SHEETS
 console.log("DEBUG - Private key processing:", {
   originalLength: process.env.GOOGLE_SERVICE_PRIVATE_KEY?.length || 0,
   processedLength: privateKey?.length || 0,
@@ -139,6 +141,7 @@ async function checkCodeInSheet(code: string, fingerprint: string) {
     throw error;
   }
 }
+*/
 
 export async function POST(request: NextRequest) {
   try {
@@ -172,6 +175,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    /* 
+    // CÓDIGO COMENTADO TEMPORALMENTE - VERIFICACIÓN CON GOOGLE SHEETS
     // Verificar el código en la hoja de cálculo
     const { valid, firstTime } = await checkCodeInSheet(code, fingerprint);
 
@@ -185,8 +190,13 @@ export async function POST(request: NextRequest) {
         { status: 403 }
       );
     }
+    */
 
-    console.log("Verificación exitosa:", {
+    // VERIFICACIÓN TEMPORAL: Sin comprobación de Google Sheets
+    const valid = true;
+    const firstTime = true; // Asumimos primera vez para todos los accesos
+
+    console.log("Verificación exitosa (MODO TEMPORAL):", {
       code,
       name: student.name,
       subjects: student.subjects,
@@ -197,7 +207,7 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({
       success: true,
       firstTime,
-      message: firstTime ? "¡Bienvenido!" : "¡Bienvenido de nuevo!",
+      message: "¡Bienvenido! (Verificación temporal)",
       student: {
         name: student.name,
         subjects: student.subjects,
