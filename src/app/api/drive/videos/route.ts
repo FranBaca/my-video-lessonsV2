@@ -10,8 +10,8 @@ const FOLDER_IDS = {
   anatomia: process.env.GOOGLE_DRIVE_FOLDER_MATH!,
   histologia: process.env.GOOGLE_DRIVE_FOLDER_SCIENCE!,
   fisiologia: process.env.GOOGLE_DRIVE_FOLDER_PHYSIOLOGY!,
+  "histologia-salta": process.env.GOOGLE_DRIVE_FOLDER_HISTOLOGIA_SALTA!,
 };
-
 
 export async function GET(request: NextRequest) {
   try {
@@ -78,6 +78,8 @@ export async function GET(request: NextRequest) {
             ? "Anatomía"
             : subjectName === "histologia"
             ? "Histología"
+            : subjectName === "histologia-salta"
+            ? "Histología Salta"
             : "Fisiología",
         sections,
       });

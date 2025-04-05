@@ -123,7 +123,7 @@
     "code": "EXEQUIELFIRME",
     "name": "Exequiel Firme",
     "authorized": true,
-    "subjects": ["histologia", "fisiologia"]
+    "subjects": ["histologia-salta", "fisiologia"]
   },
   {
     "code": "IRENEGONZALES",
@@ -418,5 +418,29 @@
     "name": "Virginia Garzon",
     "authorized": true,
     "subjects": ["fisiologia", "anatomia", "histologia"]
+  },
+  {
+    "code": "JULIETAMADRIGAL",
+    "name": "Julieta Madrigal",
+    "authorized": true,
+    "subjects": ["histologia-salta"]
+  },
+  {
+    "code": "ANITAYOCAR",
+    "name": "Anita Yocar",
+    "authorized": true,
+    "subjects": ["histologia-salta", "fisiologia"]
+  },
+  {
+    "code": "AGUSFLORIT",
+    "name": "Agustin Florit",
+    "authorized": true,
+    "subjects": ["histologia"]
+  },
+  {
+    "code": "SOLWAISMAN",
+    "name": "Sol Waisman",
+    "authorized": true,
+    "subjects": ["histologia", "fisiologia"]
   }
 ] 
