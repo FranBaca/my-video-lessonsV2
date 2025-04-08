@@ -369,7 +369,7 @@
     "code": "SOFIACRIVERO",
     "name": "Sofia C Rivero",
     "authorized": true,
-    "subjects": ["fisiologia"]
+    "subjects": ["fisiologia", "anatomia"]
   },
   {
     "code": "TOMASOCAMPO",
@@ -442,5 +442,29 @@
     "name": "Sol Waisman",
     "authorized": true,
     "subjects": ["histologia", "fisiologia"]
-  }
+  },
+  {
+    "code": "BENJAMIN123",
+    "name": "Benjamin",
+    "authorized": true,
+    "subjects": ["histologia", "fisiologia", "anatomia", "histologia-salta"]
+  },
+  {
+    "code": "ISAACIAR",
+    "name": "Isa Aciar",
+    "authorized": true,
+    "subjects": ["histologia"]
+  },
+  {
+    "code": "PAULACATALAN",
+    "name": "Paulina Catalan",
+    "authorized": true,
+    "subjects": ["histologia"]
+  },
+  {
+    "code": "LARALOPEZ",
+    "name": "Lara Lopez",
+    "authorized": true,
+    "subjects": ["histologia-salta", "fisiologia"]
+  } 
 ] 
