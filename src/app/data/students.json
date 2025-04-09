@@ -363,7 +363,7 @@
     "code": "CRISTIANCALVIÑO",
     "name": "Cristian Calviño",
     "authorized": true,
-    "subjects": ["anatomia"]
+    "subjects": ["anatomia", "fisiologia"]
   },
   {
     "code": "SOFIACRIVERO",
@@ -466,5 +466,23 @@
     "name": "Lara Lopez",
     "authorized": true,
     "subjects": ["histologia-salta", "fisiologia"]
-  } 
+  },
+  {
+    "code": "VIRGINIADIAZ",
+    "name": "Virginia Diaz",
+    "authorized": true,
+    "subjects": ["histologia"]
+  },
+  {
+    "code": "SOFIAMORENO",
+    "name": "Sofia Moreno",
+    "authorized": true,
+    "subjects": ["histologia"]
+  },
+  {
+    "code": "MELMARTIN",
+    "name": "Mel Martin",
+    "authorized": true,
+    "subjects": ["histologia"]
+  }
 ] 
