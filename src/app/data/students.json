@@ -81,7 +81,7 @@
     "code": "GUILLELOUZA",
     "name": "Guille Louza",
     "authorized": true,
-    "subjects": ["histologia"]
+    "subjects": ["histologia", "fisiologia"]
   },
   {
     "code": "INGRIDDELGADILLO",
@@ -435,7 +435,7 @@
     "code": "AGUSFLORIT",
     "name": "Agustin Florit",
     "authorized": true,
-    "subjects": ["histologia"]
+    "subjects": ["histologia", "fisiologia"]
   },
   {
     "code": "SOLWAISMAN",
@@ -482,6 +482,12 @@
   {
     "code": "MELMARTIN",
     "name": "Mel Martin",
+    "authorized": true,
+    "subjects": ["histologia"]
+  },
+  {
+    "code": "LOURDESAGUIRRE",
+    "name": "Lourdes Aguirre",
     "authorized": true,
     "subjects": ["histologia"]
   }
