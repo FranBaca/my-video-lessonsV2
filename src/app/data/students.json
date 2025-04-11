@@ -490,5 +490,23 @@
     "name": "Lourdes Aguirre",
     "authorized": true,
     "subjects": ["histologia"]
+  },
+  {
+    "code": "VALESILVA",
+    "name": "Valeria Silva",
+    "authorized": true,
+    "subjects": ["histologia"]
+  },
+  {
+    "code": "MILAGROSDELRIO",
+    "name": "Milagros Del Rio",
+    "authorized": true,
+    "subjects": ["anatomia"]
+  },
+  {
+    "code": "FERNANDAZACAME",
+    "name": "Fernanada",
+    "authorized": true,
+    "subjects": ["histologia", "fisiologia"]
   }
 ] 
