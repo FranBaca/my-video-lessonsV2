@@ -93,7 +93,7 @@
     "code": "SABRINAGARCIA",
     "name": "Sabrina Garcia",
     "authorized": true,
-    "subjects": ["histologia"]
+    "subjects": ["histologia", "fisiologia"]
   },
   {
     "code": "YONATHANDIAZ",
@@ -508,5 +508,17 @@
     "name": "Fernanada",
     "authorized": true,
     "subjects": ["histologia", "fisiologia"]
+  },
+  {
+    "code": "NICOLEPOSTA",
+    "name": "Nicole Posta",
+    "authorized": true,
+    "subjects": ["histologia"]
+  },
+  {
+    "code": "MAXILOPEZ",
+    "name": "Maximiliano Lopez",
+    "authorized": true,
+    "subjects": ["fisiologia"]
   }
 ] 
