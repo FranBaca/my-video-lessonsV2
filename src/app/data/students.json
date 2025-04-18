@@ -520,5 +520,11 @@
     "name": "Maximiliano Lopez",
     "authorized": true,
     "subjects": ["fisiologia"]
+  },
+  {
+    "code": "LUJANGRANITO",
+    "name": "Lujan Granito",
+    "authorized": true,
+    "subjects": ["fisiologia"]
   }
 ] 
