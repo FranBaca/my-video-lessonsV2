@@ -526,5 +526,11 @@
     "name": "Lujan Granito",
     "authorized": true,
     "subjects": ["fisiologia"]
+  },
+  {
+    "code": "VANIVILLAGRA",
+    "name": "Vani Villagra Mamani",
+    "authorized": true,
+    "subjects": ["fisiologia"]
   }
 ] 
