@@ -532,5 +532,17 @@
     "name": "Vani Villagra Mamani",
     "authorized": true,
     "subjects": ["fisiologia"]
+  },
+  {
+    "code": "DANIELASOLIS",
+    "name": "Daniela Solis",
+    "authorized": true,
+    "subjects": ["histologia"]
+  },
+  {
+    "code": "JIMENAPAZ",
+    "name": "Jimena Paz",
+    "authorized": true,
+    "subjects": ["histologia", "fisiologia"]
   }
 ] 
