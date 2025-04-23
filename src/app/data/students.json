@@ -99,7 +99,7 @@
     "code": "YONATHANDIAZ",
     "name": "Yonathan Diaz",
     "authorized": true,
-    "subjects": ["histologia"]
+    "subjects": ["histologia", "fisiologia"]
   },
   {
     "code": "ABRILCAMPOS",
@@ -544,5 +544,23 @@
     "name": "Jimena Paz",
     "authorized": true,
     "subjects": ["histologia", "fisiologia"]
+  },
+  {
+    "code": "CELESTECRUZ",
+    "name": "Celeste Cruz",
+    "authorized": true,
+    "subjects": ["histologia", "fisiologia"]
+  },
+  {
+    "code": "MARIELPEREZ",
+    "name": "Mariel Perez",
+    "authorized": true,
+    "subjects": ["histologia", "fisiologia"]
+  },
+  {
+    "code": "ROCIOFERREYRA",
+    "name": "Rocio Ferreyra",
+    "authorized": true,
+    "subjects": ["fisiologia"]
   }
 ] 
