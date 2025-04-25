@@ -375,7 +375,7 @@
     "code": "TOMASOCAMPO",
     "name": "Tomas Ocampo",
     "authorized": true,
-    "subjects": ["fisiologia"]
+    "subjects": ["fisiologia", "anatomia"]
   },
   {
     "code": "IRISCHUQUITARQUI",
@@ -405,7 +405,7 @@
     "code": "ANALUCASTRO",
     "name": "Ana Lu Castro",
     "authorized": true,
-    "subjects": ["histologia"]
+    "subjects": ["histologia", "fisiologia"]
   },
   {
     "code": "EMILIAGUERRA",
@@ -483,7 +483,7 @@
     "code": "MELMARTIN",
     "name": "Mel Martin",
     "authorized": true,
-    "subjects": ["histologia"]
+    "subjects": ["histologia", "fisiologia"]
   },
   {
     "code": "LOURDESAGUIRRE",
