@@ -375,7 +375,7 @@
     "code": "TOMASOCAMPO",
     "name": "Tomas Ocampo",
     "authorized": true,
-    "subjects": ["fisiologia", "anatomia"]
+    "subjects": ["fisiologia", "anatomia", "histologia"]
   },
   {
     "code": "IRISCHUQUITARQUI",
