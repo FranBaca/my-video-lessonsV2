@@ -562,5 +562,11 @@
     "name": "Rocio Ferreyra",
     "authorized": true,
     "subjects": ["fisiologia"]
+  },
+  {
+    "code":"IRINAALI",
+    "name": "Irina Ali",
+    "authorized": true,
+    "subjects": ["anatomia"]
   }
 ] 
