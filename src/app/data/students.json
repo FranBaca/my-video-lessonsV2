@@ -568,5 +568,17 @@
     "name": "Irina Ali",
     "authorized": true,
     "subjects": ["anatomia"]
+  },
+  {
+    "code":"ORNELLAARMELLA",
+    "name": "Ornella Amella",
+    "authorized": true,
+    "subjects": ["fisiologia"]
+  },
+  {
+    "code":"GABRIELRODRIGUEZ",
+    "name": "Gabriel Rodríguez",
+    "authorized": true,
+    "subjects": ["anatomia"]
   }
 ] 
