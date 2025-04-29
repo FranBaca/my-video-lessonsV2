@@ -363,7 +363,7 @@
     "code": "CRISTIANCALVIÑO",
     "name": "Cristian Calviño",
     "authorized": true,
-    "subjects": ["anatomia", "fisiologia"]
+    "subjects": ["anatomia", "fisiologia", "histologia"]
   },
   {
     "code": "SOFIACRIVERO",
@@ -580,5 +580,17 @@
     "name": "Gabriel Rodríguez",
     "authorized": true,
     "subjects": ["anatomia"]
+  },
+  {
+    "code":"SOLVALDIVIEZO",
+    "name": "Sol Valdiviezo",
+    "authorized": true,
+    "subjects": ["histologia"]
+  },
+  {
+    "code":"DIEGOSANCHEZ",
+    "name": "Diego Sanchez",
+    "authorized": true,
+    "subjects": ["fisiologia"]
   }
 ] 
