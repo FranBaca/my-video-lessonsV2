@@ -120,12 +120,6 @@
     "subjects": ["histologia", "fisiologia"]
   },
   {
-    "code": "EXEQUIELFIRME",
-    "name": "Exequiel Firme",
-    "authorized": true,
-    "subjects": ["histologia-salta", "fisiologia"]
-  },
-  {
     "code": "IRENEGONZALES",
     "name": "Irene Gonzales",
     "authorized": true,
@@ -267,7 +261,7 @@
     "code": "MICAELABARBIERI",
     "name": "Micaela Barbieri",
     "authorized": true,
-    "subjects": ["anatomia", "histologia", "fisiologia"]
+    "subjects": ["histologia", "fisiologia"]
   },
   {
     "code": "MILIAVILA",
@@ -297,7 +291,7 @@
     "code": "NAYLAPACELLO",
     "name": "Nayla Pacello",
     "authorized": true,
-    "subjects": ["anatomia", "histologia", "fisiologia"]
+    "subjects": ["histologia", "fisiologia"]
   },
   {
     "code": "PRINCESAAVILA",
@@ -459,7 +453,7 @@
     "code": "PAULACATALAN",
     "name": "Paulina Catalan",
     "authorized": true,
-    "subjects": ["histologia"]
+    "subjects": ["histologia", "fisiologia"]
   },
   {
     "code": "LARALOPEZ",
@@ -592,5 +586,11 @@
     "name": "Diego Sanchez",
     "authorized": true,
     "subjects": ["fisiologia"]
+  },
+  {
+    "code":"YULIJIMENEZ",
+    "name": "Yuli Jimenez",
+    "authorized": true,
+    "subjects": ["histologia"]
   }
 ] 
