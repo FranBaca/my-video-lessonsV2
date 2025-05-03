@@ -411,7 +411,7 @@
     "code": "VIRGINIAGARZON",
     "name": "Virginia Garzon",
     "authorized": true,
-    "subjects": ["fisiologia", "anatomia", "histologia"]
+    "subjects": ["fisiologia", "histologia"]
   },
   {
     "code": "JULIETAMADRIGAL",
@@ -590,6 +590,12 @@
   {
     "code":"YULIJIMENEZ",
     "name": "Yuli Jimenez",
+    "authorized": true,
+    "subjects": ["histologia"]
+  },
+  {
+    "code":"EXEQUIELFIRME",
+    "name": "Exequiel Firme",
     "authorized": true,
     "subjects": ["histologia"]
   }
