@@ -297,7 +297,7 @@
     "code": "PRINCESAAVILA",
     "name": "Princesa Avila",
     "authorized": true,
-    "subjects": ["anatomia", "histologia", "fisiologia"]
+    "subjects": ["histologia", "fisiologia"]
   },
   {
     "code": "ROCIOCHECA",
@@ -596,6 +596,18 @@
   {
     "code":"EXEQUIELFIRME",
     "name": "Exequiel Firme",
+    "authorized": true,
+    "subjects": ["histologia"]
+  },
+  {
+    "code":"ROFRONTINI",
+    "name": "Ro Frontini",
+    "authorized": true,
+    "subjects": ["fisiologia"]
+  },
+  {
+    "code":"SOLABRAHAM",
+    "name": "Sol Abraham",
     "authorized": true,
     "subjects": ["histologia"]
   }
