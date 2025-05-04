@@ -159,7 +159,7 @@
     "code": "CAMILAALE",
     "name": "Camila Ale",
     "authorized": true,
-    "subjects": ["anatomia", "histologia", "fisiologia"]
+    "subjects": ["histologia", "fisiologia"]
   },
   {
     "code": "CANDEMORALES",
@@ -207,7 +207,7 @@
     "code": "GUADAOLIVERA",
     "name": "Guada Olivera",
     "authorized": true,
-    "subjects": ["anatomia", "histologia", "fisiologia"]
+    "subjects": ["histologia", "fisiologia"]
   },
   {
     "code": "IGNACIOMARTINEZ",
@@ -267,7 +267,7 @@
     "code": "MILIAVILA",
     "name": "Mili Avila",
     "authorized": true,
-    "subjects": ["anatomia", "histologia", "fisiologia"]
+    "subjects": ["histologia", "fisiologia"]
   },
   {
     "code": "MILILEDESMA",
@@ -309,7 +309,7 @@
     "code": "SOFIAARAGON",
     "name": "Sofia Aragon",
     "authorized": true,
-    "subjects": ["anatomia", "histologia", "fisiologia"]
+    "subjects": ["histologia", "fisiologia"]
   },
   {
     "code": "SOFIADISTEFANO",
@@ -610,5 +610,11 @@
     "name": "Sol Abraham",
     "authorized": true,
     "subjects": ["histologia"]
+  },
+  {
+    "code":"MILIGUERRA",
+    "name": "Milagros Guerra",
+    "authorized": true,
+    "subjects": ["histologia", "fisiologia", "anatomia"]
   }
 ] 
