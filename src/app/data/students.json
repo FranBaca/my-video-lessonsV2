@@ -597,7 +597,7 @@
     "code":"EXEQUIELFIRME",
     "name": "Exequiel Firme",
     "authorized": true,
-    "subjects": ["histologia"]
+    "subjects": ["histologia", "fisiologia"]
   },
   {
     "code":"ROFRONTINI",
@@ -616,5 +616,11 @@
     "name": "Milagros Guerra",
     "authorized": true,
     "subjects": ["histologia", "fisiologia", "anatomia"]
+  },
+  {
+    "code":"NONYGONZALEZ",
+    "name": "Nony Gonzalez",
+    "authorized": true,
+    "subjects": ["fisiologia"]
   }
 ] 
