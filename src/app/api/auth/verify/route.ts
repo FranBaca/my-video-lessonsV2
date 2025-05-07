@@ -189,7 +189,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           {
             success: false,
-            message: "Este código ya está siendo usado en otro dispositivo",
+            message:
+              "Este código ya está siendo usado en otro dispositivo, se ha registrado el intento de ingreso.\n Si tu dispositivo es el que usaste para ingresar por primera vez, por favor contacta al administrador.",
           },
           { status: 403 }
         );
