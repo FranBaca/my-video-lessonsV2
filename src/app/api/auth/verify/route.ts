@@ -117,9 +117,7 @@ async function checkCodeInSheet(code: string, fingerprint: string) {
     }
 
     console.log("Fingerprint no coincide, registrando intento fallido");
-    toast.error(
-      "Dispositivo no coincide, registrando intento fallido.\n Si tu dispositivo es el que usaste para ingresar por primera vez, por favor contacta al administrador."
-    );
+
     // Fingerprint diferente, registrar intento fallido
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
