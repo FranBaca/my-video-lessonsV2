@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { google } from "googleapis";
+import { google, sheets_v4 } from "googleapis";
 import { JWT } from "google-auth-library";
 import students from "@/app/data/students.json";
 import { Student } from "@/app/types";
+import { toast } from "react-hot-toast";
 
 // ID de la hoja de cálculo
 const SPREADSHEET_ID = "16coLs8qv4BU_CwphqlvE_LWNEAV50nIQ8VaM2SdsuRs";
@@ -13,37 +14,35 @@ const SERVICE_ACCOUNT_EMAIL =
   "my-lessons@fluted-arch-452901-d1.iam.gserviceaccount.com";
 const SCOPES = ["https://www.googleapis.com/auth/spreadsheets"];
 
+// Variable para activar/desactivar la validación de fingerprint
+const FINGERPRINT_VALIDATION_ENABLED =
+  process.env.FINGERPRINT_VALIDATION_ENABLED === "true";
+
 // Crear cliente JWT para la cuenta de servicio
 const privateKey = process.env.GOOGLE_SERVICE_PRIVATE_KEY?.replace(
   /\\n/g,
   "\n"
 );
-/* 
-// CÓDIGO COMENTADO TEMPORALMENTE - VERIFICACIÓN CON GOOGLE SHEETS
-console.log("DEBUG - Private key processing:", {
-  originalLength: process.env.GOOGLE_SERVICE_PRIVATE_KEY?.length || 0,
-  processedLength: privateKey?.length || 0,
-  hasBeginMarker: privateKey?.includes("-----BEGIN PRIVATE KEY-----"),
-  hasEndMarker: privateKey?.includes("-----END PRIVATE KEY-----"),
-});
 
-const auth = new JWT({
-  email: SERVICE_ACCOUNT_EMAIL,
-  key: privateKey,
-  scopes: SCOPES,
-});
+// Crear cliente JWT y Sheets solo si la validación está activada
+let auth: JWT | undefined;
+let sheets: sheets_v4.Sheets | undefined;
 
-// Para debugging
-console.log("DEBUG - Service account configuration:", {
-  email: SERVICE_ACCOUNT_EMAIL,
-  keyLength: process.env.GOOGLE_SERVICE_PRIVATE_KEY?.length || 0,
-  scopes: SCOPES,
-});
+if (FINGERPRINT_VALIDATION_ENABLED) {
+  auth = new JWT({
+    email: SERVICE_ACCOUNT_EMAIL,
+    key: privateKey,
+    scopes: SCOPES,
+  });
 
-// Crear cliente de Sheets
-const sheets = google.sheets({ version: "v4", auth });
+  sheets = google.sheets({ version: "v4", auth });
+}
 
 async function checkCodeInSheet(code: string, fingerprint: string) {
+  if (!FINGERPRINT_VALIDATION_ENABLED || !sheets) {
+    return { valid: true, firstTime: true };
+  }
+
   try {
     console.log("=== DEBUG: Iniciando verificación de código ===");
     console.log("Usando hoja de cálculo:", SPREADSHEET_ID);
@@ -56,7 +55,7 @@ async function checkCodeInSheet(code: string, fingerprint: string) {
       console.log("Hoja de cálculo encontrada:", {
         title: spreadsheet.data.properties?.title,
         id: SPREADSHEET_ID,
-        sheets: spreadsheet.data.sheets?.map((sheet) => ({
+        sheets: spreadsheet.data.sheets?.map((sheet: any) => ({
           title: sheet.properties?.title,
           sheetId: sheet.properties?.sheetId,
         })),
@@ -87,7 +86,7 @@ async function checkCodeInSheet(code: string, fingerprint: string) {
     const rows = response.data.values || [];
     console.log("Filas encontradas:", rows.length);
 
-    const codeRow = rows.find((row) => row[0] === code);
+    const codeRow = rows.find((row: any) => row[0] === code);
 
     if (!codeRow) {
       console.log("Código no encontrado, registrando primera vez");
@@ -118,6 +117,9 @@ async function checkCodeInSheet(code: string, fingerprint: string) {
     }
 
     console.log("Fingerprint no coincide, registrando intento fallido");
+    toast.error(
+      "Dispositivo no coincide, registrando intento fallido.\n Si tu dispositivo es el que usaste para ingresar por primera vez, por favor contacta al administrador."
+    );
     // Fingerprint diferente, registrar intento fallido
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
@@ -141,7 +143,6 @@ async function checkCodeInSheet(code: string, fingerprint: string) {
     throw error;
   }
 }
-*/
 
 export async function POST(request: NextRequest) {
   try {
@@ -153,6 +154,7 @@ export async function POST(request: NextRequest) {
       fingerprint: fingerprint
         ? fingerprint.substring(0, 10) + "..."
         : "no proporcionado",
+      fingerprintValidationEnabled: FINGERPRINT_VALIDATION_ENABLED,
     });
 
     if (!code || !fingerprint) {
@@ -175,39 +177,50 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    /* 
-    // CÓDIGO COMENTADO TEMPORALMENTE - VERIFICACIÓN CON GOOGLE SHEETS
-    // Verificar el código en la hoja de cálculo
-    const { valid, firstTime } = await checkCodeInSheet(code, fingerprint);
+    let valid = true;
+    let firstTime = true;
 
-    if (!valid) {
-      console.log("Código ya en uso en otro dispositivo:", code);
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Este código ya está siendo usado en otro dispositivo",
-        },
-        { status: 403 }
-      );
+    if (FINGERPRINT_VALIDATION_ENABLED) {
+      // Verificar el código en la hoja de cálculo si la validación está activada
+      const result = await checkCodeInSheet(code, fingerprint);
+      valid = result.valid;
+      firstTime = result.firstTime;
+
+      if (!valid) {
+        console.log("Código ya en uso en otro dispositivo:", code);
+        return NextResponse.json(
+          {
+            success: false,
+            message: "Este código ya está siendo usado en otro dispositivo",
+          },
+          { status: 403 }
+        );
+      }
+    } else {
+      console.log("Validación de fingerprint desactivada, acceso concedido");
     }
-    */
 
-    // VERIFICACIÓN TEMPORAL: Sin comprobación de Google Sheets
-    const valid = true;
-    const firstTime = true; // Asumimos primera vez para todos los accesos
-
-    console.log("Verificación exitosa (MODO TEMPORAL):", {
-      code,
-      name: student.name,
-      subjects: student.subjects,
-      firstTime,
-    });
+    console.log(
+      `Verificación exitosa (${
+        FINGERPRINT_VALIDATION_ENABLED ? "Validación activa" : "Modo temporal"
+      }):`,
+      {
+        code,
+        name: student.name,
+        subjects: student.subjects,
+        firstTime,
+      }
+    );
 
     // Configurar la respuesta con las cookies
     const response = NextResponse.json({
       success: true,
       firstTime,
-      message: "¡Bienvenido! (Verificación temporal)",
+      message: `¡Bienvenido! (${
+        FINGERPRINT_VALIDATION_ENABLED
+          ? "Verificación completa"
+          : "Verificación temporal"
+      })`,
       student: {
         name: student.name,
         subjects: student.subjects,
