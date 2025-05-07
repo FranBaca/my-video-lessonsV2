@@ -66,6 +66,13 @@
     "subjects": ["anatomia", "histologia", "fisiologia"]
   },
   {
+    "code": "PAULINDA",
+    "name": "Paulina Hernandez",
+    "authorized": true,
+    "subjects": ["anatomia", "histologia", "fisiologia", "histologia-salta"]
+  },
+
+  {
     "code": "AUGUSTODANIELBRITO",
     "name": "Augusto Daniel Brito",
     "authorized": true,
