@@ -579,7 +579,7 @@
     "code":"SOLVALDIVIEZO",
     "name": "Sol Valdiviezo",
     "authorized": true,
-    "subjects": ["histologia"]
+    "subjects": ["histologia", "fisiologia"]
   },
   {
     "code":"DIEGOSANCHEZ",
