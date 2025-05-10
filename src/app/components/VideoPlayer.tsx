@@ -11,6 +11,7 @@ export default function VideoPlayer({ video }: VideoPlayerProps) {
   const [error, setError] = useState<string | null>(null);
   const [isScreenRecording, setIsScreenRecording] = useState(false);
   const streamRef = useRef<MediaStream | null>(null);
+  const checkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (video) {
@@ -20,8 +21,6 @@ export default function VideoPlayer({ video }: VideoPlayerProps) {
   }, [video?.id]);
 
   useEffect(() => {
-    let checkInterval: NodeJS.Timeout;
-
     const checkScreenRecording = async () => {
       try {
         // Si ya tenemos un stream activo, no hacemos nada
@@ -46,6 +45,9 @@ export default function VideoPlayer({ video }: VideoPlayerProps) {
             track.stop();
           });
           streamRef.current = null;
+
+          // Programar la siguiente verificación solo si sigue grabando
+          checkTimeoutRef.current = setTimeout(checkScreenRecording, 5000);
         }
       } catch (err) {
         // Si el usuario cancela o rechaza, no es una grabación
@@ -54,12 +56,14 @@ export default function VideoPlayer({ video }: VideoPlayerProps) {
       }
     };
 
-    // Verificar cada 2 segundos
-    checkInterval = setInterval(checkScreenRecording, 2000);
+    // Iniciar la primera verificación
+    checkScreenRecording();
 
     // Limpiar al desmontar
     return () => {
-      clearInterval(checkInterval);
+      if (checkTimeoutRef.current) {
+        clearTimeout(checkTimeoutRef.current);
+      }
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
         streamRef.current = null;
