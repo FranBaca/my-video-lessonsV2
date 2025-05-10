@@ -6,12 +6,8 @@ interface VideoPlayerProps {
 }
 
 export default function VideoPlayer({ video }: VideoPlayerProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isScreenRecording, setIsScreenRecording] = useState(false);
-  const streamRef = useRef<MediaStream | null>(null);
-  const checkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (video) {
@@ -19,68 +15,6 @@ export default function VideoPlayer({ video }: VideoPlayerProps) {
       setError(null);
     }
   }, [video?.id]);
-
-  useEffect(() => {
-    const checkScreenRecording = async () => {
-      try {
-        // Si ya tenemos un stream activo, no hacemos nada
-        if (streamRef.current) {
-          return;
-        }
-
-        // Intentar obtener el stream de la pantalla
-        const stream = await navigator.mediaDevices.getDisplayMedia({
-          video: {
-            displaySurface: "monitor",
-          },
-        });
-
-        // Si obtenemos un stream, significa que el usuario está grabando
-        if (stream) {
-          // Verificar si el stream está activo
-          const videoTrack = stream.getVideoTracks()[0];
-
-          if (videoTrack && videoTrack.readyState === "live") {
-            streamRef.current = stream;
-            setIsScreenRecording(true);
-
-            // Escuchar cuando el usuario detiene la grabación
-            videoTrack.onended = () => {
-              setIsScreenRecording(false);
-              streamRef.current = null;
-            };
-
-            // Detener el stream inmediatamente para cerrar el modal
-            stream.getTracks().forEach((track) => {
-              track.stop();
-            });
-          } else {
-            // Si el track no está activo, no es una grabación real
-            stream.getTracks().forEach((track) => track.stop());
-            setIsScreenRecording(false);
-          }
-        }
-      } catch (err) {
-        // Si el usuario cancela o rechaza, no es una grabación
-        setIsScreenRecording(false);
-        streamRef.current = null;
-      }
-    };
-
-    // Iniciar la primera verificación
-    checkScreenRecording();
-
-    // Limpiar al desmontar
-    return () => {
-      if (checkTimeoutRef.current) {
-        clearTimeout(checkTimeoutRef.current);
-      }
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-        streamRef.current = null;
-      }
-    };
-  }, []);
 
   const handleLoadingComplete = () => {
     setIsLoading(false);
@@ -132,35 +66,6 @@ export default function VideoPlayer({ video }: VideoPlayerProps) {
     );
   }
 
-  if (isScreenRecording) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center max-w-md bg-white rounded-xl shadow-sm p-8">
-          <svg
-            className="mx-auto h-12 w-12 text-red-500"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-            />
-          </svg>
-          <h3 className="mt-4 text-xl text-gray-700 font-medium">
-            Grabación de pantalla detectada
-          </h3>
-          <p className="mt-2 text-base text-gray-600">
-            Por favor, detén la grabación de pantalla para continuar viendo el
-            contenido.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="h-full flex flex-col">
       <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
@@ -184,7 +89,6 @@ export default function VideoPlayer({ video }: VideoPlayerProps) {
                 allowFullScreen
                 onLoad={handleLoadingComplete}
                 style={{
-                  pointerEvents: isScreenRecording ? "none" : "auto",
                   userSelect: "none",
                   WebkitUserSelect: "none",
                   MozUserSelect: "none",
@@ -228,8 +132,45 @@ export default function VideoPlayer({ video }: VideoPlayerProps) {
                 font-size: 24px;
                 pointer-events: none;
                 z-index: 1000;
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
               }
             `}</style>
+          </div>
+        </div>
+        <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <div className="flex items-start">
+            <svg
+              className="h-6 w-6 text-gray-500 mt-0.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-gray-900">Aviso Legal</h3>
+              <div className="mt-2 text-sm text-gray-600">
+                <p>
+                  Este contenido está protegido por derechos de autor según la
+                  Ley 11.723 de Propiedad Intelectual de la República Argentina.
+                  La reproducción, distribución, comunicación pública o
+                  cualquier otro uso no autorizado de este material constituye
+                  una infracción a los derechos de autor y puede resultar en
+                  acciones legales.
+                </p>
+                <p className="mt-2">
+                  El acceso a este contenido es personal e intransferible.
+                  Cualquier intento de compartir, grabar, capturar o distribuir
+                  este material sin autorización expresa está prohibido y puede
+                  ser perseguido legalmente.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
