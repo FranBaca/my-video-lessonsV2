@@ -3,9 +3,10 @@ import { useEffect, useRef, useState } from "react";
 
 interface VideoPlayerProps {
   video: Video | null;
+  userName: string;
 }
 
-export default function VideoPlayer({ video }: VideoPlayerProps) {
+export default function VideoPlayer({ video, userName }: VideoPlayerProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -124,7 +125,7 @@ export default function VideoPlayer({ video }: VideoPlayerProps) {
 
               /* Agregar marca de agua */
               .embed-container::after {
-                content: "${video.name}";
+                content: "${video.name} ${userName}";
                 position: absolute;
                 bottom: 20px;
                 right: 20px;
