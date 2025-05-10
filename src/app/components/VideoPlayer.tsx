@@ -138,7 +138,15 @@ export default function VideoPlayer({ video, userName }: VideoPlayerProps) {
             `}</style>
           </div>
         </div>
-        <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+        {/* Versión mobile */}
+        <div className="md:hidden mt-3 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200 text-xs text-gray-600">
+          <p>
+            Contenido protegido por Ley 11.723. Prohibida su reproducción y
+            distribución sin autorización.
+          </p>
+        </div>
+        {/* Versión desktop */}
+        <div className="hidden md:block mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
           <div className="flex items-start">
             <svg
               className="h-6 w-6 text-gray-500 mt-0.5"
