@@ -125,12 +125,12 @@ export default function VideoPlayer({ video, userName }: VideoPlayerProps) {
 
               /* Agregar marca de agua */
               .embed-container::after {
-                content: "${video.name} ${userName}";
+                content: "${userName}";
                 position: absolute;
                 bottom: 20px;
                 right: 20px;
                 color: rgba(255, 255, 255, 0.3);
-                font-size: 24px;
+                font-size: 19px;
                 pointer-events: none;
                 z-index: 1000;
                 text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
