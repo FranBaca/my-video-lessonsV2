@@ -37,17 +37,28 @@ export default function VideoPlayer({ video }: VideoPlayerProps) {
 
         // Si obtenemos un stream, significa que el usuario está grabando
         if (stream) {
-          streamRef.current = stream;
-          setIsScreenRecording(true);
+          // Verificar si el stream está activo
+          const videoTrack = stream.getVideoTracks()[0];
 
-          // Detener el stream inmediatamente para cerrar el modal
-          stream.getTracks().forEach((track) => {
-            track.stop();
-          });
-          streamRef.current = null;
+          if (videoTrack && videoTrack.readyState === "live") {
+            streamRef.current = stream;
+            setIsScreenRecording(true);
 
-          // Programar la siguiente verificación solo si sigue grabando
-          checkTimeoutRef.current = setTimeout(checkScreenRecording, 5000);
+            // Escuchar cuando el usuario detiene la grabación
+            videoTrack.onended = () => {
+              setIsScreenRecording(false);
+              streamRef.current = null;
+            };
+
+            // Detener el stream inmediatamente para cerrar el modal
+            stream.getTracks().forEach((track) => {
+              track.stop();
+            });
+          } else {
+            // Si el track no está activo, no es una grabación real
+            stream.getTracks().forEach((track) => track.stop());
+            setIsScreenRecording(false);
+          }
         }
       } catch (err) {
         // Si el usuario cancela o rechaza, no es una grabación
