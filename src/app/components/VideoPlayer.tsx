@@ -3,10 +3,10 @@ import { useEffect, useRef, useState } from "react";
 
 interface VideoPlayerProps {
   video: Video | null;
+  userName: string;
 }
 
-export default function VideoPlayer({ video }: VideoPlayerProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+export default function VideoPlayer({ video, userName }: VideoPlayerProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,6 +20,18 @@ export default function VideoPlayer({ video }: VideoPlayerProps) {
   const handleLoadingComplete = () => {
     setIsLoading(false);
   };
+
+  // Prevenir capturas de pantalla
+  useEffect(() => {
+    const preventScreenCapture = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === "p" || e.key === "s")) {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener("keydown", preventScreenCapture);
+    return () => document.removeEventListener("keydown", preventScreenCapture);
+  }, []);
 
   if (!video) {
     return (
@@ -77,6 +89,12 @@ export default function VideoPlayer({ video }: VideoPlayerProps) {
                 allow="autoplay; encrypted-media"
                 allowFullScreen
                 onLoad={handleLoadingComplete}
+                style={{
+                  userSelect: "none",
+                  WebkitUserSelect: "none",
+                  MozUserSelect: "none",
+                  msUserSelect: "none",
+                }}
               />
             </div>
 
@@ -96,7 +114,72 @@ export default function VideoPlayer({ video }: VideoPlayerProps) {
                 height: calc(100% + 60px);
                 border: 0;
               }
+
+              /* Prevenir capturas de pantalla */
+              .embed-container {
+                -webkit-user-select: none;
+                -moz-user-select: none;
+                -ms-user-select: none;
+                user-select: none;
+              }
+
+              /* Agregar marca de agua */
+              .embed-container::after {
+                content: "${video.name} ${userName}";
+                position: absolute;
+                bottom: 20px;
+                right: 20px;
+                color: rgba(255, 255, 255, 0.3);
+                font-size: 24px;
+                pointer-events: none;
+                z-index: 1000;
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+              }
             `}</style>
+          </div>
+        </div>
+        {/* Versión mobile */}
+        <div className="md:hidden mt-3 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200 text-xs text-gray-600">
+          <p>
+            Contenido protegido por Ley 11.723. Prohibida su reproducción y
+            distribución sin autorización.
+          </p>
+        </div>
+        {/* Versión desktop */}
+        <div className="hidden md:block mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <div className="flex items-start">
+            <svg
+              className="h-6 w-6 text-gray-500 mt-0.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-gray-900">Aviso Legal</h3>
+              <div className="mt-2 text-sm text-gray-600">
+                <p>
+                  Este contenido está protegido por derechos de autor según la
+                  Ley 11.723 de Propiedad Intelectual de la República Argentina.
+                  La reproducción, distribución, comunicación pública o
+                  cualquier otro uso no autorizado de este material constituye
+                  una infracción a los derechos de autor y puede resultar en
+                  acciones legales.
+                </p>
+                <p className="mt-2">
+                  El acceso a este contenido es personal e intransferible.
+                  Cualquier intento de compartir, grabar, capturar o distribuir
+                  este material sin autorización expresa está prohibido y puede
+                  ser perseguido legalmente.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -148,7 +148,7 @@ export default function Home() {
           </div>
         ) : (
           <div className="p-6">
-            <VideoPlayer video={selectedVideo} />
+            <VideoPlayer video={selectedVideo} userName={studentName} />
           </div>
         )}
       </main>
