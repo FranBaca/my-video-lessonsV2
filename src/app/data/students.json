@@ -635,5 +635,11 @@
     "name": "Nadi Marios",
     "authorized": true,
     "subjects": ["fisiologia"]
+  },
+  {
+    "code":"PIACHECA",
+    "name": "Pia Checa",
+    "authorized": true,
+    "subjects": ["fisiologia", "histologia", "anatomia"]
   }
 ] 
