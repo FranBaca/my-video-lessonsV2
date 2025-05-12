@@ -629,5 +629,11 @@
     "name": "Nony Gonzalez",
     "authorized": true,
     "subjects": ["fisiologia"]
+  },
+  {
+    "code":"NADIMARIOS",
+    "name": "Nadi Marios",
+    "authorized": true,
+    "subjects": ["fisiologia"]
   }
 ] 
