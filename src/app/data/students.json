@@ -328,7 +328,7 @@
     "code": "SOFIABARRAZA",
     "name": "Sofia Barraza",
     "authorized": true,
-    "subjects": ["anatomia", "histologia", "fisiologia"]
+    "subjects": ["histologia", "fisiologia"]
   },
   {
     "code": "TATIANADAZA",
@@ -370,7 +370,7 @@
     "code": "SOFIACRIVERO",
     "name": "Sofia C Rivero",
     "authorized": true,
-    "subjects": ["fisiologia", "anatomia"]
+    "subjects": ["fisiologia", "anatomia", "histologia"]
   },
   {
     "code": "TOMASOCAMPO",
@@ -628,7 +628,7 @@
     "code":"NONYGONZALEZ",
     "name": "Nony Gonzalez",
     "authorized": true,
-    "subjects": ["fisiologia"]
+    "subjects": ["fisiologia", "histologia"]
   },
   {
     "code":"NADIMARIOS",
