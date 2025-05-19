@@ -641,5 +641,17 @@
     "name": "Pia Checa",
     "authorized": true,
     "subjects": ["fisiologia", "histologia", "anatomia"]
+  },
+  {
+    "code":"VERONICAGIMENEZ",
+    "name": "Veronica Gimenez",
+    "authorized": true,
+    "subjects": ["fisiologia", "histologia"]
+  },
+  {
+    "code":"ANDREARUIZ",
+    "name": "Andrea Ruiz",
+    "authorized": true,
+    "subjects": ["fisiologia", "histologia"]
   }
 ] 
