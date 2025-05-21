@@ -1,0 +1,8 @@
+[
+    {
+        "code": "BENJATEST",
+        "name": "Benjamin",
+        "authorized": true,
+        "subjects": ["biofisica", "biologia", "bioquimica"]
+    }
+]

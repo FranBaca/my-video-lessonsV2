@@ -499,12 +499,6 @@
     "subjects": ["histologia"]
   },
   {
-    "code": "MILAGROSDELRIO",
-    "name": "Milagros Del Rio",
-    "authorized": true,
-    "subjects": ["anatomia"]
-  },
-  {
     "code": "FERNANDAZACAME",
     "name": "Fernanada",
     "authorized": true,
@@ -655,3 +649,4 @@
     "subjects": ["fisiologia", "histologia"]
   }
 ] 
+

@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { getServiceAuth, listFolderVideos } from "@/app/lib/google-auth";
 import { Subject, Video } from "@/app/types";
 import students from "@/app/data/students.json";
+import studentsBenjaYSonia from "@/app/data/studentsBenjaYSonia.json";
 import { Student } from "@/app/types";
 
 // Definir los IDs de las carpetas
@@ -10,7 +11,12 @@ const FOLDER_IDS = {
   anatomia: process.env.GOOGLE_DRIVE_FOLDER_MATH!,
   histologia: process.env.GOOGLE_DRIVE_FOLDER_SCIENCE!,
   fisiologia: process.env.GOOGLE_DRIVE_FOLDER_PHYSIOLOGY!,
+  // BENJA HISTOLOGIA SALTA
   "histologia-salta": process.env.GOOGLE_DRIVE_FOLDER_HISTOLOGIA_SALTA!,
+  // BENJA Y SONIA
+  biofisica: process.env.GOOGLE_DRIVE_FOLDER_BIOFISICA!,
+  biologia: process.env.GOOGLE_DRIVE_FOLDER_BIOLOGIA!,
+  bioquimica: process.env.GOOGLE_DRIVE_FOLDER_BIOQUIMICA!,
 };
 
 export async function GET(request: NextRequest) {
@@ -31,7 +37,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Verificar que el estudiante existe y está autorizado
-    const student = (students as Student[]).find((s) => s.code === studentCode);
+    const student =
+      (students as Student[]).find((s) => s.code === studentCode) ||
+      (studentsBenjaYSonia as Student[]).find((s) => s.code === studentCode);
     if (!student || !student.authorized) {
       return NextResponse.json(
         {
@@ -80,6 +88,12 @@ export async function GET(request: NextRequest) {
             ? "Histología"
             : subjectName === "histologia-salta"
             ? "Histología Salta"
+            : subjectName === "biofisica"
+            ? "Biofísica"
+            : subjectName === "biologia"
+            ? "Biología"
+            : subjectName === "bioquimica"
+            ? "Bioquímica"
             : "Fisiología",
         sections,
       });
