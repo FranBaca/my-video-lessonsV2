@@ -92,7 +92,9 @@ export async function GET(request: NextRequest) {
             ? "Biofísica"
             : subjectName === "biologia"
             ? "Biología"
-            : "Bioquímica",
+            : subjectName === "bioquímica"
+            ? "Bioquímica"
+            : "Fisiología",
         sections,
       });
     }
