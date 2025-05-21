@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { google, sheets_v4 } from "googleapis";
 import { JWT } from "google-auth-library";
 import students from "@/app/data/students.json";
+import studentsBenjaYSonia from "@/app/data/studentsBenjaYSonia.json";
 import { Student } from "@/app/types";
 import { toast } from "react-hot-toast";
 
@@ -163,7 +164,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar que el código existe y está autorizado
-    const student = (students as Student[]).find((s) => s.code === code);
+    const student =
+      (students as Student[]).find((s) => s.code === code) ||
+      (studentsBenjaYSonia as Student[]).find((s) => s.code === code);
     if (!student || !student.authorized) {
       console.log("Código inválido o no autorizado:", code);
       return NextResponse.json(

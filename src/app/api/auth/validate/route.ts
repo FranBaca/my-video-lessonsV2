@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { v4 as uuidv4 } from "uuid";
 import students from "@/app/data/students.json";
+import studentsBenjaYSonia from "@/app/data/studentsBenjaYSonia.json";
 import { Student } from "@/app/types";
 import { saveUsedCode, verifyDeviceAccess } from "@/app/lib/sheets";
 
@@ -45,7 +46,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Find student with the provided code
-    const student = (students as Student[]).find((s) => s.code === code);
+    const student =
+      (students as Student[]).find((s) => s.code === code) ||
+      (studentsBenjaYSonia as Student[]).find((s) => s.code === code);
 
     if (!student) {
       return NextResponse.json(
