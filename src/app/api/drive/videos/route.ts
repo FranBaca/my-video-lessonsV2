@@ -15,8 +15,8 @@ const FOLDER_IDS = {
   "histologia-salta": process.env.GOOGLE_DRIVE_FOLDER_HISTOLOGIA_SALTA!,
   // BENJA Y SONIA
   biofisica: process.env.GOOGLE_DRIVE_FOLDER_BIOFISICA!,
-  biología: process.env.GOOGLE_DRIVE_FOLDER_BIOLOGIA!,
-  bioquímica: process.env.GOOGLE_DRIVE_FOLDER_BIOQUIMICA!,
+  biologia: process.env.GOOGLE_DRIVE_FOLDER_BIOLOGIA!,
+  bioquimica: process.env.GOOGLE_DRIVE_FOLDER_BIOQUIMICA!,
 };
 
 export async function GET(request: NextRequest) {
