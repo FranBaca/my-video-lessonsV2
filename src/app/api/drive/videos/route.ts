@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
             ? "Biofísica"
             : subjectName === "biologia"
             ? "Biología"
-            : subjectName === "bioquímica"
+            : subjectName === "bioquimica"
             ? "Bioquímica"
             : "Fisiología",
         sections,
