@@ -88,7 +88,11 @@ export async function GET(request: NextRequest) {
             ? "Histología"
             : subjectName === "histologia-salta"
             ? "Histología Salta"
-            : "Fisiología",
+            : subjectName === "biofisica"
+            ? "Biofísica"
+            : subjectName === "biologia"
+            ? "Biología"
+            : "Bioquímica",
         sections,
       });
     }
