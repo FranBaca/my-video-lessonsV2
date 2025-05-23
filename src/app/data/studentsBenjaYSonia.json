@@ -555,5 +555,24 @@
             "biologia",
             "bioquimica"
         ]
+    },
+    {
+        "code": "ALVAROQUIPILDOR",
+        "name": "Alvaro",
+        "authorized": true,
+        "subjects": [
+            "biofisica",
+            "biologia",
+            "bioquimica"
+        ]
+    },
+    {
+        "code": "LUCASRIVERA",
+        "name": "Lucas",
+        "authorized": true,
+        "subjects": [
+            "bioquimica",
+            "biologia"
+        ]
     }
 ]
