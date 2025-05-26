@@ -7,6 +7,13 @@
         "subjects": ["biofisica", "biologia", "bioquimica"]
     },
     {
+        "code": "SONIATEST",
+        "name": "Sonia",
+        "authorized": true,
+        "subjects": ["biofisica", "biologia", "bioquimica"]
+
+    },
+    {
         "code": "AGUSTINASALVATIERRA",
         "name": "Agustina",
         "authorized": true,
