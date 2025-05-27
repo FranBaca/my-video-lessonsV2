@@ -647,6 +647,12 @@
     "name": "Andrea Ruiz",
     "authorized": true,
     "subjects": ["fisiologia", "histologia"]
+  },
+  {
+    "code":"ABRILALVAREZ",
+    "name": "Abril Alvarez",
+    "authorized": true,
+    "subjects": ["fisiologia"]
   }
 ] 
 
