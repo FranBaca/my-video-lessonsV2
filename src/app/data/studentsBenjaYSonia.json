@@ -194,15 +194,6 @@
         ]
     },
     {
-        "code": "NAN",
-        "name": "Nan",
-        "authorized": true,
-        "subjects": [
-            "biofisica",
-            "biologia"
-        ]
-    },
-    {
         "code": "GONZALONEIFF",
         "name": "Gonzalo",
         "authorized": true,
@@ -525,15 +516,6 @@
         ]
     },
     {
-        "code": "NAN",
-        "name": "Nan",
-        "authorized": true,
-        "subjects": [
-            "biofisica",
-            "biologia"
-        ]
-    },
-    {
         "code": "VICTORIAARGAÑARAZ",
         "name": "Victoria",
         "authorized": true,
@@ -579,6 +561,65 @@
         "authorized": true,
         "subjects": [
             "bioquimica",
+            "biologia"
+        ]
+    },
+    {
+        "code": "FLORENCIAVALDEZ",
+        "name": "Florencia",
+        "authorized": true,
+        "subjects": [
+            "biofisica",
+            "biologia",
+            "bioquimica"
+        ]
+    },
+    {
+        "code": "DAMARISMOYA",
+        "name": "Damaris",
+        "authorized": true,
+        "subjects": [
+            "biofisica",
+            "biologia",
+            "bioquimica"
+        ]
+    },
+    {
+        "code": "DIEGOSALON",
+        "name": "Diego",
+        "authorized": true,
+        "subjects": [
+            "biofisica",
+            "biologia",
+            "bioquimica"
+        ]
+    },
+    {
+        "code": "NAIAVILLARREAL",
+        "name": "Naia",
+        "authorized": true,
+        "subjects": [
+            "biofisica",
+            "biologia",
+            "bioquimica"
+        ]
+    },
+    {
+        "code": "SOFIASUAREZ",
+        "name": "Sofia",
+        "authorized": true,
+        "subjects": [
+            "biofisica",
+            "biologia",
+            "bioquimica"
+        ]
+    },
+    {
+        "code": "LINOMONTENEGRO",
+        "name": "Lino",
+        "authorized": true,
+        "subjects": [
+            "biofisica",
             "biologia"
         ]
     }
