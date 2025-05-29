@@ -15,9 +15,14 @@ const SERVICE_ACCOUNT_EMAIL =
   "my-lessons@fluted-arch-452901-d1.iam.gserviceaccount.com";
 const SCOPES = ["https://www.googleapis.com/auth/spreadsheets"];
 
-// Variable para activar/desactivar la validación de fingerprint
+// Variable para activar/desactivar la validación de dispositivo
 const FINGERPRINT_VALIDATION_ENABLED =
   process.env.FINGERPRINT_VALIDATION_ENABLED === "true";
+
+// Rate limiting
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minuto
+const MAX_REQUESTS_PER_WINDOW = 5;
+const requestCounts = new Map<string, { count: number; timestamp: number }>();
 
 // Crear cliente JWT para la cuenta de servicio
 const privateKey = process.env.GOOGLE_SERVICE_PRIVATE_KEY?.replace(
@@ -30,16 +35,49 @@ let auth: JWT | undefined;
 let sheets: sheets_v4.Sheets | undefined;
 
 if (FINGERPRINT_VALIDATION_ENABLED) {
-  auth = new JWT({
-    email: SERVICE_ACCOUNT_EMAIL,
-    key: privateKey,
-    scopes: SCOPES,
-  });
+  try {
+    auth = new JWT({
+      email: SERVICE_ACCOUNT_EMAIL,
+      key: privateKey,
+      scopes: SCOPES,
+    });
 
-  sheets = google.sheets({ version: "v4", auth });
+    sheets = google.sheets({ version: "v4", auth });
+  } catch (error) {
+    console.error("Error al inicializar Google Sheets:", error);
+    // Si hay error en la inicialización, desactivar la validación
+    console.log(
+      "Desactivando validación de dispositivo debido a error de inicialización"
+    );
+  }
 }
 
-async function checkCodeInSheet(code: string, fingerprint: string) {
+// Validar formato del deviceId
+function isValidDeviceId(deviceId: string): boolean {
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(deviceId);
+}
+
+// Rate limiting
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const requestData = requestCounts.get(ip);
+
+  if (!requestData || now - requestData.timestamp > RATE_LIMIT_WINDOW) {
+    requestCounts.set(ip, { count: 1, timestamp: now });
+    return true;
+  }
+
+  if (requestData.count >= MAX_REQUESTS_PER_WINDOW) {
+    return false;
+  }
+
+  requestData.count++;
+  return true;
+}
+
+async function checkCodeInSheet(code: string, deviceId: string) {
   if (!FINGERPRINT_VALIDATION_ENABLED || !sheets) {
     return { valid: true, firstTime: true };
   }
@@ -74,14 +112,16 @@ async function checkCodeInSheet(code: string, fingerprint: string) {
           "No tienes permisos para acceder a la hoja de control de acceso"
         );
       }
-      throw new Error("No se pudo acceder a la hoja de control de acceso");
+      // Si hay error al acceder a la hoja, permitir el acceso
+      console.log("Error al acceder a la hoja, permitiendo acceso");
+      return { valid: true, firstTime: true };
     }
 
     // Buscar el código en la hoja
     console.log("Intentando leer valores de la hoja...");
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: "'Hoja 1'!A:B", // Usando el nombre correcto de la hoja
+      range: "'Hoja 1'!A:B",
     });
 
     const rows = response.data.values || [];
@@ -97,29 +137,27 @@ async function checkCodeInSheet(code: string, fingerprint: string) {
         range: "'Hoja 1'!A:D",
         valueInputOption: "USER_ENTERED",
         requestBody: {
-          values: [
-            [code, fingerprint, new Date().toISOString(), "Primera vez"],
-          ],
+          values: [[code, deviceId, new Date().toISOString(), "Primera vez"]],
         },
       });
       return { valid: true, firstTime: true };
     }
 
-    // Código ya usado, verificar fingerprint
-    const savedFingerprint = codeRow[1];
-    console.log("Comparando fingerprints:", {
-      saved: savedFingerprint.substring(0, 10) + "...",
-      current: fingerprint.substring(0, 10) + "...",
+    // Código ya usado, verificar deviceId
+    const savedDeviceId = codeRow[1];
+    console.log("Comparando deviceIds:", {
+      saved: savedDeviceId,
+      current: deviceId,
     });
 
-    if (savedFingerprint === fingerprint) {
-      console.log("Fingerprint coincide");
+    if (savedDeviceId === deviceId) {
+      console.log("DeviceId coincide");
       return { valid: true, firstTime: false };
     }
 
-    console.log("Fingerprint no coincide, registrando intento fallido");
+    console.log("DeviceId no coincide, registrando intento fallido");
 
-    // Fingerprint diferente, registrar intento fallido
+    // DeviceId diferente, registrar intento fallido
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
       range: "'Hoja 1'!A:D",
@@ -128,9 +166,9 @@ async function checkCodeInSheet(code: string, fingerprint: string) {
         values: [
           [
             code,
-            fingerprint,
+            deviceId,
             new Date().toISOString(),
-            "Intento fallido - Fingerprint diferente",
+            "Intento fallido - DeviceId diferente",
           ],
         ],
       },
@@ -145,20 +183,41 @@ async function checkCodeInSheet(code: string, fingerprint: string) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const ip = request.headers.get("x-forwarded-for") || "unknown";
+    if (!checkRateLimit(ip)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Demasiadas solicitudes. Por favor, espera un momento antes de intentar nuevamente.",
+        },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
-    const { code, fingerprint } = body;
+    const { code, deviceId } = body;
 
     console.log("Recibida solicitud de verificación:", {
       code,
-      fingerprint: fingerprint
-        ? fingerprint.substring(0, 10) + "..."
+      deviceId: deviceId
+        ? deviceId.substring(0, 10) + "..."
         : "no proporcionado",
-      fingerprintValidationEnabled: FINGERPRINT_VALIDATION_ENABLED,
+      deviceValidationEnabled: FINGERPRINT_VALIDATION_ENABLED,
     });
 
-    if (!code || !fingerprint) {
+    if (!code || !deviceId) {
       return NextResponse.json(
         { success: false, message: "Por favor ingresa un código válido" },
+        { status: 400 }
+      );
+    }
+
+    // Validar formato del deviceId
+    if (!isValidDeviceId(deviceId)) {
+      return NextResponse.json(
+        { success: false, message: "ID de dispositivo inválido" },
         { status: 400 }
       );
     }
@@ -183,7 +242,7 @@ export async function POST(request: NextRequest) {
 
     if (FINGERPRINT_VALIDATION_ENABLED) {
       // Verificar el código en la hoja de cálculo si la validación está activada
-      const result = await checkCodeInSheet(code, fingerprint);
+      const result = await checkCodeInSheet(code, deviceId);
       valid = result.valid;
       firstTime = result.firstTime;
 
@@ -193,13 +252,13 @@ export async function POST(request: NextRequest) {
           {
             success: false,
             message:
-              "Este código ya está siendo usado en otro dispositivo, se ha registrado el intento de ingreso.\n Si tu dispositivo es el que usaste para ingresar por primera vez, por favor contacta al administrador.",
+              "Este código ya está siendo usado en otro dispositivo. Por favor, utiliza el mismo dispositivo que usaste para ingresar por primera vez.",
           },
           { status: 403 }
         );
       }
     } else {
-      console.log("Validación de fingerprint desactivada, acceso concedido");
+      console.log("Validación de dispositivo desactivada, acceso concedido");
     }
 
     console.log(

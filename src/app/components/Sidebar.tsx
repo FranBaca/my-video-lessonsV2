@@ -196,7 +196,7 @@ export default function Sidebar({
           </div>
 
           {/* Footer con botón de logout */}
-          <div className="p-4 border-t border-gray-200">
+          {/* <div className="p-4 border-t border-gray-200">
             <button
               onClick={onLogout}
               className="w-full flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors duration-200"
@@ -216,7 +216,7 @@ export default function Sidebar({
               </svg>
               Cerrar Sesión
             </button>
-          </div>
+          </div> */}
         </div>
       </aside>
     </>

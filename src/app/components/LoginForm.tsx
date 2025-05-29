@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import * as fpjs from "@fingerprintjs/fingerprintjs";
+import { useState, useEffect } from "react";
+import { v4 as uuidv4 } from "uuid";
 
 interface LoginFormProps {
   onSuccess: (studentName: string, subjects: string[]) => void;
@@ -12,25 +12,113 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Validar formato del código
+  const validateCode = (code: string) => {
+    // El código debe tener al menos 3 caracteres y solo letras, números y guiones
+    const codeRegex = /^[A-Z0-9-]{3,}$/;
+    return codeRegex.test(code);
+  };
+
+  // Verificar sesión al montar el componente
+  useEffect(() => {
+    const checkSession = async () => {
+      const deviceId = localStorage.getItem("deviceId");
+      const storedCode = localStorage.getItem("studentCode");
+
+      if (deviceId && storedCode) {
+        try {
+          setLoading(true);
+          // Verificar con el servidor con timeout
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos timeout
+
+          const response = await fetch("/api/auth/verify", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ code: storedCode, deviceId }),
+            signal: controller.signal,
+          });
+
+          clearTimeout(timeoutId);
+
+          const data = await response.json();
+
+          if (response.ok) {
+            onSuccess(data.student.name, data.student.subjects);
+          } else {
+            localStorage.removeItem("deviceId");
+            localStorage.removeItem("studentCode");
+            localStorage.removeItem("lastLogin");
+            setError(data.message || "Error al verificar la sesión");
+          }
+        } catch (error: any) {
+          console.error("Error al verificar sesión:", error);
+          if (error.name === "AbortError") {
+            setError(
+              "La verificación está tomando demasiado tiempo. Por favor, intenta nuevamente."
+            );
+          } else {
+            setError(
+              "Error al verificar la sesión. Por favor, intenta nuevamente."
+            );
+          }
+          localStorage.removeItem("deviceId");
+          localStorage.removeItem("studentCode");
+          localStorage.removeItem("lastLogin");
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    checkSession();
+  }, [onSuccess]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-      // Generar fingerprint
-      const fp = await fpjs.load();
-      const result = await fp.get();
-      const fingerprint = result.visitorId;
+      // Validar formato del código
+      if (!validateCode(code)) {
+        throw new Error(
+          "El código debe contener solo letras, números y guiones, y tener al menos 3 caracteres."
+        );
+      }
 
-      // Enviar código y fingerprint al servidor
+      // Verificar si ya existe un dispositivo registrado
+      const deviceId = localStorage.getItem("deviceId");
+      const storedCode = localStorage.getItem("studentCode");
+
+      // Si ya existe un dispositivo registrado, verificar que coincida
+      if (deviceId && storedCode) {
+        if (storedCode !== code) {
+          throw new Error(
+            "Este dispositivo ya está registrado con otro código de estudiante. Por favor, utiliza el código correcto o contacta al administrador si necesitas cambiar de dispositivo."
+          );
+        }
+      }
+
+      // Generar nuevo deviceId si no existe
+      const newDeviceId = deviceId || uuidv4();
+
+      // Enviar código y deviceId al servidor con timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos timeout
+
       const response = await fetch("/api/auth/verify", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ code, fingerprint }),
+        body: JSON.stringify({ code, deviceId: newDeviceId }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       const data = await response.json();
 
@@ -38,10 +126,21 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
         throw new Error(data.message || "Error al verificar el código");
       }
 
-      // Si todo está bien, llamar al callback de éxito
+      // Si todo está bien, guardar en localStorage
+      localStorage.setItem("deviceId", newDeviceId);
+      localStorage.setItem("studentCode", code);
+      localStorage.setItem("lastLogin", new Date().toISOString());
+
+      // Llamar al callback de éxito
       onSuccess(data.student.name, data.student.subjects);
     } catch (error: any) {
-      setError(error.message);
+      if (error.name === "AbortError") {
+        setError(
+          "La verificación está tomando demasiado tiempo. Por favor, intenta nuevamente."
+        );
+      } else {
+        setError(error.message);
+      }
     } finally {
       setLoading(false);
     }
