@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import * as fpjs from "@fingerprintjs/fingerprintjs";
 
 interface LoginFormProps {
@@ -12,6 +12,57 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Verificar sesión al montar el componente
+  useEffect(() => {
+    const checkSession = async () => {
+      const storedFingerprint = localStorage.getItem("deviceFingerprint");
+      const storedCode = localStorage.getItem("studentCode");
+
+      if (storedFingerprint && storedCode) {
+        try {
+          setLoading(true);
+          // Generar fingerprint actual
+          const fp = await fpjs.load();
+          const result = await fp.get();
+          const currentFingerprint = result.visitorId;
+
+          // Verificar que el fingerprint coincida
+          if (currentFingerprint === storedFingerprint) {
+            // Verificar con el servidor
+            const response = await fetch("/api/auth/verify", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                code: storedCode,
+                fingerprint: currentFingerprint,
+              }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+              // Si todo está bien, llamar al callback de éxito
+              onSuccess(data.student.name, data.student.subjects);
+            } else {
+              // Si hay error, limpiar localStorage
+              localStorage.removeItem("deviceFingerprint");
+              localStorage.removeItem("studentCode");
+              localStorage.removeItem("lastLogin");
+            }
+          }
+        } catch (error) {
+          console.error("Error al verificar sesión:", error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    checkSession();
+  }, [onSuccess]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -22,6 +73,25 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
       const fp = await fpjs.load();
       const result = await fp.get();
       const fingerprint = result.visitorId;
+
+      // Verificar si ya existe un dispositivo registrado
+      const storedFingerprint = localStorage.getItem("deviceFingerprint");
+      const storedCode = localStorage.getItem("studentCode");
+      const lastLogin = localStorage.getItem("lastLogin");
+
+      // Si ya existe un dispositivo registrado, verificar que coincida
+      if (storedFingerprint && storedCode) {
+        if (storedFingerprint !== fingerprint) {
+          throw new Error(
+            "Este código de estudiante ya está registrado en otro dispositivo. Por favor, utiliza el mismo dispositivo que usaste anteriormente para acceder."
+          );
+        }
+        if (storedCode !== code) {
+          throw new Error(
+            "Este dispositivo ya está registrado con otro código de estudiante. Por favor, utiliza el código correcto o contacta al administrador si necesitas cambiar de dispositivo."
+          );
+        }
+      }
 
       // Enviar código y fingerprint al servidor
       const response = await fetch("/api/auth/verify", {
@@ -38,7 +108,12 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
         throw new Error(data.message || "Error al verificar el código");
       }
 
-      // Si todo está bien, llamar al callback de éxito
+      // Si todo está bien, guardar en localStorage
+      localStorage.setItem("deviceFingerprint", fingerprint);
+      localStorage.setItem("studentCode", code);
+      localStorage.setItem("lastLogin", new Date().toISOString());
+
+      // Llamar al callback de éxito
       onSuccess(data.student.name, data.student.subjects);
     } catch (error: any) {
       setError(error.message);
