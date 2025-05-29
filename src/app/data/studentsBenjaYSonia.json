@@ -623,5 +623,45 @@
             "biologia",
             "bioquimica"
         ]
+    },
+    {
+        "code": "CAMILAWIERNA",
+        "name": "Camila",
+        "authorized": true,
+        "subjects": [
+            "biofisica",
+            "biologia",
+            "bioquimica"
+        ]
+    },
+    {
+        "code": "MILAGROAVILA",
+        "name": "Milagro",
+        "authorized": true,
+        "subjects": [
+            "biofisica",
+            "biologia",
+            "bioquimica"
+        ]
+    },
+    {
+        "code": "CAMILANACHEF",
+        "name": "Camila",
+        "authorized": true,
+        "subjects": [
+            "biofisica",
+            "biologia",
+            "bioquimica"
+        ]
+    },
+    {
+        "code": "MELQUINEROS",
+        "name": "Mel",
+        "authorized": true,
+        "subjects": [
+            "biofisica",
+            "biologia",
+            "bioquimica"
+        ]
     }
 ]
