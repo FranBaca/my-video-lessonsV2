@@ -663,5 +663,12 @@
             "biologia",
             "bioquimica"
         ]
-    }
+    },
+    ,  
+  {
+    "code":"GLADYSPRINI",
+    "name": "Gladys Prini",
+    "authorized": true,
+    "subjects": ["biofisica", "biologia", "bioquimica"]
+  }
 ]
