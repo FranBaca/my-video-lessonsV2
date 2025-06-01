@@ -48,9 +48,6 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
           if (response.ok) {
             onSuccess(data.student.name, data.student.subjects);
           } else {
-            localStorage.removeItem("deviceId");
-            localStorage.removeItem("studentCode");
-            localStorage.removeItem("lastLogin");
             setError(data.message || "Error al verificar la sesión");
           }
         } catch (error: any) {
@@ -64,9 +61,7 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
               "Error al verificar la sesión. Por favor, intenta nuevamente."
             );
           }
-          localStorage.removeItem("deviceId");
-          localStorage.removeItem("studentCode");
-          localStorage.removeItem("lastLogin");
+          // No borramos el localStorage en caso de error de conexión
         } finally {
           setLoading(false);
         }
@@ -123,6 +118,12 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
       const data = await response.json();
 
       if (!response.ok) {
+        // Solo borramos si el servidor nos dice que el código no es válido
+        if (response.status === 403) {
+          localStorage.removeItem("deviceId");
+          localStorage.removeItem("studentCode");
+          localStorage.removeItem("lastLogin");
+        }
         throw new Error(data.message || "Error al verificar el código");
       }
 
