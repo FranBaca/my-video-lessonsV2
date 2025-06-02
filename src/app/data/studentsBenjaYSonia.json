@@ -669,5 +669,17 @@
         "name": "Gladys Prini",
         "authorized": true,
         "subjects": ["biofisica", "biologia", "bioquimica"]
-    }
+    },
+    {
+        "code": "MELINACONTINO",
+        "name": "Melina",
+        "authorized": true,
+        "subjects": ["biofisica", "biologia", "bioquimica"]
+    },
+    {
+        "code": "BIANCALORRE",
+        "name": "Bianca",
+        "authorized": true,
+        "subjects": ["biofisica", "biologia", "bioquimica"]
+    }   
 ]
