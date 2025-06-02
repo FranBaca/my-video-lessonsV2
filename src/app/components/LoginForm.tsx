@@ -88,15 +88,6 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
       const deviceId = localStorage.getItem("deviceId");
       const storedCode = localStorage.getItem("studentCode");
 
-      // Si ya existe un dispositivo registrado, verificar que coincida
-      if (deviceId && storedCode) {
-        if (storedCode !== code) {
-          throw new Error(
-            "Este dispositivo ya está registrado con otro código de estudiante. Por favor, utiliza el código correcto o contacta al administrador si necesitas cambiar de dispositivo."
-          );
-        }
-      }
-
       // Generar nuevo deviceId si no existe
       const newDeviceId = deviceId || uuidv4();
 
