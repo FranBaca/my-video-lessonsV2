@@ -48,7 +48,15 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
           if (response.ok) {
             onSuccess(data.student.name, data.student.subjects);
           } else {
-            setError(data.message || "Error al verificar la sesión");
+            // Solo borramos la sesión si el servidor nos dice que el código no es válido
+            if (response.status === 403) {
+              setError(data.message || "Error al verificar la sesión");
+            } else {
+              // Para otros errores, mantenemos la sesión y mostramos un mensaje más amigable
+              setError(
+                "No pudimos verificar tu sesión. Por favor, intenta nuevamente."
+              );
+            }
           }
         } catch (error: any) {
           console.error("Error al verificar sesión:", error);
@@ -88,8 +96,11 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
       const deviceId = localStorage.getItem("deviceId");
       const storedCode = localStorage.getItem("studentCode");
 
-      // Generar nuevo deviceId si no existe
-      const newDeviceId = deviceId || uuidv4();
+      // Solo generar nuevo deviceId si no existe ninguno
+      if (!deviceId) {
+        const newDeviceId = uuidv4();
+        localStorage.setItem("deviceId", newDeviceId);
+      }
 
       // Enviar código y deviceId al servidor con timeout
       const controller = new AbortController();
@@ -100,7 +111,10 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ code, deviceId: newDeviceId }),
+        body: JSON.stringify({
+          code,
+          deviceId: deviceId || localStorage.getItem("deviceId"),
+        }),
         signal: controller.signal,
       });
 
@@ -109,17 +123,11 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
       const data = await response.json();
 
       if (!response.ok) {
-        // Solo borramos si el servidor nos dice que el código no es válido
-        if (response.status === 403) {
-          localStorage.removeItem("deviceId");
-          localStorage.removeItem("studentCode");
-          localStorage.removeItem("lastLogin");
-        }
         throw new Error(data.message || "Error al verificar el código");
       }
 
       // Si todo está bien, guardar en localStorage
-      localStorage.setItem("deviceId", newDeviceId);
+      localStorage.setItem("deviceId", data.deviceId);
       localStorage.setItem("studentCode", code);
       localStorage.setItem("lastLogin", new Date().toISOString());
 
