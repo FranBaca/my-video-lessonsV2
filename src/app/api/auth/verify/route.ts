@@ -214,13 +214,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validar formato del deviceId
-    if (!isValidDeviceId(deviceId)) {
-      return NextResponse.json(
-        { success: false, message: "ID de dispositivo inválido" },
-        { status: 400 }
-      );
-    }
+
 
     // Verificar que el código existe y está autorizado
     const student =
