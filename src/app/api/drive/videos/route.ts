@@ -11,6 +11,9 @@ const FOLDER_IDS = {
   anatomia: process.env.GOOGLE_DRIVE_FOLDER_MATH!,
   histologia: process.env.GOOGLE_DRIVE_FOLDER_SCIENCE!,
   fisiologia: process.env.GOOGLE_DRIVE_FOLDER_PHYSIOLOGY!,
+  anatomia2: process.env.GOOGLE_DRIVE_FOLDER_ANATOMIA2!,
+  histologia2: process.env.GOOGLE_DRIVE_FOLDER_HISTOLOGIA2!,
+  fisiologia2: process.env.GOOGLE_DRIVE_FOLDER_FISIOLOGIA2!,
   // BENJA HISTOLOGIA SALTA
   "histologia-salta": process.env.GOOGLE_DRIVE_FOLDER_HISTOLOGIA_SALTA!,
   // BENJA Y SONIA
@@ -94,6 +97,12 @@ export async function GET(request: NextRequest) {
             ? "Biología"
             : subjectName === "bioquimica"
             ? "Bioquímica"
+            : subjectName === "anatomia2"
+            ? "Anatomía Parcial 2"
+            : subjectName === "histologia2"
+            ? "Histología Parcial 2"
+            : subjectName === "fisiologia2"
+            ? "Fisiología Parcial 2"
             : "Fisiología",
         sections,
       });
