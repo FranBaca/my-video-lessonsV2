@@ -86,9 +86,9 @@ export async function GET(request: NextRequest) {
         id: folderId,
         name:
           subjectName === "anatomia"
-            ? "Anatomía"
+            ? "Anatomía Parcial 1"
             : subjectName === "histologia"
-            ? "Histología"
+            ? "Histología Parcial 1"
             : subjectName === "histologia-salta"
             ? "Histología Salta"
             : subjectName === "biofisica"
@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
             ? "Histología Parcial 2"
             : subjectName === "fisiologia2"
             ? "Fisiología Parcial 2"
-            : "Fisiología",
+            : "Fisiología Parcial 1",
         sections,
       });
     }
