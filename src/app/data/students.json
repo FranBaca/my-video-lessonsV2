@@ -342,6 +342,12 @@
     "subjects": ["fisiologia", "anatomia", "histologia", "fisiologia2", "anatomia2", "histologia2"]
   },
   {
+    "code": "CANDEROBLES",
+    "name": "Cande Roble",
+    "authorized": true,
+    "subjects": ["histologia", "histologia2", "fisiologia2"]
+  },
+  {
     "code": "TOMASOCAMPO",
     "name": "Tomas Ocampo",
     "authorized": true,
@@ -508,12 +514,6 @@
     "name": "Jimena Paz",
     "authorized": true,
     "subjects": ["histologia", "fisiologia", "anatomia", "histologia2", "fisiologia2", "anatomia2"]
-  },
-  {
-    "code": "CELESTECRUZ",
-    "name": "Celeste Cruz",
-    "authorized": true,
-    "subjects": ["histologia", "fisiologia", "histologia2", "fisiologia2"]
   },
   {
     "code": "MARIELPEREZ",
@@ -743,5 +743,6 @@
     "authorized": true,
     "subjects": ["histologia", "fisiologia", "histologia2", "fisiologia2"]
   }
+
 ] 
 
