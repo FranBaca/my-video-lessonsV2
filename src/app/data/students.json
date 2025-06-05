@@ -525,7 +525,7 @@
     "code": "ROCIOFERREYRA",
     "name": "Rocio Ferreyra",
     "authorized": true,
-    "subjects": ["fisiologia", "histologia", "fisiologia2", "histologia2"]
+    "subjects": ["fisiologia", "fisiologia2", "histologia2"]
   },
   {
     "code": "IRINAALI",
@@ -573,7 +573,7 @@
     "code": "ROFRONTINI",
     "name": "Ro Frontini",
     "authorized": true,
-    "subjects": ["fisiologia", "histologia", "fisiologia2", "histologia2"]
+    "subjects": ["fisiologia", "fisiologia2", "histologia2"]
   },
   {
     "code": "SOLABRAHAM",
@@ -622,6 +622,12 @@
     "name": "Abril Alvarez",
     "authorized": true,
     "subjects": ["fisiologia", "fisiologia2"]
+  },
+  {
+    "code": "LOURDESALVAREZ",
+    "name": "Lourdes Alvarez",
+    "authorized": true,
+    "subjects": ["fisiologia2", "fisiologia2", "anatomia2"]
   },
   {
     "code": "SOFIMORENO",
@@ -717,7 +723,7 @@
     "code": "ELIANACARI",
     "name": "Eliana Cari",
     "authorized": true,
-    "subjects": ["histologia2"]
+    "subjects": ["fisiologia2"]
   },
   {
     "code": "DELFINAUBENTTI",
