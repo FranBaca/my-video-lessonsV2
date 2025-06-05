@@ -682,5 +682,11 @@
         "name": "Bianca",
         "authorized": true,
         "subjects": ["biofisica", "biologia", "bioquimica"]
-    }   
+    },
+    {
+        "code": "MIAROMANO",
+        "name": "Mia Romano",
+        "authorized": true,
+        "subjects": ["biofisica", "bioquimica"]
+    }
 ]
