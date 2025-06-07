@@ -90,7 +90,7 @@
     "subjects": ["histologia", "fisiologia", "histologia2", "fisiologia2"]
   },
   {
-    "code": "AGUSTOBRITO",
+    "code": "AUGUSTOBRITO",
     "name": "Agusto Brito",
     "authorized": true,
     "subjects": ["histologia", "histologia2"]
@@ -854,6 +854,48 @@
   {
     "code": "YASMINVILLAFANE",
     "name": "Yasmin Villafane",
+    "authorized": true,
+    "subjects": ["fisiologia2"]
+  },
+  {
+    "code": "NAHIARACARRAZANA",
+    "name": "Nahiara Carrazana",
+    "authorized": true,
+    "subjects": ["histologia2", "fisiologia2", "anatomia2"]
+  },
+  {
+    "code": "MARTINAOLMEDO",
+    "name": "Martina Olmedo",
+    "authorized": true,
+    "subjects": ["histologia2", "fisiologia2"]
+  },
+  {
+    "code": "IGNACIOUMAR",
+    "name": "Ignacio Umar",
+    "authorized": true,
+    "subjects": ["histologia2", "fisiologia2"]
+  },
+  {
+    "code": "ESTRELLAMACHICADO",
+    "name": "Estrella Machicado",
+    "authorized": true,
+    "subjects": ["histologia2", "fisiologia2"]
+  },
+  {
+    "code": "JULIANMENDOZA",
+    "name": "Julian Mendoza",
+    "authorized": true,
+    "subjects": ["histologia2"]
+  },
+  {
+    "code": "SOFIADIAZ",
+    "name": "Sofia Dia",
+    "authorized": true,
+    "subjects": ["histologia2"]
+  },
+  {
+    "code": "JESSICADOMINGUEZ",
+    "name": "Jessica Dominguez",
     "authorized": true,
     "subjects": ["fisiologia2"]
   }
