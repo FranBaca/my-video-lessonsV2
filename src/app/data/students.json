@@ -246,12 +246,6 @@
     "subjects": ["histologia", "fisiologia", "histologia2", "fisiologia2"]
   },
   {
-    "code": "MILIAVILA",
-    "name": "Mili Avila",
-    "authorized": true,
-    "subjects": ["histologia", "fisiologia"]
-  },
-  {
     "code": "MILILEDESMA",
     "name": "Mili Ledesma",
     "authorized": true,
@@ -450,12 +444,6 @@
     "subjects": ["histologia-salta", "fisiologia", "fisiologia2"]
   },
   {
-    "code": "VIRGINIADIAZ",
-    "name": "Virginia Diaz",
-    "authorized": true,
-    "subjects": ["histologia"]
-  },
-  {
     "code": "SOFIAMORENO",
     "name": "Sofia Moreno",
     "authorized": true,
@@ -538,12 +526,6 @@
     "name": "Irina Ali",
     "authorized": true,
     "subjects": ["anatomia", "histologia", "fisiologia", "anatomia2", "histologia2", "fisiologia2"]
-  },
-  {
-    "code": "GABRIELRODRIGUEZ",
-    "name": "Gabriel Rodríguez",
-    "authorized": true,
-    "subjects": ["anatomia"]
   },
   {
     "code": "SOLVALDIVIEZO",
