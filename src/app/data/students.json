@@ -540,12 +540,6 @@
     "subjects": ["anatomia", "histologia", "fisiologia", "anatomia2", "histologia2", "fisiologia2"]
   },
   {
-    "code": "ORNELLAARMELLA",
-    "name": "Ornella Amella",
-    "authorized": true,
-    "subjects": ["fisiologia"]
-  },
-  {
     "code": "GABRIELRODRIGUEZ",
     "name": "Gabriel Rodríguez",
     "authorized": true,
