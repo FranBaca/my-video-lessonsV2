@@ -916,6 +916,36 @@
     "name": "Camila Diaz",
     "authorized": true,
     "subjects": ["fisiologia2"]
+  },
+  {
+    "code": "JUANCARRILLO",
+    "name": "Juan Carrilo",
+    "authorized": true,
+    "subjects": ["histologia2", "fisiologia2"]
+  },
+  {
+    "code": "AUGUSTOJUAREZ",
+    "name": "Augusto Juarez",
+    "authorized": true,
+    "subjects": ["fisiologia2"]
+  },
+  {
+    "code": "LUCIANAABREGU",
+    "name": "Luciana Abregu",
+    "authorized": true,
+    "subjects": ["histologia2", "fisiologia2"]
+  },
+  {
+    "code": "GIMENACANO",
+    "name": "Gimena Cano",
+    "authorized": true,
+    "subjects": ["fisiologia2"]
+  },
+  {
+    "code": "SOFIANORIEGA",
+    "name": "Sofia Noriega",
+    "authorized": true,
+    "subjects": ["histologia2", "fisiologia2"]
   }
 ] 
 
