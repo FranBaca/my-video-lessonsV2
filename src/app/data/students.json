@@ -711,7 +711,7 @@
     "code": "DELFINAUBENTTI",
     "name": "Delfina Ubentti",
     "authorized": true,
-    "subjects": ["histologia2"]
+    "subjects": ["histologia2", "anatomia2"]
   },
   {
     "code": "GUILLELOUZA",
@@ -783,7 +783,7 @@
     "code": "MICAELAJUAREZ",
     "name": "Micaela Juarez",
     "authorized": true,
-    "subjects": ["histologia2"]
+    "subjects": ["histologia2", "fisiologia2"]
   },
   {
     "code": "MIRKOGARCIA",
@@ -861,7 +861,7 @@
     "code": "JULIANMENDOZA",
     "name": "Julian Mendoza",
     "authorized": true,
-    "subjects": ["histologia2"]
+    "subjects": ["histologia2", "fisiologia2"]
   },
   {
     "code": "SOFIADIAZ",
@@ -946,6 +946,24 @@
     "name": "Sofia Noriega",
     "authorized": true,
     "subjects": ["histologia2", "fisiologia2"]
+  },
+  {
+    "code": "SOLEDADLOPEZ",
+    "name": "Soledad Lopez",
+    "authorized": true,
+    "subjects": ["histologia2"]
+  },
+  {
+    "code": "LOURDESCAMPERO",
+    "name": "Lourdes Campero",
+    "authorized": true,
+    "subjects": ["histologia2", "fisiologia2"]
+  },
+  {
+    "code": "JOAQUINASALAZAR",
+    "name": "Joaquina Salazar",
+    "authorized": true,
+    "subjects": ["histologia2", "fisiologia2", "anatomia2"]
   }
 ] 
 
