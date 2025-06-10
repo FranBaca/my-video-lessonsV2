@@ -694,5 +694,17 @@
         "name": "Pia Alvarado",
         "authorized": true,
         "subjects": ["biofisica", "bioquimica", "biologia"]
+    },
+    {
+        "code": "GUADALUPEALE",
+        "name": "Guadalupe",
+        "authorized": true,
+        "subjects": ["biofisica", "bioquimica", "biologia"]
+    },
+    {
+        "code": "PAULAVAQUERA",
+        "name": "Paula",
+        "authorized": true,
+        "subjects": ["biofisica", "bioquimica", "biologia"]
     }
 ]
