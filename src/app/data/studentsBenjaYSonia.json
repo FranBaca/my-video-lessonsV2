@@ -714,8 +714,14 @@
         "subjects": ["biofisica", "bioquimica", "biologia"]
     },
     {
-        "code": "MARTINADELACRUZ ",
+        "code": "MARTINADELACRUZ",
         "name": "Martina",
+        "authorized": true,
+        "subjects": ["biofisica", "bioquimica", "biologia"]
+    },
+    {
+        "code": "MATEOFIORI",
+        "name": "Mateo",
         "authorized": true,
         "subjects": ["biofisica", "bioquimica", "biologia"]
     }
