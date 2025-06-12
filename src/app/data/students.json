@@ -807,7 +807,7 @@
     "code": "SABRINAFAJARDO",
     "name": "Sabrina Fajardo",
     "authorized": true,
-    "subjects": ["fisiologia2"]
+    "subjects": ["fisiologia2", "histologia2"]
   },
   {
     "code": "SOFIACHAILE",
@@ -964,6 +964,78 @@
     "name": "Joaquina Salazar",
     "authorized": true,
     "subjects": ["histologia2", "fisiologia2", "anatomia2"]
+  },
+  {
+    "code": "LUCYCUEVAS",
+    "name": "Lucy Cuevas",
+    "authorized": true,
+    "subjects": ["histologia2"]
+  },
+  {
+    "code": "MAGALIMORENO",
+    "name": "Magali Moreno",
+    "authorized": true,
+    "subjects": ["fisiologia2"]
+  },
+  {
+    "code": "ANGELESTORRES",
+    "name": "Angeles Torres",
+    "authorized": true,
+    "subjects": ["fisiologia2"]
+  },
+  {
+    "code": "MARCOSCRUZ",
+    "name": "Marcos Cruz",
+    "authorized": true,
+    "subjects": ["histologia2", "fisiologia2", "anatomia2"]
+  },
+  {
+    "code": "CANDELAJUAREZ",
+    "name": "Candela Juarez",
+    "authorized": true,
+    "subjects": ["fisiologia2"]
+  },
+  {
+    "code": "SOFIAAPARICIO",
+    "name": "Sofia Aparecida",
+    "authorized": true,
+    "subjects": ["histologia2", "fisiologia2", "anatomia2"]
+  },
+  {
+    "code": "JUANMARCOSVEGA",
+    "name": "Juan Marcos Vega",
+    "authorized": true,
+    "subjects": ["histologia2", "fisiologia2"]
+  },
+  {
+    "code": "SELENAJUAREZ",
+    "name": "Selena Juarez",
+    "authorized": true,
+    "subjects": ["histologia2", "fisiologia2", "anatomia2"]
+  },
+  {
+    "code": "IGNACIOMUNOZ",
+    "name": "Ignacio Munoz",
+    "authorized": true,
+    "subjects": ["histologia2", "fisiologia2"]
+  },
+  {
+    "code": "ANTOFIAD",
+    "name": "Anto Fiad",
+    "authorized": true,
+    "subjects": ["histologia2"]
+  },
+  {
+    "code": "FERNANDASIVILA",
+    "name": "Fernanda Sivila",
+    "authorized": true,
+    "subjects": ["fisiologia2"]
+  },
+  {
+    "code": "CELESTECRUZ",
+    "name": "Celeste Cruz",
+    "authorized": true,
+    "subjects": ["histologia2", "fisiologia2"]
   }
 ] 
 

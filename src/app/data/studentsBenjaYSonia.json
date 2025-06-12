@@ -706,5 +706,17 @@
         "name": "Paula",
         "authorized": true,
         "subjects": ["biofisica", "bioquimica", "biologia"]
+    },
+    {
+        "code": "LUZMONTOYA",
+        "name": "Luz",
+        "authorized": true,
+        "subjects": ["biofisica", "bioquimica", "biologia"]
+    },
+    {
+        "code": "MARTINADELACRUZ ",
+        "name": "Martina",
+        "authorized": true,
+        "subjects": ["biofisica", "bioquimica", "biologia"]
     }
 ]
