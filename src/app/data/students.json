@@ -1084,6 +1084,36 @@
     "name": "Solana Ruiz",
     "authorized": true,
     "subjects": ["anatomia2", "fisiologia2", "histologia2"]
+  },
+  {
+    "code": "LISSETHUAMANI",
+    "name": "Lisseth Huamani",
+    "authorized": true,
+    "subjects": ["histologia2", "fisiologia2"]
+  },
+  {
+    "code": "SOLANARUIZ",
+    "name": "Solana Ruiz",
+    "authorized": true,
+    "subjects": ["histologia2", "fisiologia2", "anatomia2"]
+  },
+  {
+    "code": "JULISERRANO",
+    "name": "Juli Serrano",
+    "authorized": true,
+    "subjects": ["histologia2", "fisiologia2", "anatomia2"]
+  },
+  {
+    "code": "JUANCARRILLO",
+    "name": "Juan Carrilo",
+    "authorized": true,
+    "subjects": ["histologia2", "fisiologia2", "anatomia2"]
+  },
+  {
+    "code": "JULIETALUACES",
+    "name": "Julieta Luaces",
+    "authorized": true,
+    "subjects": ["fisiologia2"]
   }
 ] 
 
