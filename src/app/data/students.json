@@ -417,7 +417,7 @@
     "code": "SOLWAISMAN",
     "name": "Sol Waisman",
     "authorized": true,
-    "subjects": ["histologia", "fisiologia", "histologia2", "fisiologia2"]
+    "subjects": ["histologia", "fisiologia", "histologia2", "fisiologia2", "anatomia2"]
   },
   {
     "code": "BENJAMIN123",
@@ -444,10 +444,10 @@
     "subjects": ["histologia-salta", "fisiologia", "fisiologia2"]
   },
   {
-    "code": "SOFIAMORENO",
+    "code": "SOFIMORENO",
     "name": "Sofia Moreno",
     "authorized": true,
-    "subjects": ["histologia", "histologia2"]
+    "subjects": ["histologia", "histologia2", "fisiologia2"]
   },
   {
     "code": "MELMARTIN",
@@ -603,19 +603,13 @@
     "code": "ABRILALVAREZ",
     "name": "Abril Alvarez",
     "authorized": true,
-    "subjects": ["fisiologia", "fisiologia2"]
+    "subjects": ["fisiologia", "fisiologia2", "histologia2"]
   },
   {
     "code": "LOURDESALVAREZ",
     "name": "Lourdes Alvarez",
     "authorized": true,
     "subjects": ["fisiologia2", "histologia2", "anatomia2"]
-  },
-  {
-    "code": "SOFIMORENO",
-    "name": "Sofi Moreno",
-    "authorized": true,
-    "subjects": ["fisiologia2"]
   },
   {
     "code": "KEILAMEDINA",
@@ -1114,6 +1108,24 @@
     "name": "Julieta Luaces",
     "authorized": true,
     "subjects": ["fisiologia2"]
+  },
+  {
+    "code": "SONIAMARTINORTIZ",
+    "name": "Sonia Martin Ortiz",
+    "authorized": true,
+    "subjects": ["histologia2", "fisiologia2", "anatomia2"]
+  },
+  {
+    "code": "AGUSTINNUNEZ",
+    "name": "Agustin Nunez",
+    "authorized": true,
+    "subjects": ["histologia2", "fisiologia2"]
+  },
+  {
+    "code": "ANTONELLABORDA",
+    "name": "Antonella Borda",
+    "authorized": true,
+    "subjects": ["histologia2", "fisiologia2"]
   }
 ] 
 
