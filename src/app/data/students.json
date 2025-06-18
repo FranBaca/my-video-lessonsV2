@@ -1126,6 +1126,12 @@
     "name": "Antonella Borda",
     "authorized": true,
     "subjects": ["histologia2", "fisiologia2"]
+  },
+  {
+    "code": "CECILIAORDONEZ",
+    "name": "Cecilia Ordonez",
+    "authorized": true,
+    "subjects": ["histologia2", "fisiologia2"]
   }
 ] 
 
