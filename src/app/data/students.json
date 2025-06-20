@@ -1132,6 +1132,30 @@
     "name": "Cecilia Ordonez",
     "authorized": true,
     "subjects": ["histologia2", "fisiologia2"]
+  },
+  {
+    "code": "NICOLASFLORES",
+    "name": "Nicolas Flores",
+    "authorized": true,
+    "subjects": ["histologia2", "fisiologia2"]
+  },
+  {
+    "code": "MELINACASTILLO",
+    "name": "Melina Castillo",
+    "authorized": true,
+    "subjects": ["histologia2", "fisiologia2"]
+  },
+  {
+    "code": "LUCIANOGIMENEZ",
+    "name": "Luciana Gimenez",
+    "authorized": true,
+    "subjects": ["histologia2"]
+  },
+  {
+    "code": "LEONELORDONEZ",
+    "name": "Leonel Orndoñez",
+    "authorized": true,
+    "subjects": ["histologia2"]
   }
 ] 
 
