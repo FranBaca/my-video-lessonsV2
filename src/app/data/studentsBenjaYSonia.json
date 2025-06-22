@@ -725,5 +725,23 @@
         "name": "Mateo",
         "authorized": true,
         "subjects": ["biofisica", "bioquimica", "biologia"]
+    },
+    {
+        "code": "FERNANDODIARTE",
+        "name": "Fernando Diarte",
+        "authorized": true,
+        "subjects": ["biofisica"]
+    },
+    {
+        "code": "SAMIRAGONZALEZ",
+        "name": "Samira Gonzalez",
+        "authorized": true,
+        "subjects": ["biofisica", "bioquimica", "biologia"]
+    },
+    {
+        "code": "PILARBOTTINI",
+        "name": "Pilar Bottini",
+        "authorized": true,
+        "subjects": ["biofisica", "bioquimica", "biologia"]
     }
 ]
