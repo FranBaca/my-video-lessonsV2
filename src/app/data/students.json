@@ -1156,6 +1156,24 @@
     "name": "Leonel Orndoñez",
     "authorized": true,
     "subjects": ["histologia2"]
+  },
+  {
+    "code": "MELANIJIMENEZ",
+    "name": "Melani Jimenez",
+    "authorized": true,
+    "subjects": ["histologia2", "fisiologia2", "anatomia2"]
+  },
+  {
+    "code": "CAMILAALVARADO",
+    "name": "Camila Alvarado",
+    "authorized": true,
+    "subjects": ["histologia2", "fisiologia2"]
+  },
+  {
+    "code": "ANABELCRUZ",
+    "name": "Anabel Cruz",
+    "authorized": true,
+    "subjects": ["histologia2", "fisiologia2", "anatomia2"]
   }
 ] 
 

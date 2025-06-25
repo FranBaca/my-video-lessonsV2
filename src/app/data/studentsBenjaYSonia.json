@@ -743,5 +743,11 @@
         "name": "Pilar Bottini",
         "authorized": true,
         "subjects": ["biofisica", "bioquimica", "biologia"]
+    },
+    {
+        "code": "ANAHIVERA",
+        "name": "Anahi",
+        "authorized": true,
+        "subjects": ["biofisica", "bioquimica", "biologia"]
     }
 ]
