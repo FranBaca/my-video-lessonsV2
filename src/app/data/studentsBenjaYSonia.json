@@ -749,5 +749,11 @@
         "name": "Anahi",
         "authorized": true,
         "subjects": ["biofisica", "bioquimica", "biologia"]
+    },
+    {
+        "code": "BRISASIRMULET",
+        "name": "Brisa Sir Muleta",
+        "authorized": true,
+        "subjects": ["biofisica", "bioquimica", "biologia"]
     }
 ]
