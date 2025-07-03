@@ -309,7 +309,7 @@
     "code": "TIZIANAOSORES",
     "name": "Tiziana Osores",
     "authorized": true,
-    "subjects": ["anatomia", "histologia", "fisiologia", "anatomia2", "histologia2", "fisiologia2"]
+    "subjects": ["histologia", "fisiologia", "histologia2", "fisiologia2"]
   },
   {
     "code": "VALENTINAALBORNOZ",
@@ -328,12 +328,6 @@
     "name": "Victoria Vargas",
     "authorized": true,
     "subjects": ["anatomia", "histologia", "fisiologia", "anatomia2", "histologia2", "fisiologia2"]
-  },
-  {
-    "code": "CRISTIANCALVINO",
-    "name": "Cristian Calviño",
-    "authorized": true,
-    "subjects": ["histologia", "histologia2"]
   },
   {
     "code": "SOFIACRIVERO",
@@ -501,7 +495,7 @@
     "code": "DANIELASOLIS",
     "name": "Daniela Solis",
     "authorized": true,
-    "subjects": ["histologia", "fisiologia2", "histologia2"]
+    "subjects": ["histologia", "histologia2"]
   },
   {
     "code": "JIMENAPAZ",
@@ -642,12 +636,6 @@
     "subjects": ["histologia2"]
   },
   {
-    "code": "FIORELLACORDOBA",
-    "name": "Fiorella Cordoba",
-    "authorized": true,
-    "subjects": ["fisiologia2", "histologia2"]
-  },
-  {
     "code": "YULIANAMAMANI",
     "name": "Yuliana Mamani",
     "authorized": true,
@@ -693,7 +681,7 @@
     "code": "CELESTECARRASCO",
     "name": "Celeste Carrasco",
     "authorized": true,
-    "subjects": ["histologia2", "fisiologia2", "anatomia2"]
+    "subjects": ["histologia2", "fisiologia2"]
   },
   {
     "code": "ELIANACARI",
@@ -789,7 +777,7 @@
     "code": "NICOLASGONZALES",
     "name": "Nicolas Gonzalez",
     "authorized": true,
-    "subjects": ["histologia2", "fisiologia2", "anatomia2"]
+    "subjects": ["histologia2"]
   },
   {
     "code": "ROCIOLOBO",
@@ -819,7 +807,7 @@
     "code": "VALENTINAGOMEZ",
     "name": "Valentina Gomez",
     "authorized": true,
-    "subjects": ["histologia2", "fisiologia2", "anatomia2"]
+    "subjects": ["histologia2", "fisiologia2"]
   },
   {
     "code": "YANIVILLAFANE",
@@ -831,7 +819,7 @@
     "code": "NAHIARACARRAZANA",
     "name": "Nahiara Carrazana",
     "authorized": true,
-    "subjects": ["histologia2", "fisiologia2", "anatomia2"]
+    "subjects": ["histologia2", "fisiologia2"]
   },
   {
     "code": "MARTINAOLMEDO",
@@ -894,12 +882,6 @@
     "subjects": ["histologia2", "fisiologia2"]
   },
   {
-    "code": "SABRINACARRIZO",
-    "name": "Sabrina Carrizo",
-    "authorized": true,
-    "subjects": ["fisiologia2"]
-  },
-  {
     "code": "JULIETAVILLAFANE",
     "name": "Julietta Villafane",
     "authorized": true,
@@ -918,18 +900,6 @@
     "subjects": ["histologia2", "fisiologia2"]
   },
   {
-    "code": "AUGUSTOJUAREZ",
-    "name": "Augusto Juarez",
-    "authorized": true,
-    "subjects": ["fisiologia2"]
-  },
-  {
-    "code": "LUCIANAABREGU",
-    "name": "Luciana Abregu",
-    "authorized": true,
-    "subjects": ["histologia2", "fisiologia2"]
-  },
-  {
     "code": "GIMENACANO",
     "name": "Gimena Cano",
     "authorized": true,
@@ -939,7 +909,7 @@
     "code": "SOFIANORIEGA",
     "name": "Sofia Noriega",
     "authorized": true,
-    "subjects": ["histologia2", "fisiologia2"]
+    "subjects": ["histologia2"]
   },
   {
     "code": "SOLEDADLOPEZ",
@@ -957,7 +927,7 @@
     "code": "JOAQUINASALAZAR",
     "name": "Joaquina Salazar",
     "authorized": true,
-    "subjects": ["histologia2", "fisiologia2", "anatomia2"]
+    "subjects": ["histologia2"]
   },
   {
     "code": "LUCYCUEVAS",
@@ -968,12 +938,6 @@
   {
     "code": "MAGALIMORENO",
     "name": "Magali Moreno",
-    "authorized": true,
-    "subjects": ["fisiologia2"]
-  },
-  {
-    "code": "ANGELESTORRES",
-    "name": "Angeles Torres",
     "authorized": true,
     "subjects": ["fisiologia2"]
   },
@@ -1128,12 +1092,6 @@
     "subjects": ["histologia2", "fisiologia2", "anatomia2"]
   },
   {
-    "code": "CECILIAORDONEZ",
-    "name": "Cecilia Ordonez",
-    "authorized": true,
-    "subjects": ["histologia2", "fisiologia2"]
-  },
-  {
     "code": "NICOLASFLORES",
     "name": "Nicolas Flores",
     "authorized": true,
@@ -1148,12 +1106,6 @@
   {
     "code": "LUCIANOGIMENEZ",
     "name": "Luciana Gimenez",
-    "authorized": true,
-    "subjects": ["histologia2"]
-  },
-  {
-    "code": "LEONELORDONEZ",
-    "name": "Leonel Orndoñez",
     "authorized": true,
     "subjects": ["histologia2"]
   },
