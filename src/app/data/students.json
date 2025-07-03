@@ -1080,12 +1080,6 @@
     "subjects": ["histologia2", "fisiologia2", "anatomia2"]
   },
   {
-    "code": "AGUSTINNUNEZ",
-    "name": "Agustin Nunez",
-    "authorized": true,
-    "subjects": ["histologia2", "fisiologia2"]
-  },
-  {
     "code": "ANTONELLABORDA",
     "name": "Antonella Borda",
     "authorized": true,
