@@ -1120,6 +1120,48 @@
     "name": "Anabel Cruz",
     "authorized": true,
     "subjects": ["histologia2", "fisiologia2", "anatomia2"]
+  },
+  {
+    "code": "LOURDESPINEDA",
+    "name": "Lourdes Pineda",
+    "authorized": true,
+    "subjects": ["histologia2"]
+  },
+  {
+    "code": "RODRIGOROMERO",
+    "name": "Rodrigo Romero",
+    "authorized": true,
+    "subjects": ["histologia2"]
+  },
+  {
+    "code": "SOFIAREINOSO",
+    "name": "Sofia Reinosa",
+    "authorized": true,
+    "subjects": ["fisiologia2"]
+  },
+  {
+    "code": "NAHUELMARTIN",
+    "name": "Nahuel Martin",
+    "authorized": true,
+    "subjects": ["fisiologia2"]
+  },
+  {
+    "code": "SOFIAGRAMAJO",
+    "name": "Sofia Gramajo",
+    "authorized": true,
+    "subjects": ["fisiologia2"]
+  },
+  {
+    "code": "MICARAMOS",
+    "name": "Micaela Ramos",
+    "authorized": true,
+    "subjects": ["fisiologia2"]
+  },
+  {
+    "code": "LUCIANAABREGU",
+    "name": "Luciana Abregu",
+    "authorized": true,
+    "subjects": ["fisiologia2"]
   }
 ] 
 
