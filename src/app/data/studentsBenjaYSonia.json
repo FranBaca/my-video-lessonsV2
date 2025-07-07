@@ -755,5 +755,11 @@
         "name": "Brisa Sir Muleta",
         "authorized": true,
         "subjects": ["biofisica", "bioquimica", "biologia"]
+    },
+    {
+        "code": "MECHICARRASCO",
+        "name": "Mechi",
+        "authorized": true,
+        "subjects": ["biofisica", "bioquimica"]
     }
 ]
