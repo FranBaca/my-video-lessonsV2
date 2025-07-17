@@ -11,10 +11,13 @@ import {
   orderBy,
   limit,
   Timestamp,
-  writeBatch
+  writeBatch,
+  setDoc,
+  collectionGroup
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Professor, Video, Student, ApiResponse } from '../types/firebase';
+import { auth } from './firebase';
 
 // Servicios para Profesores
 export const professorService = {
@@ -94,16 +97,18 @@ export const videoService = {
     try {
       const q = query(
         collection(db, 'professors', professorId, 'videos'),
-        where('isActive', '==', true),
-        orderBy('order')
+        where('isActive', '==', true)
       );
       const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => ({
+      const videos = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
         createdAt: doc.data().createdAt?.toDate() || new Date(),
         updatedAt: doc.data().updatedAt?.toDate()
       })) as Video[];
+      
+      // Ordenar en memoria en lugar de en la consulta
+      return videos.sort((a, b) => (a.order || 0) - (b.order || 0));
     } catch (error) {
       console.error('Error getting videos:', error);
       throw error;
@@ -174,27 +179,27 @@ export const videoService = {
 export const studentService = {
   async getByCode(code: string): Promise<Student | null> {
     try {
-      // Buscar en todos los profesores
-      const professors = await professorService.getAll();
+      // Versión que busca solo en el profesor actual para evitar problemas de permisos
+      // Esto funciona sin necesidad de collectionGroup
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        return null;
+      }
+
+      const q = query(
+        collection(db, 'professors', currentUser.uid, 'students'),
+        where('code', '==', code)
+      );
+      const querySnapshot = await getDocs(q);
       
-      for (const professor of professors) {
-        if (!professor.id) continue;
-        
-        const q = query(
-          collection(db, 'professors', professor.id, 'students'),
-          where('code', '==', code)
-        );
-        const querySnapshot = await getDocs(q);
-        
-        if (!querySnapshot.empty) {
-          const doc = querySnapshot.docs[0];
-          return { 
-            id: doc.id, 
-            ...doc.data(),
-            enrolledAt: doc.data().enrolledAt?.toDate() || new Date(),
-            lastAccess: doc.data().lastAccess?.toDate()
-          } as Student;
-        }
+      if (!querySnapshot.empty) {
+        const doc = querySnapshot.docs[0];
+        return { 
+          id: doc.id, 
+          ...doc.data(),
+          enrolledAt: doc.data().enrolledAt?.toDate() || new Date(),
+          lastAccess: doc.data().lastAccess?.toDate()
+        } as Student;
       }
       
       return null;
@@ -239,6 +244,53 @@ export const studentService = {
     }
   },
 
+  async createWithGeneratedCode(professorId: string, studentData: Omit<Student, 'id' | 'code'>): Promise<{ id: string; code: string }> {
+    try {
+      const code = await this.generateStudentCode(professorId);
+      const studentId = await this.create(professorId, {
+        ...studentData,
+        code
+      });
+      return { id: studentId, code };
+    } catch (error) {
+      console.error('Error creating student with generated code:', error);
+      throw error;
+    }
+  },
+
+  async generateStudentCode(professorId: string): Promise<string> {
+    const prefix = 'STU';
+    const timestamp = Date.now().toString().slice(-6);
+    const random = Math.random().toString(36).substring(2, 5).toUpperCase();
+    const baseCode = `${prefix}${timestamp}${random}`;
+    
+    try {
+      // Verificar que el código no exista
+      const existingStudent = await this.getByCode(baseCode);
+      if (!existingStudent) {
+        return baseCode;
+      }
+      
+      // Si existe, agregar un número adicional
+      let counter = 1;
+      let newCode = baseCode;
+      while (existingStudent) {
+        newCode = `${baseCode}${counter}`;
+        const checkStudent = await this.getByCode(newCode);
+        if (!checkStudent) {
+          return newCode;
+        }
+        counter++;
+        if (counter > 10) break; // Evitar bucle infinito
+      }
+      
+      return newCode;
+    } catch (error) {
+      // Si hay error en la verificación, usar el código generado
+      return baseCode;
+    }
+  },
+
   async update(professorId: string, studentId: string, data: Partial<Student>): Promise<void> {
     try {
       const docRef = doc(db, 'professors', professorId, 'students', studentId);
@@ -262,5 +314,16 @@ export const studentService = {
     }
   },
 
-
+  async updateAllowedVideos(professorId: string, studentId: string, videoIds: string[]): Promise<void> {
+    try {
+      const docRef = doc(db, 'professors', professorId, 'students', studentId);
+      await updateDoc(docRef, {
+        allowedVideos: videoIds,
+        lastAccess: Timestamp.now()
+      });
+    } catch (error) {
+      console.error('Error updating student allowed videos:', error);
+      throw error;
+    }
+  }
 }; 
