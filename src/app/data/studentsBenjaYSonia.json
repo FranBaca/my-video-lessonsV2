@@ -760,6 +760,6 @@
         "code": "MECHICARRASCO",
         "name": "Mechi",
         "authorized": true,
-        "subjects": ["biofisica", "bioquimica"]
+        "subjects": ["biofisica", "bioquimica", "biologia"]
     }
 ]
