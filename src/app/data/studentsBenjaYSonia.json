@@ -1,6 +1,24 @@
 
 [
     {
+        "code": "TESTPARCIAL1",
+        "name": "Benjamin",
+        "authorized": true,
+        "subjects": ["biofisica", "biologia", "bioquimica"]
+    },
+    {
+        "code": "TESTPARCIAL2",
+        "name": "Benjamin",
+        "authorized": true,
+        "subjects": ["biofisica2", "biologia2", "bioquimica2"]
+    },
+    {
+        "code": "TESTPARCIALCOMPLETO",
+        "name": "Benjamin",
+        "authorized": true,
+        "subjects": ["biofisica", "biologia", "bioquimica", "biofisica2", "biologia2", "bioquimica2"]
+    },
+    {
         "code": "BENJATEST",
         "name": "Benjamin",
         "authorized": true,

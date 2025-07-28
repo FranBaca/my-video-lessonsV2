@@ -20,6 +20,10 @@ const FOLDER_IDS = {
   biofisica: process.env.GOOGLE_DRIVE_FOLDER_BIOFISICA!,
   biologia: process.env.GOOGLE_DRIVE_FOLDER_BIOLOGIA!,
   bioquimica: process.env.GOOGLE_DRIVE_FOLDER_BIOQUIMICA!,
+  // BENJA Y SONIA PARCIAL 2
+  biofisica2: process.env.GOOGLE_DRIVE_FOLDER_BIOFISICA2!,
+  biologia2: process.env.GOOGLE_DRIVE_FOLDER_BIOLOGIA2!,
+  bioquimica2: process.env.GOOGLE_DRIVE_FOLDER_BIOQUIMICA2!,
 };
 
 export async function GET(request: NextRequest) {
@@ -103,6 +107,12 @@ export async function GET(request: NextRequest) {
             ? "Histología Parcial 2"
             : subjectName === "fisiologia2"
             ? "Fisiología Parcial 2"
+            : subjectName === "biofisica2"
+            ? "Biofísica Parcial 2"
+            : subjectName === "biologia2"
+            ? "Biología Parcial 2"
+            : subjectName === "bioquimica2"
+            ? "Bioquímica Parcial 2"
             : "Fisiología Parcial 1",
         sections,
       });
