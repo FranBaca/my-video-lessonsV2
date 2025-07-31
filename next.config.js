@@ -4,24 +4,23 @@ const nextConfig = {
   swcMinify: true,
   output: "standalone",
   experimental: {
-    serverComponentsExternalPackages: ["googleapis"],
+    serverComponentsExternalPackages: ['@mux/mux-node', 'firebase-admin'],
+    serverActions: true,
   },
-  // Asegurarse de que los estilos se procesen correctamente
-  webpack: (config) => {
-    return config;
-  },
-  // Configuración para CSS
   images: {
-    domains: ["drive.google.com"],
+    domains: ["stream.mux.com", "image.mux.com"],
   },
-  // Configuración para rutas dinámicas
-  serverRuntimeConfig: {
-    dynamicRoutes: [
-      "/api/auth",
-      "/api/auth/callback",
-      "/api/auth/validate",
-      "/api/drive/videos",
-    ],
+  async headers() {
+    return [
+      {
+        source: '/api/mux/upload/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Access-Control-Allow-Methods', value: 'GET, POST, PUT, DELETE, OPTIONS' },
+          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization' },
+        ],
+      },
+    ];
   },
 };
 
