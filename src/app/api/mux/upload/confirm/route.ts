@@ -1,0 +1,206 @@
+import { NextRequest, NextResponse } from "next/server";
+import { verifyProfessorAuth } from "@/app/lib/auth-utils";
+import { professorService, videoService, subjectService } from "@/app/lib/firebase-services";
+import { Video as VideoType } from "@/app/types/firebase";
+import { MuxUploadService } from "@/app/lib/mux-upload-service";
+
+const uploadService = new MuxUploadService();
+
+export async function POST(request: NextRequest) {
+  try {
+    // Verificar autenticación del profesor
+    const professorId = await verifyProfessorAuth(request);
+
+    const { uploadId, metadata } = await request.json();
+
+    if (!uploadId || !metadata) {
+      return NextResponse.json(
+        { success: false, message: "Upload ID y metadata son requeridos" },
+        { status: 400 }
+      );
+    }
+
+    // Verificar que la materia existe
+    const subject = await subjectService.getById(professorId, metadata.subjectId);
+    if (!subject) {
+      return NextResponse.json(
+        { success: false, message: "Materia no encontrada" },
+        { status: 404 }
+      );
+    }
+
+    // Verificar el estado del upload
+    console.log(`Verificando estado del upload ${uploadId}...`);
+    const uploadStatus = await uploadService.getUploadStatus(uploadId);
+    console.log("Estado del upload:", uploadStatus);
+
+    if (uploadStatus.status === 'errored') {
+      return NextResponse.json(
+        { success: false, message: "El upload falló. Intenta nuevamente." },
+        { status: 500 }
+      );
+    }
+
+    // Si el upload aún está en proceso, devolver estado de procesamiento
+    if (uploadStatus.status === 'waiting') {
+      return NextResponse.json({
+        success: true,
+        status: 'processing',
+        message: "El video aún se está procesando. Los webhooks te notificarán cuando esté listo.",
+        uploadId: uploadId
+      });
+    }
+
+    // Si el asset fue creado
+    if (uploadStatus.status === 'asset_created' && uploadStatus.asset_id) {
+      try {
+        // Verificar el estado del asset
+        const assetInfo = await uploadService.getAssetInfo(uploadStatus.asset_id);
+        
+        if (assetInfo.status === 'ready') {
+          // Asset está listo, proceder a guardar
+          return await saveVideoToDatabase(professorId, metadata, assetInfo);
+        } else if (assetInfo.status === 'errored') {
+          return NextResponse.json(
+            { success: false, message: "Error en el procesamiento del video. Verifica que el archivo sea válido." },
+            { status: 500 }
+          );
+        } else {
+          // Asset aún se está procesando, pero guardamos el video con estado 'processing'
+          console.log("Asset creado pero aún procesándose, guardando video con estado 'processing'");
+          return await saveVideoToDatabaseProcessing(professorId, metadata, uploadStatus.asset_id);
+        }
+      } catch (error) {
+        console.error("Error verificando asset:", error);
+        // Si no podemos verificar el asset, guardamos el video con estado 'processing'
+        return await saveVideoToDatabaseProcessing(professorId, metadata, uploadStatus.asset_id);
+      }
+    }
+
+    // Si llegamos aquí, el upload no está en un estado esperado
+    return NextResponse.json(
+      { success: false, message: "Estado del upload no reconocido. Intenta nuevamente." },
+      { status: 500 }
+    );
+
+  } catch (error) {
+    console.error("Error confirmando upload:", error);
+    
+    // Manejar errores específicos
+    if (error instanceof Error) {
+      if (error.message.includes('Timeout') || error.message.includes('⏰')) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            message: "El video aún se está procesando. Intenta nuevamente en unos minutos.",
+            status: 'processing'
+          },
+          { status: 408 }
+        );
+      }
+      if (error.message.includes('Asset failed to process')) {
+        return NextResponse.json(
+          { success: false, message: "Error en el procesamiento del video. Verifica que el archivo sea válido." },
+          { status: 500 }
+        );
+      }
+    }
+    
+    return NextResponse.json(
+      { success: false, message: "Error interno del servidor" },
+      { status: 500 }
+    );
+  }
+}
+
+async function saveVideoToDatabase(professorId: string, metadata: any, assetInfo: any) {
+  const { playback_ids, id: assetId } = assetInfo;
+  const playback_id = playback_ids?.[0]?.id;
+
+  // Verificar que Mux devolvió los datos necesarios
+  if (!playback_id || !assetId) {
+    console.error("Mux no devolvió playback_id o assetId:", assetInfo);
+    return NextResponse.json(
+      { success: false, message: "Error: Mux no devolvió los datos necesarios" },
+      { status: 500 }
+    );
+  }
+
+  // Guardar en Firestore con metadata completa
+  const videoData: Omit<VideoType, "id"> = {
+    name: metadata.name,
+    description: metadata.description,
+    subjectId: metadata.subjectId,
+    professorId: professorId,
+    muxAssetId: assetId,
+    muxPlaybackId: playback_id,
+    tags: metadata.tags,
+    isActive: true,
+    order: 0,
+    createdAt: new Date(),
+    fileSize: metadata.fileSize,
+    mimeType: metadata.mimeType,
+    status: 'ready',
+    uploadConfirmed: true,
+    duration: assetInfo.duration,
+    aspectRatio: assetInfo.aspect_ratio,
+  };
+
+  const videoId = await videoService.create(professorId, metadata.subjectId, videoData);
+
+  return NextResponse.json({
+    success: true,
+    data: {
+      id: videoId,
+      name: metadata.name,
+      description: metadata.description,
+      subjectId: metadata.subjectId,
+      muxAssetId: assetId,
+      muxPlaybackId: playback_id,
+      tags: metadata.tags,
+      createdAt: new Date(),
+      // Información adicional del asset
+      duration: assetInfo.duration,
+      aspectRatio: assetInfo.aspect_ratio,
+    },
+    message: "Video procesado y guardado exitosamente",
+  });
+}
+
+async function saveVideoToDatabaseProcessing(professorId: string, metadata: any, assetId: string) {
+  // Guardar en Firestore con estado 'processing'
+  const videoData: Omit<VideoType, "id"> = {
+    name: metadata.name,
+    description: metadata.description,
+    subjectId: metadata.subjectId,
+    professorId: professorId,
+    muxAssetId: assetId,
+    muxPlaybackId: '', // Se actualizará cuando esté listo
+    tags: metadata.tags,
+    isActive: false, // Temporalmente inactivo hasta que esté listo
+    order: 0,
+    createdAt: new Date(),
+    fileSize: metadata.fileSize,
+    mimeType: metadata.mimeType,
+    status: 'processing',
+    uploadConfirmed: true,
+  };
+
+  const videoId = await videoService.create(professorId, metadata.subjectId, videoData);
+
+  return NextResponse.json({
+    success: true,
+    status: 'processing',
+    data: {
+      id: videoId,
+      name: metadata.name,
+      description: metadata.description,
+      subjectId: metadata.subjectId,
+      muxAssetId: assetId,
+      muxPlaybackId: '',
+      tags: metadata.tags,
+      createdAt: new Date(),
+    },
+    message: "Video guardado y procesándose. Los webhooks te notificarán cuando esté listo.",
+  });
+} 
