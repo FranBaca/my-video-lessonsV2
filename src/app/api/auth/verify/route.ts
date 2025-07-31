@@ -1,19 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { google, sheets_v4 } from "googleapis";
-import { JWT } from "google-auth-library";
-import students from "@/app/data/students.json";
-import studentsBenjaYSonia from "@/app/data/studentsBenjaYSonia.json";
-import { Student } from "@/app/types";
-import { toast } from "react-hot-toast";
-
-// ID de la hoja de cálculo
-const SPREADSHEET_ID = "16coLs8qv4BU_CwphqlvE_LWNEAV50nIQ8VaM2SdsuRs";
-const SHEET_NAME = "UsedCodes";
-
-// Configuración de la cuenta de servicio
-const SERVICE_ACCOUNT_EMAIL =
-  "my-lessons@fluted-arch-452901-d1.iam.gserviceaccount.com";
-const SCOPES = ["https://www.googleapis.com/auth/spreadsheets"];
+import { auth } from "@/app/lib/firebase";
+import { publicStudentService } from "@/app/lib/firebase-services";
+import { Student } from "@/app/types/firebase";
 
 // Variable para activar/desactivar la validación de dispositivo
 const FINGERPRINT_VALIDATION_ENABLED =
@@ -23,34 +11,6 @@ const FINGERPRINT_VALIDATION_ENABLED =
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minuto
 const MAX_REQUESTS_PER_WINDOW = 5;
 const requestCounts = new Map<string, { count: number; timestamp: number }>();
-
-// Crear cliente JWT para la cuenta de servicio
-const privateKey = process.env.GOOGLE_SERVICE_PRIVATE_KEY?.replace(
-  /\\n/g,
-  "\n"
-);
-
-// Crear cliente JWT y Sheets solo si la validación está activada
-let auth: JWT | undefined;
-let sheets: sheets_v4.Sheets | undefined;
-
-if (FINGERPRINT_VALIDATION_ENABLED) {
-  try {
-    auth = new JWT({
-      email: SERVICE_ACCOUNT_EMAIL,
-      key: privateKey,
-      scopes: SCOPES,
-    });
-
-    sheets = google.sheets({ version: "v4", auth });
-  } catch (error) {
-    console.error("Error al inicializar Google Sheets:", error);
-    // Si hay error en la inicialización, desactivar la validación
-    console.log(
-      "Desactivando validación de dispositivo debido a error de inicialización"
-    );
-  }
-}
 
 // Validar formato del deviceId
 function isValidDeviceId(deviceId: string): boolean {
@@ -77,106 +37,55 @@ function checkRateLimit(ip: string): boolean {
   return true;
 }
 
-async function checkCodeInSheet(code: string, deviceId: string) {
-  if (!FINGERPRINT_VALIDATION_ENABLED || !sheets) {
+async function checkStudentAccess(code: string, deviceId: string) {
+  if (!FINGERPRINT_VALIDATION_ENABLED) {
     return { valid: true, firstTime: true };
   }
 
   try {
-    console.log("=== DEBUG: Iniciando verificación de código ===");
-    console.log("Usando hoja de cálculo:", SPREADSHEET_ID);
 
-    // Verificar si la hoja existe
-    try {
-      const spreadsheet = await sheets.spreadsheets.get({
-        spreadsheetId: SPREADSHEET_ID,
-      });
-      console.log("Hoja de cálculo encontrada:", {
-        title: spreadsheet.data.properties?.title,
-        id: SPREADSHEET_ID,
-        sheets: spreadsheet.data.sheets?.map((sheet: any) => ({
-          title: sheet.properties?.title,
-          sheetId: sheet.properties?.sheetId,
-        })),
-      });
-    } catch (error: any) {
-      console.error("Error detallado al acceder a la hoja:", {
-        message: error.message,
-        code: error.code,
-        status: error.status,
-        details: error.errors,
-      });
 
-      if (error.message.includes("permission")) {
-        throw new Error(
-          "No tienes permisos para acceder a la hoja de control de acceso"
-        );
+    // Obtener el estudiante desde Firestore usando el servicio público
+    const student = await publicStudentService.getByCode(code);
+    
+    if (!student) {
+      console.log("Estudiante no encontrado en Firestore");
+      return { valid: false, firstTime: false };
+    }
+
+    if (!student.authorized) {
+      console.log("Estudiante no autorizado");
+      return { valid: false, firstTime: false };
+    }
+
+    // Verificar si es la primera vez que accede
+    if (!student.deviceId) {
+      console.log("Primera vez accediendo, registrando deviceId");
+      // Actualizar el deviceId del estudiante usando el servicio público
+      // Extraer el professorId del id que ahora incluye el path completo
+      const pathParts = student.id?.split('/') || [];
+      const professorId = pathParts[0]; // El primer elemento es el professorId
+      const studentId = pathParts[1]; // El segundo elemento es el studentId
+      
+
+      
+      if (professorId && studentId) {
+        await publicStudentService.updateDeviceId(studentId, professorId, deviceId);
       }
-      // Si hay error al acceder a la hoja, permitir el acceso
-      console.log("Error al acceder a la hoja, permitiendo acceso");
       return { valid: true, firstTime: true };
     }
 
-    // Buscar el código en la hoja
-    console.log("Intentando leer valores de la hoja...");
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
-      range: "'Hoja 1'!A:B",
-    });
-
-    const rows = response.data.values || [];
-    console.log("Filas encontradas:", rows.length);
-
-    const codeRow = rows.find((row: any) => row[0] === code);
-
-    if (!codeRow) {
-      console.log("Código no encontrado, registrando primera vez");
-      // Código no usado, registrarlo
-      await sheets.spreadsheets.values.append({
-        spreadsheetId: SPREADSHEET_ID,
-        range: "'Hoja 1'!A:D",
-        valueInputOption: "USER_ENTERED",
-        requestBody: {
-          values: [[code, deviceId, new Date().toISOString(), "Primera vez"]],
-        },
-      });
-      return { valid: true, firstTime: true };
-    }
-
-    // Código ya usado, verificar deviceId
-    const savedDeviceId = codeRow[1];
-    console.log("Comparando deviceIds:", {
-      saved: savedDeviceId,
-      current: deviceId,
-    });
-
-    if (savedDeviceId === deviceId) {
-      console.log("DeviceId coincide");
+    // Verificar si el deviceId coincide
+    if (student.deviceId === deviceId) {
+      console.log("DeviceId coincide, acceso permitido");
       return { valid: true, firstTime: false };
     }
 
-    console.log("DeviceId no coincide, registrando intento fallido");
-
-    // DeviceId diferente, registrar intento fallido
-    await sheets.spreadsheets.values.append({
-      spreadsheetId: SPREADSHEET_ID,
-      range: "'Hoja 1'!A:D",
-      valueInputOption: "USER_ENTERED",
-      requestBody: {
-        values: [
-          [
-            code,
-            deviceId,
-            new Date().toISOString(),
-            "Intento fallido - DeviceId diferente",
-          ],
-        ],
-      },
-    });
-
+    console.log("DeviceId no coincide, acceso denegado");
     return { valid: false, firstTime: false };
+
   } catch (error) {
-    console.error("Error checking code in sheet:", error);
+    console.error("Error checking student access:", error);
     throw error;
   }
 }
@@ -214,45 +123,42 @@ export async function POST(request: NextRequest) {
       );
     }
 
-
-
-    // Verificar que el código existe y está autorizado
-    const student =
-      (students as Student[]).find((s) => s.code === code) ||
-      (studentsBenjaYSonia as Student[]).find((s) => s.code === code);
-    if (!student || !student.authorized) {
-      console.log("Código inválido o no autorizado:", code);
+    // Verificar acceso del estudiante
+    const result = await checkStudentAccess(code, deviceId);
+    
+    if (!result.valid) {
+      console.log("Acceso denegado para código:", code);
       return NextResponse.json(
         {
           success: false,
-          message: "El código ingresado no es válido o no está autorizado",
+          message:
+            "Este código ya está siendo usado en otro dispositivo. Por favor, utiliza el mismo dispositivo que usaste para ingresar por primera vez.",
         },
         { status: 403 }
       );
     }
 
-    let valid = true;
-    let firstTime = true;
+    // Obtener información del estudiante usando el servicio público
+    const student = await publicStudentService.getByCode(code);
+    
+    if (!student) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "El código ingresado no es válido o no existe",
+        },
+        { status: 403 }
+      );
+    }
 
-    if (FINGERPRINT_VALIDATION_ENABLED) {
-      // Verificar el código en la hoja de cálculo si la validación está activada
-      const result = await checkCodeInSheet(code, deviceId);
-      valid = result.valid;
-      firstTime = result.firstTime;
-
-      if (!valid) {
-        console.log("Código ya en uso en otro dispositivo:", code);
-        return NextResponse.json(
-          {
-            success: false,
-            message:
-              "Este código ya está siendo usado en otro dispositivo. Por favor, utiliza el mismo dispositivo que usaste para ingresar por primera vez.",
-          },
-          { status: 403 }
-        );
-      }
-    } else {
-      console.log("Validación de dispositivo desactivada, acceso concedido");
+    if (!student.authorized) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Tu cuenta no está autorizada. Contacta a tu profesor.",
+        },
+        { status: 403 }
+      );
     }
 
     console.log(
@@ -262,15 +168,18 @@ export async function POST(request: NextRequest) {
       {
         code,
         name: student.name,
-        subjects: student.subjects,
-        firstTime,
+        authorized: student.authorized,
+        allowedVideos: student.allowedVideos?.length || 0,
+        allowedSubjects: student.allowedSubjects?.length || 0,
+        firstTime: result.firstTime,
+        deviceId: deviceId.substring(0, 10) + "...",
       }
     );
 
     // Configurar la respuesta con las cookies
     const response = NextResponse.json({
       success: true,
-      firstTime,
+      firstTime: result.firstTime,
       message: `¡Bienvenido! (${
         FINGERPRINT_VALIDATION_ENABLED
           ? "Verificación completa"
@@ -278,7 +187,7 @@ export async function POST(request: NextRequest) {
       })`,
       student: {
         name: student.name,
-        subjects: student.subjects,
+        allowedSubjects: student.allowedSubjects || [],
       },
     });
 
@@ -294,7 +203,7 @@ export async function POST(request: NextRequest) {
     response.cookies.set("student_code", code, cookieOptions);
     response.cookies.set(
       "allowed_subjects",
-      JSON.stringify(student.subjects),
+      JSON.stringify(student.allowedSubjects || []),
       cookieOptions
     );
 
