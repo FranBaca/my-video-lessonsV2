@@ -9,6 +9,7 @@ import Sidebar from "./components/Sidebar";
 import { Subject, Video } from "./types";
 import { authService } from "./lib/auth-service";
 import { ProfessorAuthData } from "./lib/auth-service";
+import { professorServiceClient } from "./lib/firebase-client";
 
 type UserType = "professor" | "student" | null;
 type AuthState = "selecting" | "professor-login" | "student-login" | "professor-dashboard" | "student-dashboard";
@@ -50,9 +51,7 @@ export default function Home() {
   // Cargar datos del profesor
   const loadProfessorData = async (professorId: string) => {
     try {
-      const professor = await import("./lib/firebase-services").then(
-        (module) => module.professorService.getById(professorId)
-      );
+      const professor = await professorServiceClient.getById(professorId);
       
       if (professor) {
         setProfessorAuthData({
@@ -74,7 +73,9 @@ export default function Home() {
 
   // Cargar videos cuando el estudiante está autenticado
   useEffect(() => {
+    console.log('🔄 useEffect isStudentAuthenticated:', isStudentAuthenticated);
     if (isStudentAuthenticated) {
+      console.log('📚 Cargando videos para estudiante...');
       loadVideos();
     }
   }, [isStudentAuthenticated]);
@@ -83,10 +84,13 @@ export default function Home() {
   const loadVideos = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/drive/videos");
+      // Usar endpoint diferente según el tipo de usuario
+      const endpoint = isStudentAuthenticated ? "/api/student/videos" : "/api/mux/videos";
+      const response = await fetch(endpoint);
       const data = await response.json();
 
       console.log("API Response:", {
+        endpoint,
         fullData: data,
         success: data.success,
         subjectsType: typeof data.subjects,
@@ -117,9 +121,11 @@ export default function Home() {
 
   // Handlers para estudiantes
   const handleStudentLoginSuccess = (name: string, allowedSubjects: string[]) => {
+    console.log('🎓 handleStudentLoginSuccess:', { name, allowedSubjects });
     setStudentName(name);
     setIsStudentAuthenticated(true);
     setAuthState("student-dashboard");
+    // Aquí podrías filtrar las materias basado en allowedSubjects si es necesario
   };
 
   const handleSubjectSelect = (subject: Subject) => {
@@ -308,7 +314,7 @@ export default function Home() {
             </div>
           ) : (
             <div className="p-6">
-              <VideoPlayer video={selectedVideo} userName={studentName} />
+              <VideoPlayer video={selectedVideo} userName={studentName} isStudent={true} />
             </div>
           )}
         </main>

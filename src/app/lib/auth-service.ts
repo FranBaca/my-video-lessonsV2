@@ -4,10 +4,11 @@ import {
   onAuthStateChanged,
   User,
   createUserWithEmailAndPassword,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  getIdToken
 } from 'firebase/auth';
 import { auth } from './firebase';
-import { professorService } from './firebase-services';
+import { professorServiceClient } from './firebase-client';
 import { Professor } from '../types/firebase';
 
 export interface AuthUser {
@@ -20,6 +21,7 @@ export interface AuthUser {
 export interface ProfessorAuthData {
   user: AuthUser;
   professor: Professor;
+  token?: string;
 }
 
 // Servicio de autenticación para profesores
@@ -31,10 +33,13 @@ export const authService = {
       const user = userCredential.user;
       
       // Verificar que el usuario es un profesor
-      const professor = await professorService.getById(user.uid);
+      const professor = await professorServiceClient.getById(user.uid);
       if (!professor) {
         throw new Error('Usuario no es un profesor registrado');
       }
+
+      // Obtener el token de ID para usar en las API calls
+      const token = await user.getIdToken();
 
       return {
         user: {
@@ -43,7 +48,8 @@ export const authService = {
           displayName: user.displayName,
           photoURL: user.photoURL
         },
-        professor
+        professor,
+        token
       };
     } catch (error) {
       console.error('Error en login de profesor:', error);
@@ -61,8 +67,8 @@ export const authService = {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       
-      // Crear el profesor en Firestore
-      const professorId = await professorService.create({
+      // Crear el profesor en Firestore usando el servicio del cliente
+      const professorId = await professorServiceClient.create({
         ...professorData,
         email: user.email!,
         isActive: true,
@@ -70,7 +76,7 @@ export const authService = {
       });
 
       // Obtener el profesor creado
-      const professor = await professorService.getById(professorId);
+      const professor = await professorServiceClient.getById(professorId);
       if (!professor) {
         throw new Error('Error al crear profesor');
       }
@@ -123,7 +129,7 @@ export const authService = {
   // Verificar si el usuario es profesor
   async isProfessor(uid: string): Promise<boolean> {
     try {
-      const professor = await professorService.getById(uid);
+      const professor = await professorServiceClient.getById(uid);
       return professor !== null;
     } catch (error) {
       console.error('Error verificando si es profesor:', error);

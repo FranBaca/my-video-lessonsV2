@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 
 interface LoginFormProps {
-  onSuccess: (studentName: string, subjects: string[]) => void;
+  onSuccess: (studentName: string, allowedSubjects: string[]) => void;
 }
 
 export default function LoginForm({ onSuccess }: LoginFormProps) {
@@ -46,7 +46,7 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
           const data = await response.json();
 
           if (response.ok) {
-            onSuccess(data.student.name, data.student.subjects);
+            onSuccess(data.student.name, data.student.allowedSubjects);
           } else {
             setError(data.message || "Error al verificar la sesión");
           }
@@ -124,7 +124,7 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
       localStorage.setItem("lastLogin", new Date().toISOString());
 
       // Llamar al callback de éxito
-      onSuccess(data.student.name, data.student.subjects);
+      onSuccess(data.student.name, data.student.allowedSubjects);
     } catch (error: any) {
       if (error.name === "AbortError") {
         setError(
