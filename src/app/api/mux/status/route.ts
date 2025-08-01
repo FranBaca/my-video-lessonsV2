@@ -3,6 +3,8 @@ import { verifyProfessorAuth } from "@/app/lib/auth-utils";
 import { videoService } from "@/app/lib/firebase-services";
 import { MuxUploadService } from "@/app/lib/mux-upload-service";
 
+export const dynamic = 'force-dynamic';
+
 const uploadService = new MuxUploadService();
 
 export async function GET(request: NextRequest) {

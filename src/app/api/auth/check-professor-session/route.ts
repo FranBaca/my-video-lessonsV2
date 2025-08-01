@@ -3,6 +3,8 @@ import { cookies } from 'next/headers';
 import { adminAuth } from '../../../lib/firebase-admin';
 import { professorServiceClient } from '../../../lib/firebase-client';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     // Obtener las cookies

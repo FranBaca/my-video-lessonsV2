@@ -19,8 +19,8 @@ export async function GET(request: NextRequest) {
       ready: videos.filter(v => v.status === 'ready').length,
       processing: videos.filter(v => v.status === 'processing').length,
       errored: videos.filter(v => v.status === 'errored').length,
-      withAssetId: videos.filter(v => v.assetId).length,
-      withoutAssetId: videos.filter(v => !v.assetId).length,
+      withAssetId: videos.filter(v => v.muxAssetId).length,
+      withoutAssetId: videos.filter(v => !v.muxAssetId).length,
     };
 
     return NextResponse.json({
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
       videos: videos.map(v => ({
         id: v.id,
         name: v.name,
-        assetId: v.assetId,
+        assetId: v.muxAssetId,
         status: v.status,
         createdAt: v.createdAt,
         subjectId: v.subjectId

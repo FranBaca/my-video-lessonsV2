@@ -4,6 +4,8 @@ import { db } from "@/app/lib/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { Student } from "@/app/types/firebase";
 
+export const dynamic = 'force-dynamic';
+
 // Función para buscar estudiantes en Firebase
 async function findStudentByCode(code: string): Promise<Student | null> {
   try {

@@ -134,7 +134,7 @@ export default function Home() {
       const data = await response.json();
 
       if (!data.success) {
-        throw new Error(data.message || "Error al cargar los videos");
+        throw new Error(data.message || "Error al cargar las clases");
       }
 
       setSubjects(data.subjects);
@@ -349,7 +349,7 @@ export default function Home() {
                   />
                 </svg>
                 <h3 className="mt-4 text-xl text-gray-700 font-medium">
-                  No hay videos disponibles
+                  No hay clases disponibles
                 </h3>
                 <p className="mt-2 text-base text-gray-600">
                   Vuelve a intentarlo más tarde

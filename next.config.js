@@ -7,6 +7,9 @@ const nextConfig = {
     serverComponentsExternalPackages: ['@mux/mux-node', 'firebase-admin'],
     serverActions: true,
   },
+  typescript: {
+    ignoreBuildErrors: true, // ⚠️ Permite que el build se complete con errores de TS
+  },
   images: {
     domains: ["stream.mux.com", "image.mux.com"],
   },

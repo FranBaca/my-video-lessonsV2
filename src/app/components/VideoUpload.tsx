@@ -177,7 +177,7 @@ export default function VideoUpload({
         });
         
         // Mostrar mensaje informativo al usuario
-        showNotification.success('✅ Video subido exitosamente!\n\nEl video se está procesando. Esto puede tomar varios minutos para archivos grandes.');
+        showNotification.success('✅ Clase subida exitosamente!\n\nLa clase se está procesando. Esto puede tomar varios minutos para archivos grandes.');
       } else {
         // El video está listo
         onUploadSuccess({
@@ -187,7 +187,7 @@ export default function VideoUpload({
         });
         
         // Mostrar mensaje de éxito
-        showNotification.success('✅ Video procesado y listo para reproducir!');
+        showNotification.success('✅ Clase procesada y lista para reproducir!');
       }
       
     } catch (error) {
@@ -245,7 +245,7 @@ export default function VideoUpload({
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
       <div className="relative top-10 mx-auto p-6 border w-full max-w-2xl shadow-lg rounded-md bg-white">
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-lg font-medium text-gray-900">Subir Video</h3>
+          <h3 className="text-lg font-medium text-gray-900">Subir Clase</h3>
           <button
             onClick={onCancel}
             className="text-gray-400 hover:text-gray-600"
@@ -305,7 +305,7 @@ export default function VideoUpload({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
                 <p className="mt-2 text-sm text-gray-600">
-                  Arrastra tu video aquí o haz clic para seleccionar
+                  Arrastra tu clase aquí o haz clic para seleccionar
                 </p>
                 <button
                   type="button"
@@ -322,7 +322,7 @@ export default function VideoUpload({
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Nombre del video *
+                Nombre de la clase *
               </label>
                              <input
                  type="text"
@@ -367,7 +367,7 @@ export default function VideoUpload({
                  onChange={(e) => setVideoMetadata(prev => ({...prev, description: e.target.value}))}
                  className="w-full border rounded-md p-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-500"
                  rows={3}
-                 placeholder="Describe el contenido del video..."
+                 placeholder="Describe el contenido de la clase..."
                />
             </div>
 
@@ -440,7 +440,7 @@ export default function VideoUpload({
               disabled={isUploading || !selectedFile || !videoMetadata.name.trim() || !videoMetadata.subjectId}
               className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition-colors"
             >
-              {isUploading ? 'Subiendo...' : 'Subir Video'}
+              {isUploading ? 'Subiendo...' : 'Subir Clase'}
             </button>
           </div>
         </form>

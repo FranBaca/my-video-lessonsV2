@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth } from '../../../lib/firebase-admin';
 import { professorServiceClient } from '../../../lib/firebase-client';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -59,7 +61,7 @@ export async function POST(request: NextRequest) {
       };
 
       response.cookies.set("professor_token", idToken, cookieOptions);
-      response.cookies.set("professor_id", professor.id, cookieOptions);
+      response.cookies.set("professor_id", professor.id!, cookieOptions);
 
       return response;
 

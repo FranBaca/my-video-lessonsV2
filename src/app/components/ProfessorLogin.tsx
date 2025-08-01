@@ -37,7 +37,7 @@ export default function ProfessorLogin({ onLoginSuccess, onSwitchToStudent }: Pr
             Acceso para Profesores
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Gestiona tus videos y estudiantes
+            Gestiona tus clases y estudiantes
           </p>
         </div>
         

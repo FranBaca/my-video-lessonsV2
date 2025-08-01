@@ -135,8 +135,8 @@ export async function GET(request: NextRequest) {
                 thumbnailUrl: video.thumbnailUrl,
                 duration: video.duration,
                 status: video.status,
-                createdAt: video.createdAt?.toDate?.() || video.createdAt,
-                updatedAt: video.updatedAt?.toDate?.() || video.updatedAt
+                createdAt: video.createdAt,
+                updatedAt: video.updatedAt
               }))
             }
           ]

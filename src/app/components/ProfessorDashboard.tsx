@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { authService } from '../lib/auth-service';
 import { professorServiceClient, videoServiceClient, studentServiceClient, subjectServiceClient } from '../lib/firebase-client';
 import { Professor, Video, Student, Subject } from '../types/firebase';
@@ -33,11 +33,7 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
   const [newStudentEmail, setNewStudentEmail] = useState('');
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
 
-  useEffect(() => {
-    loadDashboardData();
-  }, [professorId]);
-
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -55,7 +51,11 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
     } finally {
       setLoading(false);
     }
-  };
+  }, [professorId]);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, [loadDashboardData]);
 
   const handleLogout = async () => {
     try {
@@ -75,13 +75,8 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
       // Cerrar el modal antes de recargar datos
       setShowCreateSubjectModal(false);
       
-      // Recargar datos inmediatamente
+      // Recargar datos una sola vez
       await loadDashboardData();
-      
-      // Forzar una segunda recarga después de un delay para asegurar que Firestore se actualice
-      setTimeout(async () => {
-        await loadDashboardData();
-      }, 1000);
       
       showNotification.success('Materia creada exitosamente');
     } catch (error) {
@@ -106,7 +101,7 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
   const handleVideoUploadSuccess = async (video: Video) => {
     await loadDashboardData();
     setShowVideoUploadModal(false);
-    showNotification.success('Video subido exitosamente');
+          showNotification.success('Clase subida exitosamente');
   };
 
   const handleVideoUploadError = (error: string) => {
@@ -236,7 +231,7 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              Videos ({videos.length})
+              Clases ({videos.length})
             </button>
             <button
               onClick={() => setActiveTab('students')}
@@ -269,7 +264,7 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">Total Videos</dt>
+                      <dt className="text-sm font-medium text-gray-500 truncate">Total Clases</dt>
                       <dd className="text-lg font-medium text-gray-900">{videos.length}</dd>
                     </dl>
                   </div>
@@ -387,7 +382,7 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
           <div className="space-y-6">
             {/* Header con botón de subir */}
             <div className="flex justify-between items-center">
-              <h2 className="text-lg font-medium text-gray-900">Videos</h2>
+              <h2 className="text-lg font-medium text-gray-900">Clases</h2>
               <button
                 onClick={() => setShowVideoUploadModal(true)}
                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium"
@@ -406,8 +401,8 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
                   <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                   </svg>
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">No hay videos</h3>
-                  <p className="mt-1 text-sm text-gray-500">Comienza subiendo tu primer video.</p>
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">No hay clases</h3>
+                                      <p className="mt-1 text-sm text-gray-500">Comienza subiendo tu primera clase.</p>
                 </div>
               ) : (
                 <ul className="divide-y divide-gray-200">

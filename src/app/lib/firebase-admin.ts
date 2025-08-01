@@ -1,4 +1,4 @@
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { initializeApp, getApps, cert, ServiceAccount } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
@@ -33,22 +33,18 @@ function initializeFirebaseAdmin() {
   }
 
   // Configuración de Firebase Admin
-  const serviceAccount = {
-    type: "service_account",
-    project_id: requiredEnvVars.project_id,
-    private_key_id: requiredEnvVars.private_key_id,
-    private_key: requiredEnvVars.private_key?.replace(/\\n/g, '\n'),
-    client_email: requiredEnvVars.client_email,
-    client_id: requiredEnvVars.client_id,
-    auth_uri: "https://accounts.google.com/o/oauth2/auth",
-    token_uri: "https://oauth2.googleapis.com/token",
-    auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs"
+  const serviceAccount: ServiceAccount = {
+    projectId: requiredEnvVars.project_id!,
+    privateKeyId: requiredEnvVars.private_key_id!,
+    privateKey: requiredEnvVars.private_key?.replace(/\\n/g, '\n')!,
+    clientEmail: requiredEnvVars.client_email!,
+    clientId: requiredEnvVars.client_id!
   };
 
   try {
     initializeApp({
       credential: cert(serviceAccount),
-      projectId: requiredEnvVars.project_id,
+      projectId: requiredEnvVars.project_id!,
     });
   } catch (error) {
     throw error;

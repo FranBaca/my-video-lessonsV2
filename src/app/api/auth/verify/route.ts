@@ -3,6 +3,8 @@ import { db } from "@/app/lib/firebase";
 import { collection, getDocs, query, where, updateDoc, doc, Timestamp } from "firebase/firestore";
 import { Student } from "@/app/types/firebase";
 
+export const dynamic = 'force-dynamic';
+
 // Variable para activar/desactivar la validación de dispositivo
 const FINGERPRINT_VALIDATION_ENABLED = true; // Device validation enabled
 // process.env.FINGERPRINT_VALIDATION_ENABLED === "true";
