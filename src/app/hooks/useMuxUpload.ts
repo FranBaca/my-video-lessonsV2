@@ -26,6 +26,7 @@ interface UploadResult {
   createdAt: Date;
   duration?: number;
   aspectRatio?: string;
+  status: 'ready' | 'processing';
 }
 
 export const useMuxUpload = () => {
@@ -88,11 +89,11 @@ export const useMuxUpload = () => {
 
       await uploadFileToMux(uploadUrl, file);
 
-      // 3. Confirmar upload y esperar procesamiento
+      // 3. Confirmar upload y guardar en base de datos
       setUploadProgress({
         phase: 'processing',
         progress: 95,
-        message: 'Procesando video...'
+        message: 'Guardando video en base de datos...'
       });
 
       const confirmResponse = await fetch('/api/mux/upload/confirm', {
@@ -116,16 +117,23 @@ export const useMuxUpload = () => {
       
       // Verificar si el video está listo o aún procesándose
       if (confirmResult.status === 'processing') {
-        // El video aún se está procesando, devolver un resultado temporal
+        setUploadProgress({
+          phase: 'processing',
+          progress: 100,
+          message: '¡Upload completado! El video se está procesando...'
+        });
+
+        // El video aún se está procesando, devolver resultado con estado 'processing'
         return {
-          id: `temp_${Date.now()}`, // ID temporal
+          id: confirmResult.data.id,
           name: metadata.name,
           description: metadata.description,
           subjectId: metadata.subjectId,
           playbackId: '', // Se actualizará cuando esté listo
-          assetId: confirmResult.assetId || confirmResult.uploadId || '',
+          assetId: confirmResult.data.muxAssetId || '',
           tags: metadata.tags,
           createdAt: new Date(),
+          status: 'processing'
         };
       }
 
@@ -142,12 +150,13 @@ export const useMuxUpload = () => {
           name: confirmResult.data.name,
           description: confirmResult.data.description,
           subjectId: confirmResult.data.subjectId,
-          playbackId: confirmResult.data.playbackId,
-          assetId: confirmResult.data.assetId,
+          playbackId: confirmResult.data.muxPlaybackId,
+          assetId: confirmResult.data.muxAssetId,
           tags: confirmResult.data.tags,
           createdAt: new Date(confirmResult.data.createdAt),
           duration: confirmResult.data.duration,
           aspectRatio: confirmResult.data.aspectRatio,
+          status: 'ready'
         };
       }
 
@@ -161,6 +170,7 @@ export const useMuxUpload = () => {
         assetId: '',
         tags: metadata.tags,
         createdAt: new Date(),
+        status: 'processing'
       };
 
     } catch (error) {

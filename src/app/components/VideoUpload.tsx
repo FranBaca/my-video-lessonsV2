@@ -165,32 +165,42 @@ export default function VideoUpload({
         name: result.name,
         description: result.description,
         subjectId: result.subjectId,
-        playbackId: result.playbackId || '',
-        assetId: result.assetId || '',
+        professorId: professorId,
+        muxPlaybackId: result.playbackId || '',
+        muxAssetId: result.assetId || '',
         tags: result.tags,
-        isActive: true,
+        isActive: result.status === 'ready', // Solo activo si está listo
         order: 0,
         createdAt: result.createdAt,
         fileSize: selectedFile.size,
         mimeType: selectedFile.type,
+        status: result.status || 'processing',
+        uploadConfirmed: true,
       };
       
-      // Verificar si el video está listo o aún procesándose
-      if (result.id.startsWith('temp_') || !result.playbackId) {
-        // El video aún se está procesando
-        console.log('Video subido pero aún procesándose. Los webhooks actualizarán el estado.');
-        // Mostrar mensaje al usuario
+      // Notificar al usuario sobre el estado del video
+      if (result.status === 'processing') {
+        console.log('Video subido pero aún procesándose. Los webhooks actualizarán el estado cuando esté listo.');
+        // Mostrar mensaje al usuario sobre el procesamiento
         onUploadSuccess({
           ...video,
           status: 'processing',
           isActive: false, // Temporalmente inactivo hasta que esté listo
         });
+        
+        // Mostrar mensaje informativo al usuario
+        alert('✅ Video subido exitosamente!\n\nEl video se está procesando en Mux. Esto puede tomar varios minutos para archivos grandes.\n\nLos webhooks actualizarán automáticamente el estado cuando esté listo. Puedes cerrar esta ventana y continuar trabajando.');
       } else {
         // El video está listo
+        console.log('Video procesado y listo para reproducir.');
         onUploadSuccess({
           ...video,
           status: 'ready',
+          isActive: true,
         });
+        
+        // Mostrar mensaje de éxito
+        alert('✅ Video procesado y listo para reproducir!');
       }
       
     } catch (error) {

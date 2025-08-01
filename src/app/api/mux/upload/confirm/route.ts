@@ -29,9 +29,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verificar el estado del upload
+    console.log(`🔄 Confirmando upload ${uploadId} para archivo de ${(metadata.fileSize / (1024 * 1024)).toFixed(2)}MB`);
+
+    // Verificar el estado del upload una sola vez con timeout extendido
     console.log(`Verificando estado del upload ${uploadId}...`);
-    const uploadStatus = await uploadService.getUploadStatus(uploadId);
+    
+    // Timeout más largo para archivos grandes
+    const fileSizeMB = metadata.fileSize / (1024 * 1024);
+    const timeoutMs = fileSizeMB > 100 ? 30000 : 10000; // 30s para archivos > 100MB
+    
+    console.log(`⏱️ Timeout configurado: ${timeoutMs/1000}s para archivo de ${fileSizeMB.toFixed(2)}MB`);
+    
+    const uploadStatus = await Promise.race([
+      uploadService.getUploadStatus(uploadId),
+      new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout verificando upload')), timeoutMs)
+      )
+    ]) as any;
+    
     console.log("Estado del upload:", uploadStatus);
 
     if (uploadStatus.status === 'errored') {
@@ -41,24 +56,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Si el upload aún está en proceso, devolver estado de procesamiento
+    // Si el upload aún está esperando, guardar con estado 'processing'
     if (uploadStatus.status === 'waiting') {
-      return NextResponse.json({
-        success: true,
-        status: 'processing',
-        message: "El video aún se está procesando. Los webhooks te notificarán cuando esté listo.",
-        uploadId: uploadId
-      });
+      console.log("Upload aún en proceso, guardando video con estado 'processing'");
+      return await saveVideoToDatabaseProcessing(professorId, metadata, null);
     }
 
-    // Si el asset fue creado
+    // Si el asset fue creado, verificar si está listo
     if (uploadStatus.status === 'asset_created' && uploadStatus.asset_id) {
       try {
-        // Verificar el estado del asset
-        const assetInfo = await uploadService.getAssetInfo(uploadStatus.asset_id);
+        console.log(`📊 Verificando asset ${uploadStatus.asset_id}...`);
+        
+        // Verificar el estado del asset con timeout extendido
+        const assetInfo = await Promise.race([
+          uploadService.getAssetInfo(uploadStatus.asset_id),
+          new Promise<never>((_, reject) => 
+            setTimeout(() => reject(new Error('Timeout verificando asset')), timeoutMs)
+          )
+        ]) as any;
+        
+        console.log(`📊 Asset ${uploadStatus.asset_id} - Estado: ${assetInfo.status}`);
         
         if (assetInfo.status === 'ready') {
-          // Asset está listo, proceder a guardar
+          // Asset está listo, proceder a guardar como 'ready'
+          console.log("Asset listo, guardando video como 'ready'");
           return await saveVideoToDatabase(professorId, metadata, assetInfo);
         } else if (assetInfo.status === 'errored') {
           return NextResponse.json(
@@ -66,13 +87,20 @@ export async function POST(request: NextRequest) {
             { status: 500 }
           );
         } else {
-          // Asset aún se está procesando, pero guardamos el video con estado 'processing'
+          // Asset aún se está procesando, guardar con estado 'processing'
           console.log("Asset creado pero aún procesándose, guardando video con estado 'processing'");
           return await saveVideoToDatabaseProcessing(professorId, metadata, uploadStatus.asset_id);
         }
       } catch (error) {
         console.error("Error verificando asset:", error);
-        // Si no podemos verificar el asset, guardamos el video con estado 'processing'
+        
+        // Si es timeout, guardar como processing y confiar en webhook
+        if (error instanceof Error && error.message.includes('Timeout')) {
+          console.log("⏰ Timeout verificando asset, guardando como 'processing' y confiando en webhook");
+          return await saveVideoToDatabaseProcessing(professorId, metadata, uploadStatus.asset_id);
+        }
+        
+        // Si no podemos verificar el asset, guardar con estado 'processing'
         return await saveVideoToDatabaseProcessing(professorId, metadata, uploadStatus.asset_id);
       }
     }
@@ -88,11 +116,11 @@ export async function POST(request: NextRequest) {
     
     // Manejar errores específicos
     if (error instanceof Error) {
-      if (error.message.includes('Timeout') || error.message.includes('⏰')) {
+      if (error.message.includes('Timeout')) {
         return NextResponse.json(
           { 
             success: false, 
-            message: "El video aún se está procesando. Intenta nuevamente en unos minutos.",
+            message: "Timeout verificando upload. El archivo puede estar procesándose. Los webhooks te notificarán cuando esté listo.",
             status: 'processing'
           },
           { status: 408 }
@@ -167,14 +195,14 @@ async function saveVideoToDatabase(professorId: string, metadata: any, assetInfo
   });
 }
 
-async function saveVideoToDatabaseProcessing(professorId: string, metadata: any, assetId: string) {
+async function saveVideoToDatabaseProcessing(professorId: string, metadata: any, assetId: string | null) {
   // Guardar en Firestore con estado 'processing'
   const videoData: Omit<VideoType, "id"> = {
     name: metadata.name,
     description: metadata.description,
     subjectId: metadata.subjectId,
     professorId: professorId,
-    muxAssetId: assetId,
+    muxAssetId: assetId || '', // Puede ser null si aún no se creó el asset
     muxPlaybackId: '', // Se actualizará cuando esté listo
     tags: metadata.tags,
     isActive: false, // Temporalmente inactivo hasta que esté listo
@@ -196,7 +224,7 @@ async function saveVideoToDatabaseProcessing(professorId: string, metadata: any,
       name: metadata.name,
       description: metadata.description,
       subjectId: metadata.subjectId,
-      muxAssetId: assetId,
+      muxAssetId: assetId || '',
       muxPlaybackId: '',
       tags: metadata.tags,
       createdAt: new Date(),
