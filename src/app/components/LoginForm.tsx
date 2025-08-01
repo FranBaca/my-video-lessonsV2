@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 
 interface LoginFormProps {
@@ -19,57 +19,11 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
     return codeRegex.test(code);
   };
 
-  // Verificar sesión al montar el componente
-  useEffect(() => {
-    const checkSession = async () => {
-      const deviceId = localStorage.getItem("deviceId");
-      const storedCode = localStorage.getItem("studentCode");
-
-      if (deviceId && storedCode) {
-        try {
-          setLoading(true);
-          // Verificar con el servidor con timeout
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos timeout
-
-          const response = await fetch("/api/auth/verify", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ code: storedCode, deviceId }),
-            signal: controller.signal,
-          });
-
-          clearTimeout(timeoutId);
-
-          const data = await response.json();
-
-          if (response.ok) {
-            onSuccess(data.student.name, data.student.allowedSubjects);
-          } else {
-            setError(data.message || "Error al verificar la sesión");
-          }
-        } catch (error: any) {
-          console.error("Error al verificar sesión:", error);
-          if (error.name === "AbortError") {
-            setError(
-              "La verificación está tomando demasiado tiempo. Por favor, intenta nuevamente."
-            );
-          } else {
-            setError(
-              "Error al verificar la sesión. Por favor, intenta nuevamente."
-            );
-          }
-          // No borramos el localStorage en caso de error de conexión
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
-
-    checkSession();
-  }, [onSuccess]);
+  // Centralized error handling
+  const handleError = (message: string) => {
+    setError(message);
+    setLoading(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,12 +38,8 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
         );
       }
 
-      // Verificar si ya existe un dispositivo registrado
-      const deviceId = localStorage.getItem("deviceId");
-      const storedCode = localStorage.getItem("studentCode");
-
-      // Generar nuevo deviceId si no existe
-      const newDeviceId = deviceId || uuidv4();
+      // Generar o recuperar deviceId
+      const deviceId = localStorage.getItem("deviceId") || uuidv4();
 
       // Enviar código y deviceId al servidor con timeout
       const controller = new AbortController();
@@ -100,16 +50,15 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ code, deviceId: newDeviceId }),
+        body: JSON.stringify({ code, deviceId }),
         signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
-
       const data = await response.json();
 
       if (!response.ok) {
-        // Solo borramos si el servidor nos dice que el código no es válido
+        // Limpiar localStorage si el código no es válido
         if (response.status === 403) {
           localStorage.removeItem("deviceId");
           localStorage.removeItem("studentCode");
@@ -118,8 +67,8 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
         throw new Error(data.message || "Error al verificar el código");
       }
 
-      // Si todo está bien, guardar en localStorage
-      localStorage.setItem("deviceId", newDeviceId);
+      // Guardar en localStorage solo si la verificación fue exitosa
+      localStorage.setItem("deviceId", deviceId);
       localStorage.setItem("studentCode", code);
       localStorage.setItem("lastLogin", new Date().toISOString());
 
@@ -127,14 +76,12 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
       onSuccess(data.student.name, data.student.allowedSubjects);
     } catch (error: any) {
       if (error.name === "AbortError") {
-        setError(
+        handleError(
           "La verificación está tomando demasiado tiempo. Por favor, intenta nuevamente."
         );
       } else {
-        setError(error.message);
+        handleError(error.message);
       }
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -201,14 +148,10 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white transition-colors duration-200 ${
-                loading
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              }`}
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
-                <>
+                <div className="flex items-center">
                   <svg
                     className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
                     xmlns="http://www.w3.org/2000/svg"
@@ -229,14 +172,20 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     ></path>
                   </svg>
-                  <span className="text-base">Verificando...</span>
-                </>
+                  Verificando...
+                </div>
               ) : (
-                <span className="text-base">Ingresar</span>
+                "Ingresar"
               )}
             </button>
           </div>
         </form>
+
+        <div className="text-center">
+          <p className="text-sm text-gray-600">
+            ¿No tienes un código? Contacta a tu profesor
+          </p>
+        </div>
       </div>
     </div>
   );

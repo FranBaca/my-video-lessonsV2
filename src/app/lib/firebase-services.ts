@@ -330,88 +330,116 @@ export const videoService = {
     }
   },
 
-  // Nuevo método usando Firebase Admin SDK para buscar por muxAssetId
+  // Método simplificado para buscar por muxAssetId sin collectionGroup
   async findByMuxAssetId(muxAssetId: string): Promise<{ video: Video; professorId: string; subjectId: string; videoId: string } | null> {
     try {
-      if (!adminDb) {
-        console.warn('Firebase Admin no disponible, usando búsqueda alternativa');
-        return await this.findByAssetId(muxAssetId);
+      console.log(`🔍 Buscando video con muxAssetId: ${muxAssetId}`);
+      
+      // Obtener todos los profesores
+      const professorsSnapshot = await getDocs(collection(db, 'professors'));
+      
+      // Buscar en cada profesor
+      for (const professorDoc of professorsSnapshot.docs) {
+        const professorId = professorDoc.id;
+        
+        // Obtener todas las materias del profesor
+        const subjectsSnapshot = await getDocs(collection(db, 'professors', professorId, 'subjects'));
+        
+        // Buscar en cada materia
+        for (const subjectDoc of subjectsSnapshot.docs) {
+          const subjectId = subjectDoc.id;
+          
+          // Buscar videos en esta materia
+          const videosQuery = query(
+            collection(db, 'professors', professorId, 'subjects', subjectId, 'videos'),
+            where('muxAssetId', '==', muxAssetId)
+          );
+          
+          const videosSnapshot = await getDocs(videosQuery);
+          
+          if (!videosSnapshot.empty) {
+            const videoDoc = videosSnapshot.docs[0];
+            const video = {
+              id: videoDoc.id,
+              ...videoDoc.data(),
+              createdAt: videoDoc.data().createdAt?.toDate() || new Date(),
+              updatedAt: videoDoc.data().updatedAt?.toDate()
+            } as Video;
+            
+            console.log(`✅ Video encontrado: ${videoDoc.id} en profesor ${professorId}, materia ${subjectId}`);
+            
+            return {
+              video,
+              professorId,
+              subjectId,
+              videoId: videoDoc.id
+            };
+          }
+        }
       }
-
-      // Usar Firebase Admin SDK para búsqueda global
-      const videosQuery = adminDb.collectionGroup('videos').where('muxAssetId', '==', muxAssetId);
-      const querySnapshot = await videosQuery.get();
       
-      if (querySnapshot.empty) {
-        return null;
-      }
-      
-      const doc = querySnapshot.docs[0]; // Tomar el primer resultado
-      const video = {
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate() || new Date(),
-        updatedAt: doc.data().updatedAt?.toDate()
-      } as Video;
-      
-      // Extraer professorId y subjectId del path del documento
-      const pathParts = doc.ref.path.split('/');
-      const professorId = pathParts[1];
-      const subjectId = pathParts[3];
-      const videoId = pathParts[5];
-      
-      return {
-        video,
-        professorId,
-        subjectId,
-        videoId
-      };
+      console.log(`❌ No se encontró video con muxAssetId: ${muxAssetId}`);
+      return null;
     } catch (error) {
       console.error('Error finding video by muxAssetId:', error);
-      // Fallback a búsqueda alternativa
-      return await this.findByAssetId(muxAssetId);
+      return null;
     }
   },
 
-  // Método de fallback usando Firestore client
+  // Método de fallback usando búsqueda directa sin collectionGroup
   async findByAssetId(assetId: string): Promise<{ video: Video; professorId: string; subjectId: string; videoId: string } | null> {
     try {
-      // Buscar en todos los videos de todos los profesores
-      const videosQuery = query(
-        collectionGroup(db, 'videos'),
-        where('assetId', '==', assetId),
-        where('isActive', '==', true)
-      );
+      console.log(`🔍 Buscando video con assetId: ${assetId}`);
       
-      const querySnapshot = await getDocs(videosQuery);
+      // Obtener todos los profesores
+      const professorsSnapshot = await getDocs(collection(db, 'professors'));
       
-      if (querySnapshot.empty) {
-        return null;
+      // Buscar en cada profesor
+      for (const professorDoc of professorsSnapshot.docs) {
+        const professorId = professorDoc.id;
+        
+        // Obtener todas las materias del profesor
+        const subjectsSnapshot = await getDocs(collection(db, 'professors', professorId, 'subjects'));
+        
+        // Buscar en cada materia
+        for (const subjectDoc of subjectsSnapshot.docs) {
+          const subjectId = subjectDoc.id;
+          
+          // Buscar videos en esta materia
+          const videosQuery = query(
+            collection(db, 'professors', professorId, 'subjects', subjectId, 'videos'),
+            where('assetId', '==', assetId),
+            where('isActive', '==', true)
+          );
+          
+          const videosSnapshot = await getDocs(videosQuery);
+          
+          if (!videosSnapshot.empty) {
+            const videoDoc = videosSnapshot.docs[0];
+            const video = {
+              id: videoDoc.id,
+              ...videoDoc.data(),
+              createdAt: videoDoc.data().createdAt?.toDate() || new Date(),
+              updatedAt: videoDoc.data().updatedAt?.toDate()
+            } as Video;
+            
+            console.log(`✅ Video encontrado: ${videoDoc.id} en profesor ${professorId}, materia ${subjectId}`);
+            
+            return {
+              video,
+              professorId,
+              subjectId,
+              videoId: videoDoc.id
+            };
+          }
+        }
       }
       
-      const doc = querySnapshot.docs[0]; // Tomar el primer resultado
-      const video = {
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate() || new Date(),
-        updatedAt: doc.data().updatedAt?.toDate()
-      } as Video;
-      
-      // Extraer professorId y subjectId del path del documento
-      const pathParts = doc.ref.path.split('/');
-      const professorId = pathParts[1];
-      const subjectId = pathParts[3];
-      const videoId = pathParts[5];
-      
-      return {
-        video,
-        professorId,
-        subjectId,
-        videoId
-      };
+      console.log(`❌ No se encontró video con assetId: ${assetId}`);
+      return null;
     } catch (error) {
       console.error('Error finding video by assetId:', error);
-      throw error;
+      return null;
     }
   },
 
@@ -737,36 +765,47 @@ export const publicStudentService = {
         console.error('Error en collectionGroup:', collectionGroupError);
       }
       
-      // Si collectionGroup falla, buscar en el profesor específico
-      console.log('🔄 Intentando búsqueda en profesor específico...');
-      const professorId = 'gaTy3CzW2AdQ8yGP74kUty1cc3K2';
+      // Si collectionGroup falla, buscar en múltiples profesores conocidos
+      console.log('🔄 Intentando búsqueda en múltiples profesores...');
+      const knownProfessors = [
+        'gaTy3CzW2AdQ8yGP74kUty1cc3K2',
+        // Add other professor IDs here if needed
+      ];
       
-      const q = query(
-        collection(db, 'professors', professorId, 'students'),
-        where('code', '==', code)
-      );
-      const querySnapshot = await getDocs(q);
-      
-      if (!querySnapshot.empty) {
-        const doc = querySnapshot.docs[0];
-        console.log('📄 Documento encontrado en profesor:', professorId);
-        
-        const studentData = {
-          id: `${professorId}/${doc.id}`,
-          ...doc.data(),
-          enrolledAt: doc.data().enrolledAt?.toDate() || new Date(),
-          lastAccess: doc.data().lastAccess?.toDate()
-        } as Student;
-        
-        console.log('✅ Estudiante encontrado:', {
-          id: studentData.id,
-          name: studentData.name,
-          code: studentData.code,
-          deviceId: studentData.deviceId,
-          allowedSubjects: studentData.allowedSubjects?.length || 0
-        });
-        
-        return studentData;
+      for (const professorId of knownProfessors) {
+        try {
+          console.log(`🔍 Buscando en profesor: ${professorId}`);
+          const q = query(
+            collection(db, 'professors', professorId, 'students'),
+            where('code', '==', code)
+          );
+          const querySnapshot = await getDocs(q);
+          
+          if (!querySnapshot.empty) {
+            const doc = querySnapshot.docs[0];
+            console.log('📄 Documento encontrado en profesor:', professorId);
+            
+            const studentData = {
+              id: `${professorId}/${doc.id}`,
+              ...doc.data(),
+              enrolledAt: doc.data().enrolledAt?.toDate() || new Date(),
+              lastAccess: doc.data().lastAccess?.toDate()
+            } as Student;
+            
+            console.log('✅ Estudiante encontrado:', {
+              id: studentData.id,
+              name: studentData.name,
+              code: studentData.code,
+              deviceId: studentData.deviceId,
+              allowedSubjects: studentData.allowedSubjects?.length || 0
+            });
+            
+            return studentData;
+          }
+        } catch (error) {
+          console.log(`⚠️ Error buscando en profesor ${professorId}:`, error);
+          continue; // Try next professor
+        }
       }
       
       console.log('❌ No se encontró estudiante con código:', code);

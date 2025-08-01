@@ -15,6 +15,7 @@ export default function VideoPlayer({ video, userName, isStudent = false }: Vide
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
+    console.log("🎬 VideoPlayer - video prop changed:", video);
     if (video) {
       setIsLoading(true);
       setError(null);

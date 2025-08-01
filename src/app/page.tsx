@@ -103,14 +103,25 @@ export default function Home() {
       }
 
       setSubjects(data.subjects);
+      console.log("🎬 Setting subjects:", data.subjects);
+      
       if (data.subjects.length > 0) {
-        setSelectedSubject(data.subjects[0]);
+        const firstSubject = data.subjects[0];
+        console.log("📚 First subject:", firstSubject);
+        setSelectedSubject(firstSubject);
+        
         if (
-          data.subjects[0].sections.length > 0 &&
-          data.subjects[0].sections[0].videos.length > 0
+          firstSubject.sections.length > 0 &&
+          firstSubject.sections[0].videos.length > 0
         ) {
-          setSelectedVideo(data.subjects[0].sections[0].videos[0]);
+          const firstVideo = firstSubject.sections[0].videos[0];
+          console.log("🎥 First video:", firstVideo);
+          setSelectedVideo(firstVideo);
+        } else {
+          console.log("⚠️ No videos found in first subject");
         }
+      } else {
+        console.log("⚠️ No subjects found");
       }
     } catch (error) {
       console.error("Error loading videos:", error);
