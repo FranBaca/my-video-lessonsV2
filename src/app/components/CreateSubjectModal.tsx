@@ -51,7 +51,7 @@ export default function CreateSubjectModal({
       const subjectData: Omit<Subject, 'id'> = {
         name: formData.name.trim(),
         description: formData.description.trim(),
-        color: formData.color,
+        color: formData.color.id, // Guardar solo el ID del color
         order: existingSubjects.length + 1,
         isActive: true,
         createdAt: new Date()
@@ -124,18 +124,22 @@ export default function CreateSubjectModal({
               <div className="flex flex-wrap gap-2 mt-2">
                 {SUBJECT_COLORS.map(color => (
                   <button
-                    key={color}
+                    key={color.id}
                     type="button"
                     className={`w-8 h-8 rounded-full border-2 transition-all ${
-                      formData.color === color 
+                      formData.color.id === color.id 
                         ? 'border-gray-800 scale-110' 
                         : 'border-gray-300 hover:border-gray-400'
                     }`}
-                    style={{ backgroundColor: color }}
+                    style={{ backgroundColor: color.value }}
                     onClick={() => setFormData(prev => ({...prev, color}))}
+                    title={color.name}
                   />
                 ))}
               </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Color seleccionado: {formData.color.name}
+              </p>
             </div>
             
             <div className="flex justify-end space-x-2 pt-4">
