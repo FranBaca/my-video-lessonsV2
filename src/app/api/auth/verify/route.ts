@@ -158,10 +158,21 @@ export async function POST(request: NextRequest) {
           console.log("✅ DeviceId registrado para primera vez");
         }
       } else if (student.deviceId !== deviceId) {
-        return createErrorResponse(
-          "Este código ya está siendo usado en otro dispositivo. Por favor, utiliza el mismo dispositivo que usaste para ingresar por primera vez.",
-          403
-        );
+        // Si el deviceId no coincide, permitir re-autenticación desde el mismo dispositivo
+        // Esto permite que el estudiante pueda volver a autenticarse si se borró la caché
+        console.log("⚠️ DeviceId no coincide, permitiendo re-autenticación");
+        const pathParts = student.id?.split('/') || [];
+        const professorId = pathParts[0];
+        const studentId = pathParts[1];
+        
+        if (professorId && studentId) {
+          const docRef = doc(db, 'professors', professorId, 'students', studentId);
+          await updateDoc(docRef, {
+            deviceId,
+            lastAccess: Timestamp.now()
+          });
+          console.log("✅ DeviceId actualizado para re-autenticación");
+        }
       }
     }
 

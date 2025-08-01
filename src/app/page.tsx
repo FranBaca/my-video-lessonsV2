@@ -11,7 +11,6 @@ import { authService } from "./lib/auth-service";
 import { ProfessorAuthData } from "./lib/auth-service";
 import { professorServiceClient } from "./lib/firebase-client";
 
-type UserType = "professor" | "student" | null;
 type AuthState = "selecting" | "professor-login" | "student-login" | "professor-dashboard" | "student-dashboard";
 
 export default function Home() {
@@ -29,23 +28,74 @@ export default function Home() {
 
   // Verificar sesión de profesor al cargar
   useEffect(() => {
-    const unsubscribe = authService.onAuthStateChange((user) => {
-      if (user) {
-        // Usuario autenticado, verificar si es profesor
-        authService.isProfessor(user.uid).then((isProfessor) => {
-          if (isProfessor) {
-            // Es profesor, cargar datos del profesor
-            loadProfessorData(user.uid);
-          }
-        });
-      } else {
-        // No hay sesión, volver al selector
-        setAuthState("selecting");
-        setProfessorAuthData(null);
-      }
-    });
+    const checkProfessorSession = async () => {
+      try {
+        const sessionData = await authService.checkProfessorSession();
+        
+        if (sessionData.authenticated && sessionData.professor) {
+          // Profesor autenticado con cookies válidas
+          setProfessorAuthData({
+            user: {
+              uid: sessionData.professor.id,
+              email: sessionData.professor.email,
+              displayName: sessionData.professor.name,
+              photoURL: undefined
+            },
+            professor: sessionData.professor
+          });
+          setAuthState("professor-dashboard");
+        } else {
+          // Verificar Firebase Auth como fallback
+          const unsubscribe = authService.onAuthStateChange((user) => {
+            if (user) {
+              // Usuario autenticado, verificar si es profesor
+              authService.isProfessor(user.uid).then((isProfessor) => {
+                if (isProfessor) {
+                  // Es profesor, cargar datos del profesor
+                  loadProfessorData(user.uid);
+                }
+              });
+            } else {
+              // No hay sesión, volver al selector
+              setAuthState("selecting");
+              setProfessorAuthData(null);
+            }
+          });
 
-    return () => unsubscribe();
+          return () => unsubscribe();
+        }
+      } catch (error) {
+        console.error("Error verificando sesión de profesor:", error);
+        setAuthState("selecting");
+      }
+    };
+
+    checkProfessorSession();
+  }, []);
+
+  // Verificar sesión de estudiante al cargar
+  useEffect(() => {
+    const checkStudentSession = async () => {
+      try {
+        const response = await fetch("/api/auth/check-session");
+        const data = await response.json();
+
+        if (data.success && data.authenticated) {
+          setStudentName(data.student.name);
+          setIsStudentAuthenticated(true);
+          setAuthState("student-dashboard");
+        } else {
+          // Limpiar localStorage si no hay sesión válida
+          localStorage.removeItem("deviceId");
+          localStorage.removeItem("studentCode");
+          localStorage.removeItem("lastLogin");
+        }
+      } catch (error) {
+        console.error("Error verificando sesión de estudiante:", error);
+      }
+    };
+
+    checkStudentSession();
   }, []);
 
   // Cargar datos del profesor
@@ -59,7 +109,7 @@ export default function Home() {
             uid: professorId,
             email: professor.email,
             displayName: professor.name,
-            photoURL: professor.profileImage
+            photoURL: undefined // Removido profileImage que no existe en el tipo
           },
           professor
         });
@@ -73,9 +123,7 @@ export default function Home() {
 
   // Cargar videos cuando el estudiante está autenticado
   useEffect(() => {
-    console.log('🔄 useEffect isStudentAuthenticated:', isStudentAuthenticated);
     if (isStudentAuthenticated) {
-      console.log('📚 Cargando videos para estudiante...');
       loadVideos();
     }
   }, [isStudentAuthenticated]);
@@ -84,30 +132,17 @@ export default function Home() {
   const loadVideos = async () => {
     setLoading(true);
     try {
-      // Usar endpoint diferente según el tipo de usuario
-      const endpoint = isStudentAuthenticated ? "/api/student/videos" : "/api/mux/videos";
-      const response = await fetch(endpoint);
+      const response = await fetch("/api/student/videos");
       const data = await response.json();
-
-      console.log("API Response:", {
-        endpoint,
-        fullData: data,
-        success: data.success,
-        subjectsType: typeof data.subjects,
-        isSubjectsArray: Array.isArray(data.subjects),
-        subjects: data.subjects,
-      });
 
       if (!data.success) {
         throw new Error(data.message || "Error al cargar los videos");
       }
 
       setSubjects(data.subjects);
-      console.log("🎬 Setting subjects:", data.subjects);
       
       if (data.subjects.length > 0) {
         const firstSubject = data.subjects[0];
-        console.log("📚 First subject:", firstSubject);
         setSelectedSubject(firstSubject);
         
         if (
@@ -115,13 +150,8 @@ export default function Home() {
           firstSubject.sections[0].videos.length > 0
         ) {
           const firstVideo = firstSubject.sections[0].videos[0];
-          console.log("🎥 First video:", firstVideo);
           setSelectedVideo(firstVideo);
-        } else {
-          console.log("⚠️ No videos found in first subject");
         }
-      } else {
-        console.log("⚠️ No subjects found");
       }
     } catch (error) {
       console.error("Error loading videos:", error);
@@ -132,11 +162,9 @@ export default function Home() {
 
   // Handlers para estudiantes
   const handleStudentLoginSuccess = (name: string, allowedSubjects: string[]) => {
-    console.log('🎓 handleStudentLoginSuccess:', { name, allowedSubjects });
     setStudentName(name);
     setIsStudentAuthenticated(true);
     setAuthState("student-dashboard");
-    // Aquí podrías filtrar las materias basado en allowedSubjects si es necesario
   };
 
   const handleSubjectSelect = (subject: Subject) => {
@@ -180,9 +208,17 @@ export default function Home() {
     setAuthState("professor-dashboard");
   };
 
-  const handleProfessorLogout = () => {
-    setProfessorAuthData(null);
-    setAuthState("selecting");
+  const handleProfessorLogout = async () => {
+    try {
+      await authService.logout();
+      setProfessorAuthData(null);
+      setAuthState("selecting");
+    } catch (error) {
+      console.error("Error en logout de profesor:", error);
+      // Aún así, limpiar el estado local
+      setProfessorAuthData(null);
+      setAuthState("selecting");
+    }
   };
 
   // Selector de tipo de usuario

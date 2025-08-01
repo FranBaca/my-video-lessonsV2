@@ -62,6 +62,8 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
       onLogout();
     } catch (error) {
       console.error('Error en logout:', error);
+      // Aún así, llamar a onLogout para limpiar el estado local
+      onLogout();
     }
   };
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 
 interface LoginFormProps {
@@ -11,6 +11,32 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Verificar sesión automáticamente al cargar
+  useEffect(() => {
+    const checkExistingSession = async () => {
+      try {
+        console.log("🔍 Verificando sesión existente...");
+        const response = await fetch("/api/auth/check-session");
+
+        const data = await response.json();
+        
+        if (data.success && data.authenticated) {
+          console.log("✅ Sesión existente válida");
+          onSuccess(data.student.name, data.student.allowedSubjects);
+        } else {
+          console.log("❌ Sesión existente inválida, limpiando localStorage");
+          localStorage.removeItem("deviceId");
+          localStorage.removeItem("studentCode");
+          localStorage.removeItem("lastLogin");
+        }
+      } catch (error) {
+        console.error("Error verificando sesión existente:", error);
+      }
+    };
+
+    checkExistingSession();
+  }, [onSuccess]);
 
   // Validar formato del código
   const validateCode = (code: string) => {

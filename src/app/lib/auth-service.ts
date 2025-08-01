@@ -41,6 +41,20 @@ export const authService = {
       // Obtener el token de ID para usar en las API calls
       const token = await user.getIdToken();
 
+      // Establecer cookies de sesión en el servidor
+      const response = await fetch('/api/auth/professor-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ idToken: token }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al establecer sesión');
+      }
+
       return {
         user: {
           uid: user.uid,
@@ -99,6 +113,11 @@ export const authService = {
   // Logout
   async logout(): Promise<void> {
     try {
+      // Limpiar cookies de sesión en el servidor
+      await fetch('/api/auth/professor-logout', {
+        method: 'POST',
+      });
+      
       await signOut(auth);
     } catch (error) {
       console.error('Error en logout:', error);
@@ -133,6 +152,35 @@ export const authService = {
       return professor !== null;
     } catch (error) {
       console.error('Error verificando si es profesor:', error);
+      return false;
+    }
+  },
+
+  // Verificar sesión de profesor desde cookies
+  async checkProfessorSession(): Promise<{ authenticated: boolean; professor?: any }> {
+    try {
+      const response = await fetch('/api/auth/check-professor-session');
+      const data = await response.json();
+      
+      return {
+        authenticated: data.success && data.authenticated,
+        professor: data.professor
+      };
+    } catch (error) {
+      console.error('Error verificando sesión de profesor:', error);
+      return { authenticated: false };
+    }
+  },
+
+  // Verificar rápidamente si hay una sesión de profesor
+  async hasProfessorSession(): Promise<boolean> {
+    try {
+      const response = await fetch('/api/auth/professor-session');
+      const data = await response.json();
+      
+      return data.success && data.hasSession;
+    } catch (error) {
+      console.error('Error verificando sesión rápida de profesor:', error);
       return false;
     }
   }
