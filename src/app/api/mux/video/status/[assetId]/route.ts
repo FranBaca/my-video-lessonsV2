@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { videoService } from "@/app/lib/firebase-services";
 import { MuxUploadService } from "@/app/lib/mux-upload-service";
+import { videoService } from "@/app/lib/firebase-services";
 
 const uploadService = new MuxUploadService();
 
@@ -9,7 +9,7 @@ export async function GET(
   { params }: { params: { assetId: string } }
 ) {
   try {
-    const { assetId } = params;
+    const assetId = params.assetId;
 
     if (!assetId) {
       return NextResponse.json(
@@ -18,117 +18,51 @@ export async function GET(
       );
     }
 
-    console.log('Verificando estado del asset:', assetId);
+    console.log(`🔍 Verificando estado del asset ${assetId}...`);
 
-    // Buscar el video en la base de datos
-    const videoResult = await videoService.findByAssetId(assetId);
+    // Verificar estado en Mux
+    const assetInfo = await uploadService.getAssetInfo(assetId);
+    console.log(`📊 Asset ${assetId} - Estado en Mux: ${assetInfo.status}`);
+
+    // Buscar video en Firebase
+    const videoResult = await videoService.findByMuxAssetId(assetId);
     
-    if (!videoResult) {
-      console.log('Video no encontrado en la base de datos para assetId:', assetId);
-      return NextResponse.json(
-        { success: false, message: "Video no encontrado en la base de datos" },
-        { status: 404 }
-      );
+    let firebaseStatus = 'no encontrado';
+    let firebaseData = null;
+    
+    if (videoResult) {
+      const { video } = videoResult;
+      firebaseStatus = video.status || 'sin estado';
+      firebaseData = {
+        id: video.id,
+        name: video.name,
+        status: video.status,
+        isActive: video.isActive,
+        muxPlaybackId: video.muxPlaybackId,
+        createdAt: video.createdAt,
+        updatedAt: video.updatedAt
+      };
     }
 
-    const { video } = videoResult;
-    console.log('Video encontrado:', {
-      id: video.id,
-      name: video.name,
-      status: video.status,
-      assetId: video.assetId
+    return NextResponse.json({
+      success: true,
+      data: {
+        assetId,
+        muxStatus: assetInfo.status,
+        firebaseStatus,
+        firebaseData,
+        playbackIds: assetInfo.playback_ids,
+        duration: assetInfo.duration,
+        aspectRatio: assetInfo.aspect_ratio,
+        errors: assetInfo.errors
+      }
     });
 
-    // Si el video ya está listo, devolver su información
-    if (video.status === 'ready') {
-      return NextResponse.json({
-        success: true,
-        status: 'ready',
-        video: {
-          id: video.id,
-          name: video.name,
-          description: video.description,
-          playbackId: video.playbackId,
-          assetId: video.assetId,
-          duration: video.duration,
-          aspectRatio: video.aspectRatio,
-          createdAt: video.createdAt,
-        }
-      });
-    }
-
-    // Si el video está en error, devolver el error
-    if (video.status === 'errored') {
-      return NextResponse.json({
-        success: false,
-        status: 'errored',
-        message: video.errorMessage || 'Error en el procesamiento del video'
-      });
-    }
-
-    // Si el video está procesándose, verificar el estado actual del asset en Mux
-    try {
-      console.log('Verificando estado del asset en Mux...');
-      const assetInfo = await uploadService.getAssetInfo(assetId);
-      console.log('Estado del asset en Mux:', assetInfo.status);
-      
-      if (assetInfo.status === 'ready') {
-        // Actualizar el video en la base de datos
-        await videoService.update(videoResult.professorId, videoResult.subjectId, video.id, {
-          playbackId: assetInfo.playback_ids?.[0]?.id,
-          duration: assetInfo.duration,
-          aspectRatio: assetInfo.aspect_ratio,
-          status: 'ready'
-        });
-
-        return NextResponse.json({
-          success: true,
-          status: 'ready',
-          video: {
-            id: video.id,
-            name: video.name,
-            description: video.description,
-            playbackId: assetInfo.playback_ids?.[0]?.id,
-            assetId: assetId,
-            duration: assetInfo.duration,
-            aspectRatio: assetInfo.aspect_ratio,
-            createdAt: video.createdAt,
-          }
-        });
-      } else if (assetInfo.status === 'errored') {
-        // Actualizar el video como fallido
-        await videoService.update(videoResult.professorId, videoResult.subjectId, video.id, {
-          status: 'errored',
-          errorMessage: 'Error en el procesamiento del video'
-        });
-
-        return NextResponse.json({
-          success: false,
-          status: 'errored',
-          message: 'Error en el procesamiento del video'
-        });
-      } else {
-        // Asset aún se está procesando
-        return NextResponse.json({
-          success: true,
-          status: 'processing',
-          message: 'El video aún se está procesando',
-          assetStatus: assetInfo.status
-        });
-      }
-    } catch (error) {
-      console.error('Error checking asset status:', error);
-      return NextResponse.json({
-        success: true,
-        status: 'processing',
-        message: 'El video aún se está procesando (error al verificar Mux)'
-      });
-    }
-
   } catch (error) {
-    console.error('Error checking video status:', error);
+    console.error("Error verificando estado del asset:", error);
+    
     return NextResponse.json(
-      { success: false, message: "Error interno del servidor", error: error.message },
+      { success: false, message: "Error interno del servidor" },
       { status: 500 }
     );
   }

@@ -1,5 +1,67 @@
 import { NextRequest, NextResponse } from "next/server";
-import { publicStudentService, videoService, subjectService } from "@/app/lib/firebase-services";
+import { videoService, subjectService } from "@/app/lib/firebase-services";
+import { db } from "@/app/lib/firebase";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { Student } from "@/app/types/firebase";
+
+// Función para buscar estudiantes (copiada del verify route)
+async function findStudentByCode(code: string): Promise<Student | null> {
+  try {
+    console.log('🔍 Buscando estudiante con código:', code);
+    
+    // Obtener todos los profesores
+    const professorsSnapshot = await getDocs(collection(db, 'professors'));
+    console.log('📋 Profesores encontrados:', professorsSnapshot.size);
+    
+    // Buscar en cada profesor
+    for (const professorDoc of professorsSnapshot.docs) {
+      const professorId = professorDoc.id;
+      console.log(`🔍 Buscando en profesor: ${professorId}`);
+      
+      try {
+        // Buscar estudiantes en este profesor
+        const studentsQuery = query(
+          collection(db, 'professors', professorId, 'students'),
+          where('code', '==', code)
+        );
+        
+        const studentsSnapshot = await getDocs(studentsQuery);
+        
+        if (!studentsSnapshot.empty) {
+          const studentDoc = studentsSnapshot.docs[0];
+          console.log('✅ Estudiante encontrado en profesor:', professorId);
+          
+          const studentData = {
+            id: `${professorId}/${studentDoc.id}`,
+            ...studentDoc.data(),
+            enrolledAt: studentDoc.data().enrolledAt?.toDate() || new Date(),
+            lastAccess: studentDoc.data().lastAccess?.toDate()
+          } as Student;
+          
+          console.log('✅ Datos del estudiante:', {
+            id: studentData.id,
+            name: studentData.name,
+            code: studentData.code,
+            authorized: studentData.authorized,
+            deviceId: studentData.deviceId,
+            allowedSubjects: studentData.allowedSubjects?.length || 0
+          });
+          
+          return studentData;
+        }
+      } catch (error) {
+        console.log(`⚠️ Error buscando en profesor ${professorId}:`, error);
+        continue; // Try next professor
+      }
+    }
+    
+    console.log('❌ No se encontró estudiante con código:', code);
+    return null;
+  } catch (error) {
+    console.error('❌ Error en findStudentByCode:', error);
+    return null;
+  }
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,8 +78,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Obtener información del estudiante
-    const student = await publicStudentService.getByCode(studentCode);
+    // Obtener información del estudiante usando la nueva función
+    const student = await findStudentByCode(studentCode);
     
     if (!student) {
       return NextResponse.json(
@@ -60,13 +122,22 @@ export async function GET(request: NextRequest) {
 
     for (const subjectId of allowedSubjects) {
       try {
+        // Extraer el professorId del id del estudiante
+        const pathParts = student.id?.split('/') || [];
+        const professorId = pathParts[0]; // El primer elemento es el professorId
+        
+        console.log(`🔍 Buscando videos para materia ${subjectId} en profesor ${professorId}`);
+        
         // Obtener información de la materia desde el profesor específico
-        const professorId = 'gaTy3CzW2AdQ8yGP74kUty1cc3K2'; // Profesor del estudiante
         const subject = await subjectService.getById(professorId, subjectId);
         const subjectName = subject?.name || subjectId;
         
+        console.log(`📚 Materia encontrada:`, { id: subjectId, name: subjectName });
+        
         // Obtener videos de esta materia específica usando el método directo
         const videos = await videoService.getBySubject(professorId, subjectId);
+        
+        console.log(`🎥 Videos encontrados para materia ${subjectId}:`, videos.length);
         
 
         

@@ -1,6 +1,68 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyProfessorAuth } from "@/app/lib/auth-utils";
-import { videoService, publicStudentService } from "@/app/lib/firebase-services";
+import { videoService } from "@/app/lib/firebase-services";
+import { db } from "@/app/lib/firebase";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { Student } from "@/app/types/firebase";
+
+// Función para buscar estudiantes (copiada del verify route)
+async function findStudentByCode(code: string): Promise<Student | null> {
+  try {
+    console.log('🔍 Buscando estudiante con código:', code);
+    
+    // Obtener todos los profesores
+    const professorsSnapshot = await getDocs(collection(db, 'professors'));
+    console.log('📋 Profesores encontrados:', professorsSnapshot.size);
+    
+    // Buscar en cada profesor
+    for (const professorDoc of professorsSnapshot.docs) {
+      const professorId = professorDoc.id;
+      console.log(`🔍 Buscando en profesor: ${professorId}`);
+      
+      try {
+        // Buscar estudiantes en este profesor
+        const studentsQuery = query(
+          collection(db, 'professors', professorId, 'students'),
+          where('code', '==', code)
+        );
+        
+        const studentsSnapshot = await getDocs(studentsQuery);
+        
+        if (!studentsSnapshot.empty) {
+          const studentDoc = studentsSnapshot.docs[0];
+          console.log('✅ Estudiante encontrado en profesor:', professorId);
+          
+          const studentData = {
+            id: `${professorId}/${studentDoc.id}`,
+            ...studentDoc.data(),
+            enrolledAt: studentDoc.data().enrolledAt?.toDate() || new Date(),
+            lastAccess: studentDoc.data().lastAccess?.toDate()
+          } as Student;
+          
+          console.log('✅ Datos del estudiante:', {
+            id: studentData.id,
+            name: studentData.name,
+            code: studentData.code,
+            authorized: studentData.authorized,
+            deviceId: studentData.deviceId,
+            allowedSubjects: studentData.allowedSubjects?.length || 0
+          });
+          
+          return studentData;
+        }
+      } catch (error) {
+        console.log(`⚠️ Error buscando en profesor ${professorId}:`, error);
+        continue; // Try next professor
+      }
+    }
+    
+    console.log('❌ No se encontró estudiante con código:', code);
+    return null;
+  } catch (error) {
+    console.error('❌ Error en findStudentByCode:', error);
+    return null;
+  }
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,7 +73,7 @@ export async function GET(request: NextRequest) {
     // Si hay un código de estudiante, obtener sus materias permitidas
     if (studentCode) {
       try {
-        const student = await publicStudentService.getByCode(studentCode);
+        const student = await findStudentByCode(studentCode);
         if (student && student.allowedSubjects) {
           allowedSubjects = student.allowedSubjects;
         }
