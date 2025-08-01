@@ -66,7 +66,6 @@ export const authService = {
         token
       };
     } catch (error) {
-      console.error('Error en login de profesor:', error);
       throw error;
     }
   },
@@ -105,7 +104,6 @@ export const authService = {
         professor
       };
     } catch (error) {
-      console.error('Error en registro de profesor:', error);
       throw error;
     }
   },
@@ -120,7 +118,6 @@ export const authService = {
       
       await signOut(auth);
     } catch (error) {
-      console.error('Error en logout:', error);
       throw error;
     }
   },
@@ -130,7 +127,6 @@ export const authService = {
     try {
       await sendPasswordResetEmail(auth, email);
     } catch (error) {
-      console.error('Error al resetear contraseña:', error);
       throw error;
     }
   },
@@ -151,7 +147,6 @@ export const authService = {
       const professor = await professorServiceClient.getById(uid);
       return professor !== null;
     } catch (error) {
-      console.error('Error verificando si es profesor:', error);
       return false;
     }
   },
@@ -167,7 +162,6 @@ export const authService = {
         professor: data.professor
       };
     } catch (error) {
-      console.error('Error verificando sesión de profesor:', error);
       return { authenticated: false };
     }
   },
@@ -180,7 +174,6 @@ export const authService = {
       
       return data.success && data.hasSession;
     } catch (error) {
-      console.error('Error verificando sesión rápida de profesor:', error);
       return false;
     }
   }

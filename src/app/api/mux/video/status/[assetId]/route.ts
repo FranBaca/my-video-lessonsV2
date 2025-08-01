@@ -18,11 +18,8 @@ export async function GET(
       );
     }
 
-    console.log(`🔍 Verificando estado del asset ${assetId}...`);
-
     // Verificar estado en Mux
     const assetInfo = await uploadService.getAssetInfo(assetId);
-    console.log(`📊 Asset ${assetId} - Estado en Mux: ${assetInfo.status}`);
 
     // Buscar video en Firebase
     const videoResult = await videoService.findByMuxAssetId(assetId);

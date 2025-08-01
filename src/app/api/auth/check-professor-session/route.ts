@@ -10,10 +10,7 @@ export async function GET(request: NextRequest) {
     const professorToken = cookieStore.get("professor_token")?.value;
     const professorId = cookieStore.get("professor_id")?.value;
 
-    console.log("🔍 Verificando sesión de profesor:", {
-      hasProfessorToken: !!professorToken,
-      hasProfessorId: !!professorId
-    });
+
 
     if (!professorToken || !professorId) {
       return NextResponse.json({
@@ -56,11 +53,7 @@ export async function GET(request: NextRequest) {
         });
       }
 
-      console.log("✅ Sesión de profesor válida:", {
-        name: professor.name,
-        email: professor.email,
-        id: professorId
-      });
+
 
       return NextResponse.json({
         success: true,

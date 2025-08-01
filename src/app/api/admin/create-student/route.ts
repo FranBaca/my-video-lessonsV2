@@ -7,8 +7,6 @@ import { createAuthMiddleware, AuthenticatedRequest } from "@/app/lib/auth-utils
 // Función optimizada para buscar estudiantes solo en el profesor actual
 async function findStudentByCodeInProfessor(code: string, professorId: string): Promise<Student | null> {
   try {
-    console.log(`🔍 Buscando estudiante con código '${code}' en profesor: ${professorId}`);
-    
     const studentsQuery = query(
       collection(db, 'professors', professorId, 'students'),
       where('code', '==', code)
@@ -18,7 +16,6 @@ async function findStudentByCodeInProfessor(code: string, professorId: string): 
     
     if (!studentsSnapshot.empty) {
       const studentDoc = studentsSnapshot.docs[0];
-      console.log('✅ Estudiante encontrado:', studentDoc.id);
       
       const studentData = {
         id: `${professorId}/${studentDoc.id}`,
@@ -30,10 +27,8 @@ async function findStudentByCodeInProfessor(code: string, professorId: string): 
       return studentData;
     }
     
-    console.log('❌ No se encontró estudiante con código:', code);
     return null;
   } catch (error) {
-    console.error('❌ Error buscando estudiante:', error);
     return null;
   }
 }
@@ -44,7 +39,6 @@ async function verifyProfessorExists(professorId: string): Promise<boolean> {
     const professorDoc = await getDoc(doc(db, 'professors', professorId));
     return professorDoc.exists();
   } catch (error) {
-    console.error('❌ Error verificando profesor:', error);
     return false;
   }
 }
@@ -122,13 +116,7 @@ async function handleCreateStudent(request: AuthenticatedRequest) {
       }
     } while (await findStudentByCodeInProfessor(code, professorId));
 
-    console.log("🔧 Creating student:", { 
-      code, 
-      name, 
-      professorId, 
-      allowedSubjects,
-      authorized 
-    });
+
 
     // Crear el estudiante
     const studentData = {
@@ -150,7 +138,7 @@ async function handleCreateStudent(request: AuthenticatedRequest) {
       }
     );
 
-    console.log("✅ Student created successfully:", docRef.id);
+
 
     return NextResponse.json({
       success: true,
@@ -162,7 +150,6 @@ async function handleCreateStudent(request: AuthenticatedRequest) {
     });
 
   } catch (error: any) {
-    console.error("❌ Error creating student:", error);
     return NextResponse.json(
       {
         success: false,

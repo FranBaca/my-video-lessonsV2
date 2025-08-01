@@ -31,7 +31,6 @@ export const professorService = {
         createdAt: doc.data().createdAt?.toDate() || new Date()
       })) as Professor[];
     } catch (error) {
-      console.error('Error getting professors:', error);
       throw error;
     }
   },
@@ -49,7 +48,6 @@ export const professorService = {
       }
       return null;
     } catch (error) {
-      console.error('Error getting professor:', error);
       throw error;
     }
   },
@@ -63,7 +61,6 @@ export const professorService = {
       });
       return docRef.id;
     } catch (error) {
-      console.error('Error creating professor:', error);
       throw error;
     }
   },
@@ -77,7 +74,6 @@ export const professorService = {
         isActive: true
       });
     } catch (error) {
-      console.error('Error creating professor with ID:', error);
       throw error;
     }
   },
@@ -90,7 +86,6 @@ export const professorService = {
         updatedAt: Timestamp.now()
       });
     } catch (error) {
-      console.error('Error updating professor:', error);
       throw error;
     }
   },
@@ -100,7 +95,6 @@ export const professorService = {
       const docRef = doc(db, 'professors', id);
       await deleteDoc(docRef);
     } catch (error) {
-      console.error('Error deleting professor:', error);
       throw error;
     }
   }
@@ -121,7 +115,6 @@ export const subjectService = {
       })) as Subject[];
       return subjects;
     } catch (error) {
-      console.error('Error getting subjects:', error);
       throw error;
     }
   },
@@ -140,7 +133,6 @@ export const subjectService = {
       }
       return null;
     } catch (error) {
-      console.error('Error getting subject:', error);
       throw error;
     }
   },
@@ -157,7 +149,6 @@ export const subjectService = {
       );
       return docRef.id;
     } catch (error) {
-      console.error('Error creating subject:', error);
       throw error;
     }
   },
@@ -170,7 +161,6 @@ export const subjectService = {
         updatedAt: Timestamp.now()
       });
     } catch (error) {
-      console.error('Error updating subject:', error);
       throw error;
     }
   },
@@ -186,7 +176,6 @@ export const subjectService = {
       const docRef = doc(db, 'professors', professorId, 'subjects', subjectId);
       await deleteDoc(docRef);
     } catch (error) {
-      console.error('Error deleting subject:', error);
       throw error;
     }
   },
@@ -205,7 +194,6 @@ export const subjectService = {
       
       return !querySnapshot.empty;
     } catch (error) {
-      console.error('Error checking subject name:', error);
       return false;
     }
   }
@@ -228,7 +216,6 @@ export const videoService = {
       // Ordenar todos los videos por order
       return allVideos.sort((a, b) => a.order - b.order);
     } catch (error) {
-      console.error('Error getting videos:', error);
       throw error;
     }
   },
@@ -249,7 +236,6 @@ export const videoService = {
         updatedAt: doc.data().updatedAt?.toDate()
       })) as Video[];
     } catch (error) {
-      console.error('Error getting videos by subject:', error);
       throw error;
     }
   },
@@ -268,7 +254,6 @@ export const videoService = {
       }
       return null;
     } catch (error) {
-      console.error('Error getting video:', error);
       throw error;
     }
   },
@@ -285,7 +270,6 @@ export const videoService = {
       );
       return docRef.id;
     } catch (error) {
-      console.error('Error creating video:', error);
       throw error;
     }
   },
@@ -298,7 +282,6 @@ export const videoService = {
         updatedAt: Timestamp.now()
       });
     } catch (error) {
-      console.error('Error updating video:', error);
       throw error;
     }
   },
@@ -308,7 +291,6 @@ export const videoService = {
       const docRef = doc(db, 'professors', professorId, 'subjects', subjectId, 'videos', videoId);
       await deleteDoc(docRef);
     } catch (error) {
-      console.error('Error deleting video:', error);
       throw error;
     }
   },
@@ -325,7 +307,6 @@ export const videoService = {
         subject: subjects.find(s => s.id === video.subjectId)!
       }));
     } catch (error) {
-      console.error('Error getting videos with subjects:', error);
       throw error;
     }
   },
@@ -333,7 +314,6 @@ export const videoService = {
   // Método simplificado para buscar por muxAssetId sin collectionGroup
   async findByMuxAssetId(muxAssetId: string): Promise<{ video: Video; professorId: string; subjectId: string; videoId: string } | null> {
     try {
-      console.log(`🔍 Buscando video con muxAssetId: ${muxAssetId}`);
       
       // Obtener todos los profesores
       const professorsSnapshot = await getDocs(collection(db, 'professors'));
@@ -366,8 +346,6 @@ export const videoService = {
               updatedAt: videoDoc.data().updatedAt?.toDate()
             } as Video;
             
-            console.log(`✅ Video encontrado: ${videoDoc.id} en profesor ${professorId}, materia ${subjectId}`);
-            
             return {
               video,
               professorId,
@@ -378,10 +356,8 @@ export const videoService = {
         }
       }
       
-      console.log(`❌ No se encontró video con muxAssetId: ${muxAssetId}`);
       return null;
     } catch (error) {
-      console.error('Error finding video by muxAssetId:', error);
       return null;
     }
   },
@@ -389,7 +365,6 @@ export const videoService = {
   // Método de fallback usando búsqueda directa sin collectionGroup
   async findByAssetId(assetId: string): Promise<{ video: Video; professorId: string; subjectId: string; videoId: string } | null> {
     try {
-      console.log(`🔍 Buscando video con assetId: ${assetId}`);
       
       // Obtener todos los profesores
       const professorsSnapshot = await getDocs(collection(db, 'professors'));
@@ -423,8 +398,6 @@ export const videoService = {
               updatedAt: videoDoc.data().updatedAt?.toDate()
             } as Video;
             
-            console.log(`✅ Video encontrado: ${videoDoc.id} en profesor ${professorId}, materia ${subjectId}`);
-            
             return {
               video,
               professorId,
@@ -435,10 +408,8 @@ export const videoService = {
         }
       }
       
-      console.log(`❌ No se encontró video con assetId: ${assetId}`);
       return null;
     } catch (error) {
-      console.error('Error finding video by assetId:', error);
       return null;
     }
   },
@@ -447,7 +418,6 @@ export const videoService = {
   async findByMuxPlaybackId(muxPlaybackId: string): Promise<{ video: Video; professorId: string; subjectId: string; videoId: string } | null> {
     try {
       if (!adminDb) {
-        console.warn('Firebase Admin no disponible, usando búsqueda alternativa');
         return null;
       }
 
@@ -480,7 +450,6 @@ export const videoService = {
         videoId
       };
     } catch (error) {
-      console.error('Error finding video by muxPlaybackId:', error);
       return null;
     }
   },
@@ -489,7 +458,6 @@ export const videoService = {
   async getByStatus(status: Video['status']): Promise<Video[]> {
     try {
       if (!adminDb) {
-        console.warn('Firebase Admin no disponible, no se pueden buscar videos por estado');
         return [];
       }
 
@@ -503,7 +471,6 @@ export const videoService = {
         updatedAt: doc.data().updatedAt?.toDate()
       })) as Video[];
     } catch (error) {
-      console.error('Error getting videos by status:', error);
       return [];
     }
   },
@@ -512,7 +479,6 @@ export const videoService = {
   async getProcessingVideosOlderThan(minutes: number): Promise<Video[]> {
     try {
       if (!adminDb) {
-        console.warn('Firebase Admin no disponible, no se pueden buscar videos antiguos');
         return [];
       }
 
@@ -530,7 +496,6 @@ export const videoService = {
         updatedAt: doc.data().updatedAt?.toDate()
       })) as Video[];
     } catch (error) {
-      console.error('Error getting processing videos older than:', error);
       return [];
     }
   },
@@ -539,7 +504,6 @@ export const videoService = {
   async getBySubjectAcrossProfessors(subjectId: string): Promise<Video[]> {
     try {
       if (!adminDb) {
-        console.warn('Firebase Admin no disponible, no se pueden buscar videos por materia');
         return [];
       }
 
@@ -557,7 +521,6 @@ export const videoService = {
         updatedAt: doc.data().updatedAt?.toDate()
       })) as Video[];
     } catch (error) {
-      console.error('Error getting videos by subject across professors:', error);
       return [];
     }
   }
@@ -592,7 +555,6 @@ export const studentService = {
       
       return null;
     } catch (error) {
-      console.error('Error getting student by code:', error);
       throw error;
     }
   },
@@ -609,7 +571,6 @@ export const studentService = {
         lastAccess: doc.data().lastAccess?.toDate()
       })) as Student[];
     } catch (error) {
-      console.error('Error getting students:', error);
       throw error;
     }
   },
@@ -628,7 +589,6 @@ export const studentService = {
       );
       return docRef.id;
     } catch (error) {
-      console.error('Error creating student:', error);
       throw error;
     }
   },
@@ -642,7 +602,6 @@ export const studentService = {
       });
       return { id: studentId, code };
     } catch (error) {
-      console.error('Error creating student with generated code:', error);
       throw error;
     }
   },
@@ -688,7 +647,6 @@ export const studentService = {
         lastAccess: Timestamp.now()
       });
     } catch (error) {
-      console.error('Error updating student:', error);
       throw error;
     }
   },
@@ -698,7 +656,6 @@ export const studentService = {
       const docRef = doc(db, 'professors', professorId, 'students', studentId);
       await deleteDoc(docRef);
     } catch (error) {
-      console.error('Error deleting student:', error);
       throw error;
     }
   },
@@ -711,7 +668,6 @@ export const studentService = {
         lastAccess: Timestamp.now()
       });
     } catch (error) {
-      console.error('Error updating student allowed videos:', error);
       throw error;
     }
   }
@@ -721,7 +677,6 @@ export const studentService = {
 export const publicStudentService = {
   async getByCode(code: string): Promise<Student | null> {
     try {
-      console.log('🔍 Buscando estudiante con código:', code);
       
       // Primero intentar con collectionGroup
       try {
@@ -730,18 +685,13 @@ export const publicStudentService = {
           where('code', '==', code)
         );
         
-        console.log('📋 Ejecutando query collectionGroup...');
         const querySnapshot = await getDocs(q);
-        console.log('📊 Resultados encontrados:', querySnapshot.size);
         
         if (!querySnapshot.empty) {
           const doc = querySnapshot.docs[0];
-          console.log('📄 Documento encontrado:', doc.ref.path);
-          
           // Extraer el professorId del path del documento
           const pathParts = doc.ref.path.split('/');
           const professorId = pathParts[1]; // professors/{professorId}/students/{studentId}
-          console.log('👨‍🏫 ProfessorId extraído:', professorId);
           
           const studentData = {
             id: `${professorId}/${doc.id}`, // Incluir professorId en el id para referencia
@@ -750,23 +700,13 @@ export const publicStudentService = {
             lastAccess: doc.data().lastAccess?.toDate()
           } as Student;
           
-          console.log('✅ Estudiante encontrado:', {
-            id: studentData.id,
-            name: studentData.name,
-            code: studentData.code,
-            deviceId: studentData.deviceId,
-            allowedSubjects: studentData.allowedSubjects?.length || 0
-          });
-          
           return studentData;
         }
       } catch (collectionGroupError) {
-        console.log('⚠️ CollectionGroup falló, intentando búsqueda alternativa...');
-        console.error('Error en collectionGroup:', collectionGroupError);
+        // Fallback to alternative search
       }
       
       // Si collectionGroup falla, buscar en múltiples profesores conocidos
-      console.log('🔄 Intentando búsqueda en múltiples profesores...');
       const knownProfessors = [
         'gaTy3CzW2AdQ8yGP74kUty1cc3K2',
         // Add other professor IDs here if needed
@@ -774,7 +714,6 @@ export const publicStudentService = {
       
       for (const professorId of knownProfessors) {
         try {
-          console.log(`🔍 Buscando en profesor: ${professorId}`);
           const q = query(
             collection(db, 'professors', professorId, 'students'),
             where('code', '==', code)
@@ -783,7 +722,6 @@ export const publicStudentService = {
           
           if (!querySnapshot.empty) {
             const doc = querySnapshot.docs[0];
-            console.log('📄 Documento encontrado en profesor:', professorId);
             
             const studentData = {
               id: `${professorId}/${doc.id}`,
@@ -792,26 +730,15 @@ export const publicStudentService = {
               lastAccess: doc.data().lastAccess?.toDate()
             } as Student;
             
-            console.log('✅ Estudiante encontrado:', {
-              id: studentData.id,
-              name: studentData.name,
-              code: studentData.code,
-              deviceId: studentData.deviceId,
-              allowedSubjects: studentData.allowedSubjects?.length || 0
-            });
-            
             return studentData;
           }
         } catch (error) {
-          console.log(`⚠️ Error buscando en profesor ${professorId}:`, error);
           continue; // Try next professor
         }
       }
       
-      console.log('❌ No se encontró estudiante con código:', code);
       return null;
     } catch (error) {
-      console.error('❌ Error getting student by code (public):', error);
       return null; // Retornar null en lugar de throw para evitar errores
     }
   },
@@ -824,7 +751,6 @@ export const publicStudentService = {
         lastAccess: Timestamp.now()
       });
     } catch (error) {
-      console.error('Error updating student deviceId:', error);
       throw error;
     }
   }

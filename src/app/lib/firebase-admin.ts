@@ -24,13 +24,8 @@ function initializeFirebaseAdmin() {
     .map(([key]) => key);
 
   if (missingVars.length > 0) {
-    console.error('❌ Firebase Admin SDK: Variables de entorno faltantes:', missingVars);
-    console.error('💡 Asegúrate de configurar las variables en tu archivo .env.local');
-    console.error('📖 Consulta FIREBASE_ADMIN_SETUP.md para más información');
-    
     // En desarrollo, podemos continuar sin Firebase Admin
     if (process.env.NODE_ENV === 'development') {
-      console.warn('⚠️  Firebase Admin SDK no inicializado - modo desarrollo');
       return;
     } else {
       throw new Error('Firebase Admin SDK requiere variables de entorno configuradas');
@@ -55,9 +50,7 @@ function initializeFirebaseAdmin() {
       credential: cert(serviceAccount),
       projectId: requiredEnvVars.project_id,
     });
-    console.log('✅ Firebase Admin SDK inicializado correctamente');
   } catch (error) {
-    console.error('❌ Error inicializando Firebase Admin SDK:', error);
     throw error;
   }
 }
@@ -73,7 +66,7 @@ try {
   adminAuth = getAuth();
   adminDb = getFirestore();
 } catch (error) {
-  console.warn('⚠️  Firebase Admin no disponible:', error);
+  // Firebase Admin not available
 }
 
 export { adminAuth, adminDb };

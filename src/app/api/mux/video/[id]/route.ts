@@ -21,7 +21,7 @@ export async function GET(
       );
     }
 
-    console.log(`🔍 Obteniendo estado del video ${videoId} para profesor ${professorId}`);
+
 
     // Buscar el video en todas las materias del profesor
     const subjects = await videoService.getByProfessor(professorId);
@@ -37,7 +37,6 @@ export async function GET(
     // Si el video está procesando, verificar estado en Mux
     if (video.status === 'processing' && video.muxAssetId) {
       try {
-        console.log(`🔍 Verificando estado del asset ${video.muxAssetId} en Mux`);
         const assetInfo = await uploadService.getAssetInfo(video.muxAssetId);
         
         if (assetInfo.status === 'ready') {
@@ -63,8 +62,6 @@ export async function GET(
           video.aspectRatio = assetInfo.aspect_ratio;
           video.isActive = true;
           
-          console.log(`✅ Video ${videoId} actualizado como listo`);
-          
         } else if (assetInfo.status === 'errored') {
           // Asset falló, marcar como error
           await videoService.update(
@@ -83,13 +80,10 @@ export async function GET(
           video.status = 'errored';
           video.errorMessage = assetInfo.errors?.message || 'Error desconocido';
           video.isActive = false;
-          
-          console.log(`❌ Video ${videoId} marcado como error`);
         }
         
       } catch (error) {
-        console.error(`❌ Error verificando asset ${video.muxAssetId}:`, error);
-        // No actualizar el video si hay error en la verificación
+        // Error handling silently for production
       }
     }
 
@@ -115,7 +109,6 @@ export async function GET(
     });
 
   } catch (error) {
-    console.error('❌ Error obteniendo estado del video:', error);
     return NextResponse.json(
       { 
         success: false, 

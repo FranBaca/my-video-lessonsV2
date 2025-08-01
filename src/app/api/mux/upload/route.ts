@@ -62,9 +62,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 1. Crear Direct Upload URL optimizada
-    console.log("Creando Direct Upload URL optimizada...");
     const upload = await uploadService.createDirectUploadUrl(file.size);
-    console.log("Direct Upload URL creada:", upload.id);
 
     // 2. Devolver la URL de upload para que el cliente suba directamente
     return NextResponse.json({

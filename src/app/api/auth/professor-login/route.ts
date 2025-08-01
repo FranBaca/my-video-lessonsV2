@@ -35,11 +35,7 @@ export async function POST(request: NextRequest) {
         }, { status: 403 });
       }
 
-      console.log("✅ Login exitoso de profesor:", {
-        name: professor.name,
-        email: professor.email,
-        id: professor.id
-      });
+
 
       // Configurar la respuesta con las cookies
       const response = NextResponse.json({

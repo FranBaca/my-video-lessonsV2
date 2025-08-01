@@ -16,22 +16,19 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
   useEffect(() => {
     const checkExistingSession = async () => {
       try {
-        console.log("🔍 Verificando sesión existente...");
         const response = await fetch("/api/auth/check-session");
 
         const data = await response.json();
         
         if (data.success && data.authenticated) {
-          console.log("✅ Sesión existente válida");
           onSuccess(data.student.name, data.student.allowedSubjects);
         } else {
-          console.log("❌ Sesión existente inválida, limpiando localStorage");
           localStorage.removeItem("deviceId");
           localStorage.removeItem("studentCode");
           localStorage.removeItem("lastLogin");
         }
       } catch (error) {
-        console.error("Error verificando sesión existente:", error);
+        // Error handling silently for production
       }
     };
 

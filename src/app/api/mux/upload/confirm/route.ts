@@ -29,16 +29,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`🔄 Confirmando upload ${uploadId} para archivo de ${(metadata.fileSize / (1024 * 1024)).toFixed(2)}MB`);
-
     // Verificar el estado del upload una sola vez con timeout extendido
-    console.log(`Verificando estado del upload ${uploadId}...`);
     
     // Timeout más largo para archivos grandes
     const fileSizeMB = metadata.fileSize / (1024 * 1024);
     const timeoutMs = fileSizeMB > 100 ? 30000 : 10000; // 30s para archivos > 100MB
-    
-    console.log(`⏱️ Timeout configurado: ${timeoutMs/1000}s para archivo de ${fileSizeMB.toFixed(2)}MB`);
     
     const uploadStatus = await Promise.race([
       uploadService.getUploadStatus(uploadId),
@@ -46,8 +41,6 @@ export async function POST(request: NextRequest) {
         setTimeout(() => reject(new Error('Timeout verificando upload')), timeoutMs)
       )
     ]) as any;
-    
-    console.log("Estado del upload:", uploadStatus);
 
     if (uploadStatus.status === 'errored') {
       return NextResponse.json(
@@ -58,15 +51,12 @@ export async function POST(request: NextRequest) {
 
     // Si el upload aún está esperando, guardar con estado 'processing'
     if (uploadStatus.status === 'waiting') {
-      console.log("Upload aún en proceso, guardando video con estado 'processing'");
       return await saveVideoToDatabaseProcessing(professorId, metadata, null);
     }
 
     // Si el asset fue creado, verificar si está listo
     if (uploadStatus.status === 'asset_created' && uploadStatus.asset_id) {
       try {
-        console.log(`📊 Verificando asset ${uploadStatus.asset_id}...`);
-        
         // Verificar el estado del asset con timeout extendido
         const assetInfo = await Promise.race([
           uploadService.getAssetInfo(uploadStatus.asset_id),
@@ -75,11 +65,8 @@ export async function POST(request: NextRequest) {
           )
         ]) as any;
         
-        console.log(`📊 Asset ${uploadStatus.asset_id} - Estado: ${assetInfo.status}`);
-        
         if (assetInfo.status === 'ready') {
           // Asset está listo, proceder a guardar como 'ready'
-          console.log("Asset listo, guardando video como 'ready'");
           return await saveVideoToDatabase(professorId, metadata, assetInfo);
         } else if (assetInfo.status === 'errored') {
           return NextResponse.json(
@@ -88,7 +75,6 @@ export async function POST(request: NextRequest) {
           );
         } else {
           // Asset aún se está procesando, guardar con estado 'processing'
-          console.log("Asset creado pero aún procesándose, guardando video con estado 'processing'");
           return await saveVideoToDatabaseProcessing(professorId, metadata, uploadStatus.asset_id);
         }
       } catch (error) {
@@ -96,7 +82,6 @@ export async function POST(request: NextRequest) {
         
         // Si es timeout, guardar como processing y confiar en webhook
         if (error instanceof Error && error.message.includes('Timeout')) {
-          console.log("⏰ Timeout verificando asset, guardando como 'processing' y confiando en webhook");
           return await saveVideoToDatabaseProcessing(professorId, metadata, uploadStatus.asset_id);
         }
         

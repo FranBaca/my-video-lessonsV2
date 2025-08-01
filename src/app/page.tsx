@@ -65,7 +65,6 @@ export default function Home() {
           return () => unsubscribe();
         }
       } catch (error) {
-        console.error("Error verificando sesión de profesor:", error);
         setAuthState("selecting");
       }
     };
@@ -91,7 +90,7 @@ export default function Home() {
           localStorage.removeItem("lastLogin");
         }
       } catch (error) {
-        console.error("Error verificando sesión de estudiante:", error);
+        // Error handling silently for production
       }
     };
 
@@ -116,7 +115,6 @@ export default function Home() {
         setAuthState("professor-dashboard");
       }
     } catch (error) {
-      console.error("Error loading professor data:", error);
       setAuthState("selecting");
     }
   };
@@ -154,7 +152,7 @@ export default function Home() {
         }
       }
     } catch (error) {
-      console.error("Error loading videos:", error);
+      // Error handling silently for production
     } finally {
       setLoading(false);
     }
@@ -198,7 +196,7 @@ export default function Home() {
       setSelectedVideo(null);
       setAuthState("selecting");
     } catch (error) {
-      console.error("Error durante el logout:", error);
+      // Error handling silently for production
     }
   };
 
@@ -214,7 +212,6 @@ export default function Home() {
       setProfessorAuthData(null);
       setAuthState("selecting");
     } catch (error) {
-      console.error("Error en logout de profesor:", error);
       // Aún así, limpiar el estado local
       setProfessorAuthData(null);
       setAuthState("selecting");

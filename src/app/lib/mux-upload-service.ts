@@ -13,8 +13,6 @@ export class MuxUploadService {
   // Crear Direct Upload URL con configuración optimizada
   async createDirectUploadUrl(fileSize: number) {
     try {
-      console.log(`Creando Direct Upload URL para archivo de ${(fileSize / (1024 * 1024)).toFixed(2)}MB`);
-      
       const upload = await this.muxClient.video.uploads.create({
         cors_origin: '*',
         new_asset_settings: {
@@ -27,11 +25,8 @@ export class MuxUploadService {
         test: false, // Asegurar que no es un upload de prueba
       });
 
-      console.log(`Direct Upload URL creada exitosamente: ${upload.id}`);
       return upload;
     } catch (error) {
-      console.error('Error creando Direct Upload URL:', error);
-      
       // Manejar errores específicos de Mux
       if (error && typeof error === 'object' && 'status' in error) {
         if (error.status === 400) {
@@ -58,8 +53,6 @@ export class MuxUploadService {
 
   // Verificar estado del asset con reintentos optimizados
   async waitForAssetReady(uploadId: string, maxAttempts = 120, fastMode = true) {
-    console.log(`Esperando a que el asset del upload ${uploadId} esté listo...`);
-    
     let attempts = 0;
     const startTime = Date.now();
     
@@ -67,8 +60,6 @@ export class MuxUploadService {
       try {
         // Primero obtener el upload para verificar su estado
         const upload = await this.muxClient.video.uploads.retrieve(uploadId);
-        const elapsedSeconds = ((Date.now() - startTime) / 1000).toFixed(1);
-        console.log(`Upload ${uploadId} - Estado: ${upload.status} (intento ${attempts + 1}/${maxAttempts}, ${elapsedSeconds}s transcurridos)`);
         
         if (upload.status === 'errored') {
           throw new Error(`Upload failed: ${(upload as any).error?.message || 'Error desconocido'}`);
@@ -77,33 +68,22 @@ export class MuxUploadService {
         if (upload.status === 'asset_created' && upload.asset_id) {
           // Ahora obtener el asset usando el asset_id del upload
           const asset = await this.muxClient.video.assets.retrieve(upload.asset_id);
-          console.log(`Asset ${upload.asset_id} - Estado: ${asset.status}`);
           
           if (asset.status === 'ready') {
-            const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(1);
-            console.log(`✅ Asset ${upload.asset_id} listo después de ${elapsedTime}s`);
             return asset;
           } else if (asset.status === 'errored') {
             const errorMessage = (asset as any).errors?.message || 'Error desconocido';
             throw new Error(`Asset failed to process: ${errorMessage}`);
-          } else if (asset.status === 'preparing') {
-            console.log(`🔄 Asset ${upload.asset_id} aún preparándose...`);
           }
-        } else if (upload.status === 'waiting') {
-          console.log(`🔄 Upload ${uploadId} aún esperando...`);
-        } else if (upload.status === 'asset_created') {
-          console.log(`📦 Upload ${uploadId} - Asset creado, esperando procesamiento...`);
         }
         
         // Esperar menos tiempo para checks más frecuentes
         const baseWaitTime = fastMode ? 200 : 500;
         const maxWaitTime = fastMode ? 2000 : 5000;
         const waitTime = Math.min(baseWaitTime * Math.pow(1.1, attempts), maxWaitTime);
-        console.log(`⏳ Esperando ${waitTime}ms antes del siguiente intento...`);
         await new Promise(resolve => setTimeout(resolve, waitTime));
         attempts++;
       } catch (error) {
-        console.error(`❌ Error verificando estado del upload ${uploadId} (intento ${attempts + 1}):`, error);
         attempts++;
         
         // Si es el último intento, lanzar el error
@@ -135,7 +115,6 @@ export class MuxUploadService {
         errors: (asset as any).errors,
       };
     } catch (error) {
-      console.error(`Error obteniendo información del asset ${assetId}:`, error);
       throw new Error(`Error obteniendo información del asset: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     }
   }
@@ -152,7 +131,6 @@ export class MuxUploadService {
         timeout: upload.timeout,
       };
     } catch (error) {
-      console.error(`Error obteniendo estado del upload ${uploadId}:`, error);
       throw new Error(`Error obteniendo estado del upload: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     }
   }
@@ -170,7 +148,6 @@ export class MuxUploadService {
         errored: assets.filter((a: any) => a.status === 'errored').length,
       };
     } catch (error) {
-      console.error('Error obteniendo estadísticas de assets:', error);
       throw new Error(`Error obteniendo estadísticas: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     }
   }

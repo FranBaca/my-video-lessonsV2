@@ -23,7 +23,6 @@ export default function ProfessorLogin({ onLoginSuccess, onSwitchToStudent }: Pr
       const authData = await authService.loginProfessor(email, password);
       onLoginSuccess(authData);
     } catch (error: any) {
-      console.error('Error en login:', error);
       setError(error.message || 'Error al iniciar sesión');
     } finally {
       setLoading(false);

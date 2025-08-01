@@ -32,7 +32,6 @@ export const professorServiceClient = {
       }
       return null;
     } catch (error) {
-      console.error('Error getting professor:', error);
       throw error;
     }
   },
@@ -49,7 +48,6 @@ export const professorServiceClient = {
       );
       return docRef.id;
     } catch (error) {
-      console.error('Error creating professor:', error);
       throw error;
     }
   },
@@ -62,7 +60,6 @@ export const professorServiceClient = {
         updatedAt: Timestamp.now()
       });
     } catch (error) {
-      console.error('Error updating professor:', error);
       throw error;
     }
   }
@@ -83,7 +80,6 @@ export const subjectServiceClient = {
       })) as Subject[];
       return subjects;
     } catch (error) {
-      console.error('Error getting subjects:', error);
       throw error;
     }
   },
@@ -102,7 +98,6 @@ export const subjectServiceClient = {
       }
       return null;
     } catch (error) {
-      console.error('Error getting subject:', error);
       throw error;
     }
   },
@@ -119,7 +114,6 @@ export const subjectServiceClient = {
       );
       return docRef.id;
     } catch (error) {
-      console.error('Error creating subject:', error);
       throw error;
     }
   },
@@ -132,7 +126,6 @@ export const subjectServiceClient = {
         updatedAt: Timestamp.now()
       });
     } catch (error) {
-      console.error('Error updating subject:', error);
       throw error;
     }
   },
@@ -142,7 +135,6 @@ export const subjectServiceClient = {
       const docRef = doc(db, 'professors', professorId, 'subjects', subjectId);
       await deleteDoc(docRef);
     } catch (error) {
-      console.error('Error deleting subject:', error);
       throw error;
     }
   }
@@ -165,7 +157,6 @@ export const videoServiceClient = {
       // Ordenar todos los videos por order
       return allVideos.sort((a, b) => a.order - b.order);
     } catch (error) {
-      console.error('Error getting videos:', error);
       throw error;
     }
   },
@@ -186,7 +177,6 @@ export const videoServiceClient = {
         updatedAt: doc.data().updatedAt?.toDate()
       })) as Video[];
     } catch (error) {
-      console.error('Error getting videos by subject:', error);
       throw error;
     }
   },
@@ -205,7 +195,6 @@ export const videoServiceClient = {
       }
       return null;
     } catch (error) {
-      console.error('Error getting video:', error);
       throw error;
     }
   },
@@ -222,7 +211,6 @@ export const videoServiceClient = {
       );
       return docRef.id;
     } catch (error) {
-      console.error('Error creating video:', error);
       throw error;
     }
   },
@@ -235,7 +223,6 @@ export const videoServiceClient = {
         updatedAt: Timestamp.now()
       });
     } catch (error) {
-      console.error('Error updating video:', error);
       throw error;
     }
   },
@@ -245,7 +232,6 @@ export const videoServiceClient = {
       const docRef = doc(db, 'professors', professorId, 'subjects', subjectId, 'videos', videoId);
       await deleteDoc(docRef);
     } catch (error) {
-      console.error('Error deleting video:', error);
       throw error;
     }
   },
@@ -262,7 +248,6 @@ export const videoServiceClient = {
         subject: subjects.find(s => s.id === video.subjectId)!
       }));
     } catch (error) {
-      console.error('Error getting videos with subjects:', error);
       throw error;
     }
   }
@@ -282,7 +267,6 @@ export const studentServiceClient = {
         lastAccess: doc.data().lastAccess?.toDate()
       })) as Student[];
     } catch (error) {
-      console.error('Error getting students:', error);
       throw error;
     }
   },
@@ -301,7 +285,6 @@ export const studentServiceClient = {
       );
       return docRef.id;
     } catch (error) {
-      console.error('Error creating student:', error);
       throw error;
     }
   },
@@ -315,7 +298,6 @@ export const studentServiceClient = {
       });
       return { id: studentId, code };
     } catch (error) {
-      console.error('Error creating student with generated code:', error);
       throw error;
     }
   },
@@ -359,7 +341,6 @@ export const studentServiceClient = {
       // Por ahora, retornamos null y manejamos la verificación en el servidor
       return null;
     } catch (error) {
-      console.error('Error getting student by code:', error);
       return null;
     }
   },
@@ -372,7 +353,6 @@ export const studentServiceClient = {
         lastAccess: Timestamp.now()
       });
     } catch (error) {
-      console.error('Error updating student:', error);
       throw error;
     }
   },
@@ -382,7 +362,6 @@ export const studentServiceClient = {
       const docRef = doc(db, 'professors', professorId, 'students', studentId);
       await deleteDoc(docRef);
     } catch (error) {
-      console.error('Error deleting student:', error);
       throw error;
     }
   }

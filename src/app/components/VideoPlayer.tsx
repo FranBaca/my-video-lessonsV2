@@ -15,7 +15,6 @@ export default function VideoPlayer({ video, userName, isStudent = false }: Vide
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    console.log("🎬 VideoPlayer - video prop changed:", video);
     if (video) {
       setIsLoading(true);
       setError(null);
@@ -75,7 +74,6 @@ export default function VideoPlayer({ video, userName, isStudent = false }: Vide
          setError(data.message || "Error al cargar el video");
        }
      } catch (error) {
-       console.error('🎬 VideoPlayer - fetchVideoData error:', error);
        setError("Error al cargar el video");
      } finally {
        setIsLoading(false);

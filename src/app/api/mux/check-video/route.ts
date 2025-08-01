@@ -40,14 +40,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar el estado del asset en Mux
-    console.log(`Verificando estado del asset ${assetId}...`);
     const assetInfo = await uploadService.getAssetInfo(assetId);
-    
-    console.log(`Asset ${assetId} - Estado: ${assetInfo.status}`);
 
     // Si el asset está listo y el video no lo está, actualizar
     if (assetInfo.status === 'ready' && video.status !== 'ready') {
-      console.log(`Actualizando video ${foundVideoId} como listo`);
       
       const playbackId = assetInfo.playback_ids?.[0]?.id;
       
@@ -81,7 +77,6 @@ export async function POST(request: NextRequest) {
       });
 
     } else if (assetInfo.status === 'errored') {
-      console.log(`Marcando video ${foundVideoId} como fallido`);
       
       // Marcar el video como fallido
       await videoService.update(videoProfessorId, subjectId, foundVideoId, {

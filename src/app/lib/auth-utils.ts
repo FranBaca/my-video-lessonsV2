@@ -30,7 +30,6 @@ export async function verifyProfessorAuth(request: NextRequest): Promise<string>
 
     return decodedToken.uid;
   } catch (error) {
-    console.error('Error verificando autenticación:', error);
     throw new Error("Autenticación fallida");
   }
 }

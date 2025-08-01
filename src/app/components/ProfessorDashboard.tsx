@@ -7,6 +7,7 @@ import { Professor, Video, Student, Subject } from '../types/firebase';
 import CreateSubjectModal from './CreateSubjectModal';
 import SubjectCard from './SubjectCard';
 import VideoUpload from './VideoUpload';
+import { showNotification, showConfirmation } from '../lib/notifications';
 
 interface ProfessorDashboardProps {
   professorId: string;
@@ -50,7 +51,7 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
       setSubjects(subjectsData);
       setStudents(studentsData);
     } catch (error) {
-      console.error('Error loading dashboard data:', error);
+      // Error handling silently for production
     } finally {
       setLoading(false);
     }
@@ -61,7 +62,6 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
       await authService.logout();
       onLogout();
     } catch (error) {
-      console.error('Error en logout:', error);
       // Aún así, llamar a onLogout para limpiar el estado local
       onLogout();
     }
@@ -83,23 +83,22 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
         await loadDashboardData();
       }, 1000);
       
-      alert('Materia creada exitosamente');
+      showNotification.success('Materia creada exitosamente');
     } catch (error) {
-      console.error('Error creating subject:', error);
-      alert(`Error al crear la materia: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      showNotification.error(`Error al crear la materia: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     }
   };
 
   const handleDeleteSubject = async (subjectId: string) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar esta materia? Esta acción no se puede deshacer.')) return;
+    const confirmed = await showConfirmation('¿Estás seguro de que quieres eliminar esta materia? Esta acción no se puede deshacer.');
+    if (!confirmed) return;
 
     try {
       await subjectServiceClient.delete(professorId, subjectId);
       await loadDashboardData();
-      alert('Materia eliminada exitosamente');
+      showNotification.success('Materia eliminada exitosamente');
     } catch (error) {
-      console.error('Error deleting subject:', error);
-      alert(`Error al eliminar la materia: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      showNotification.error(`Error al eliminar la materia: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     }
   };
 
@@ -107,11 +106,11 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
   const handleVideoUploadSuccess = async (video: Video) => {
     await loadDashboardData();
     setShowVideoUploadModal(false);
-    alert('Video subido exitosamente');
+    showNotification.success('Video subido exitosamente');
   };
 
   const handleVideoUploadError = (error: string) => {
-    alert(`Error al subir el video: ${error}`);
+    showNotification.error(`Error al subir el video: ${error}`);
   };
 
   // Funciones para crear estudiantes
@@ -141,25 +140,24 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
       await loadDashboardData();
 
       // Mostrar mensaje de éxito
-      alert(`Estudiante creado exitosamente!\nCódigo: ${result.code}`);
+      showNotification.success(`Estudiante creado exitosamente!\nCódigo: ${result.code}`);
     } catch (error) {
-      console.error('Error creating student:', error);
-      alert(`Error al crear el estudiante: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      showNotification.error(`Error al crear el estudiante: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     } finally {
       setCreatingStudent(false);
     }
   };
 
   const handleDeleteStudent = async (studentId: string) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar este estudiante?')) return;
+    const confirmed = await showConfirmation('¿Estás seguro de que quieres eliminar este estudiante?');
+    if (!confirmed) return;
 
     try {
       await studentServiceClient.delete(professorId, studentId);
       await loadDashboardData();
-      alert('Estudiante eliminado exitosamente');
+      showNotification.success('Estudiante eliminado exitosamente');
     } catch (error) {
-      console.error('Error deleting student:', error);
-      alert('Error al eliminar el estudiante');
+      showNotification.error('Error al eliminar el estudiante');
     }
   };
 
@@ -171,15 +169,7 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
     );
   };
 
-  const handleSeedVideos = async () => {
-    try {
-      // TODO: Implement seed videos functionality
-      alert('Función de videos de prueba no implementada');
-    } catch (error) {
-      console.error('Error creating test videos:', error);
-      alert('Error al crear videos de prueba');
-    }
-  };
+
 
   if (loading) {
     return (
@@ -264,20 +254,9 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
 
       {/* Content */}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        {/* Botón de crear videos de prueba (solo para desarrollo) */}
-        {videos.length === 0 && (
-          <div className="mb-6">
-            <button
-              onClick={handleSeedVideos}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-            >
-              Crear Videos de Prueba
-            </button>
-          </div>
-        )}
 
-        {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                 {activeTab === 'overview' && (
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white overflow-hidden shadow rounded-lg">
               <div className="p-5">
                 <div className="flex items-center">
@@ -338,27 +317,7 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
               </div>
             </div>
 
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">Videos Activos</dt>
-                      <dd className="text-lg font-medium text-gray-900">
-                        {videos.filter(v => v.isActive).length}
-                      </dd>
-                    </dl>
-                  </div>
-                </div>
-              </div>
-            </div>
+            
           </div>
         )}
 
@@ -591,29 +550,29 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
                   <label htmlFor="studentName" className="block text-sm font-medium text-gray-700">
                     Nombre *
                   </label>
-                  <input
-                    type="text"
-                    id="studentName"
-                    value={newStudentName}
-                    onChange={(e) => setNewStudentName(e.target.value)}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Nombre del estudiante"
-                    required
-                  />
+                                     <input
+                     type="text"
+                     id="studentName"
+                     value={newStudentName}
+                     onChange={(e) => setNewStudentName(e.target.value)}
+                     className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+                     placeholder="Nombre del estudiante"
+                     required
+                   />
                 </div>
 
                 <div>
                   <label htmlFor="studentEmail" className="block text-sm font-medium text-gray-700">
                     Email (opcional)
                   </label>
-                  <input
-                    type="email"
-                    id="studentEmail"
-                    value={newStudentEmail}
-                    onChange={(e) => setNewStudentEmail(e.target.value)}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="email@ejemplo.com"
-                  />
+                                     <input
+                     type="email"
+                     id="studentEmail"
+                     value={newStudentEmail}
+                     onChange={(e) => setNewStudentEmail(e.target.value)}
+                     className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+                     placeholder="email@ejemplo.com"
+                   />
                 </div>
 
                 {subjects.length > 0 && (

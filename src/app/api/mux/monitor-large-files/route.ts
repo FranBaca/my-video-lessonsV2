@@ -17,12 +17,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log(`🔍 Monitoreando asset ${assetId} (${fileSizeMB}MB)`);
-
     // Verificar estado en Mux con timeout extendido
     const timeoutMs = fileSizeMB && parseFloat(fileSizeMB) > 100 ? 45000 : 15000;
-    
-    console.log(`⏱️ Timeout de monitoreo: ${timeoutMs/1000}s`);
 
     const assetInfo = await Promise.race([
       uploadService.getAssetInfo(assetId),
@@ -30,8 +26,6 @@ export async function GET(request: NextRequest) {
         setTimeout(() => reject(new Error('Timeout monitoreando asset')), timeoutMs)
       )
     ]) as any;
-
-    console.log(`📊 Asset ${assetId} - Estado: ${assetInfo.status}`);
 
     // Buscar video en Firebase
     const videoResult = await videoService.findByMuxAssetId(assetId);

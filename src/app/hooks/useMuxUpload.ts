@@ -47,7 +47,7 @@ export const useMuxUpload = () => {
     setUploadProgress({
       phase: 'preparing',
       progress: 0,
-      message: 'Preparando Direct Upload URL...'
+      message: 'Preparando video para subir...'
     });
 
     try {
@@ -76,25 +76,21 @@ export const useMuxUpload = () => {
       const { uploadUrl, uploadId } = result.data;
 
       // 2. Subir archivo directamente a Mux
-      console.log('Iniciando upload directo a Mux...');
-      console.log('Upload URL:', uploadUrl);
-      console.log('File size:', file.size, 'bytes');
-      console.log('File type:', file.type);
       
       setUploadProgress({
         phase: 'uploading',
         progress: 0,
-        message: 'Subiendo archivo a Mux...'
+        message: 'Subiendo video...'
       });
 
       await uploadFileToMux(uploadUrl, file);
 
       // 3. Confirmar upload y guardar en base de datos
-      setUploadProgress({
-        phase: 'processing',
-        progress: 95,
-        message: 'Guardando video en base de datos...'
-      });
+              setUploadProgress({
+          phase: 'processing',
+          progress: 95,
+          message: 'Finalizando subida...'
+        });
 
       const confirmResponse = await fetch('/api/mux/upload/confirm', {
         method: 'POST',
@@ -174,7 +170,6 @@ export const useMuxUpload = () => {
       };
 
     } catch (error) {
-      console.error('Upload error:', error);
       throw error;
     } finally {
       setIsUploading(false);
@@ -188,7 +183,6 @@ export const useMuxUpload = () => {
     while (attempts < maxRetries) {
       try {
         attempts++;
-        console.log(`Intento de upload ${attempts}/${maxRetries}`);
         
         await new Promise<void>((resolve, reject) => {
           const xhr = new XMLHttpRequest();
@@ -204,7 +198,7 @@ export const useMuxUpload = () => {
               setUploadProgress(prev => ({
                 ...prev,
                 progress: Math.round(progress),
-                message: `Subiendo: ${Math.round(progress)}% (${uploadedMB}MB/${totalMB}MB) - Intento ${attempts}`
+                message: `${uploadedMB}MB de ${totalMB}MB`
               }));
             }
           });
@@ -215,13 +209,10 @@ export const useMuxUpload = () => {
               setUploadProgress(prev => ({
                 ...prev,
                 progress: 90,
-                message: 'Archivo subido exitosamente'
+                message: 'Video subido exitosamente'
               }));
               resolve();
             } else {
-              console.error('Upload failed with status:', xhr.status);
-              console.error('Response text:', xhr.responseText);
-              
               let errorMessage = `Upload failed with status: ${xhr.status}`;
               if (xhr.status === 405) {
                 errorMessage = 'Method Not Allowed - Error en la configuración de Mux. Contacta al administrador.';
@@ -236,21 +227,15 @@ export const useMuxUpload = () => {
           });
 
           xhr.addEventListener('error', (event) => {
-            console.error('XHR Error:', event);
-            console.error('XHR Status:', xhr.status);
-            console.error('XHR StatusText:', xhr.statusText);
-            console.error('XHR Response:', xhr.responseText);
             reject(new Error('Error de red durante el upload'));
           });
 
           xhr.addEventListener('abort', () => {
-            console.error('Upload abortado por el navegador o usuario');
             reject(new Error('Upload cancelado'));
           });
 
           xhr.addEventListener('timeout', () => {
             const fileSizeMB = file.size / (1024 * 1024);
-            console.error(`Upload timeout después de ${xhr.timeout/1000/60} minutos para archivo de ${fileSizeMB.toFixed(2)}MB`);
             reject(new Error(`Timeout de upload - El archivo de ${fileSizeMB.toFixed(2)}MB es muy grande para tu conexión. Intenta con un archivo más pequeño o mejora tu conexión a internet.`));
           });
 
@@ -269,7 +254,6 @@ export const useMuxUpload = () => {
             timeout = 1200000; // 20 minutos para archivos > 100MB
           }
           
-          console.log(`Configurando timeout de ${timeout/1000/60} minutos para archivo de ${fileSizeMB.toFixed(2)}MB`);
           xhr.timeout = timeout;
           
           // Enviar archivo
@@ -280,8 +264,6 @@ export const useMuxUpload = () => {
         return;
         
       } catch (error) {
-        console.error(`Error en intento ${attempts}:`, error);
-        
         // Si es el último intento, lanzar el error
         if (attempts >= maxRetries) {
           throw error;
@@ -289,11 +271,10 @@ export const useMuxUpload = () => {
         
         // Esperar antes del siguiente intento (backoff exponencial)
         const waitTime = Math.min(1000 * Math.pow(2, attempts - 1), 10000);
-        console.log(`Esperando ${waitTime}ms antes del siguiente intento...`);
         
         setUploadProgress(prev => ({
           ...prev,
-          message: `Reintentando en ${waitTime/1000}s... (${attempts}/${maxRetries})`
+          message: `Reintentando...`
         }));
         
         await new Promise(resolve => setTimeout(resolve, waitTime));

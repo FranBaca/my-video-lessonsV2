@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     // Verificar autenticación del profesor
     const professorId = await verifyProfessorAuth(request);
 
-    console.log(`📊 Obteniendo estadísticas para profesor ${professorId}`);
+
 
     // Obtener estadísticas de videos del profesor
     const allVideos = await videoService.getByProfessor(professorId);

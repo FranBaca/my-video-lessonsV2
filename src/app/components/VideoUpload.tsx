@@ -4,8 +4,9 @@ import { useState, useRef } from 'react';
 import { Subject, Video } from '../types/firebase';
 import { auth } from '../lib/firebase';
 import { useMuxUpload } from '../hooks/useMuxUpload';
-import { NetworkDiagnostics } from '../lib/network-diagnostics';
+
 import { UploadErrorHandler } from '../lib/upload-error-handler';
+import { showNotification } from '../lib/notifications';
 
 interface VideoMetadata {
   name: string;
@@ -103,7 +104,6 @@ export default function VideoUpload({
       const token = await currentUser.getIdToken();
       return token;
     } catch (error) {
-      console.error('Error obteniendo token:', error);
       throw new Error('Error de autenticación. Por favor, inicia sesión nuevamente.');
     }
   };
@@ -117,17 +117,6 @@ export default function VideoUpload({
     }
 
     try {
-      // Verificar conectividad antes del upload
-      console.log('Verificando conectividad...');
-      const connectivity = await NetworkDiagnostics.checkConnectivity();
-      if (!connectivity.success) {
-        onUploadError(`Error de conectividad: ${connectivity.error}. Verifica tu conexión a internet.`);
-        return;
-      }
-
-      // Verificar velocidad de conexión
-      const speed = await NetworkDiagnostics.checkConnectionSpeed();
-      console.log(`Velocidad de conexión: ${speed.speed} (${speed.latency}ms)`);
       
       // Validación de tamaño de archivo
       const fileSizeMB = selectedFile.size / (1024 * 1024);
@@ -180,7 +169,6 @@ export default function VideoUpload({
       
       // Notificar al usuario sobre el estado del video
       if (result.status === 'processing') {
-        console.log('Video subido pero aún procesándose. Los webhooks actualizarán el estado cuando esté listo.');
         // Mostrar mensaje al usuario sobre el procesamiento
         onUploadSuccess({
           ...video,
@@ -189,10 +177,9 @@ export default function VideoUpload({
         });
         
         // Mostrar mensaje informativo al usuario
-        alert('✅ Video subido exitosamente!\n\nEl video se está procesando en Mux. Esto puede tomar varios minutos para archivos grandes.\n\nLos webhooks actualizarán automáticamente el estado cuando esté listo. Puedes cerrar esta ventana y continuar trabajando.');
+        showNotification.success('✅ Video subido exitosamente!\n\nEl video se está procesando. Esto puede tomar varios minutos para archivos grandes.');
       } else {
         // El video está listo
-        console.log('Video procesado y listo para reproducir.');
         onUploadSuccess({
           ...video,
           status: 'ready',
@@ -200,12 +187,10 @@ export default function VideoUpload({
         });
         
         // Mostrar mensaje de éxito
-        alert('✅ Video procesado y listo para reproducir!');
+        showNotification.success('✅ Video procesado y listo para reproducir!');
       }
       
     } catch (error) {
-      console.error('Upload error:', error);
-      
       // Usar el manejador de errores mejorado
       const errorMessage = UploadErrorHandler.handleError(error);
       const suggestions = UploadErrorHandler.getSuggestions(error);
@@ -339,26 +324,26 @@ export default function VideoUpload({
               <label className="block text-sm font-medium text-gray-700">
                 Nombre del video *
               </label>
-              <input
-                type="text"
-                value={videoMetadata.name}
-                onChange={(e) => setVideoMetadata(prev => ({...prev, name: e.target.value}))}
-                className="w-full border rounded-md p-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Ej: Introducción a la Anatomía"
-                required
-              />
+                             <input
+                 type="text"
+                 value={videoMetadata.name}
+                 onChange={(e) => setVideoMetadata(prev => ({...prev, name: e.target.value}))}
+                 className="w-full border rounded-md p-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-500"
+                 placeholder="Ej: Introducción a la Anatomía"
+                 required
+               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Materia *
               </label>
-              <select
-                value={videoMetadata.subjectId}
-                onChange={(e) => setVideoMetadata(prev => ({...prev, subjectId: e.target.value}))}
-                className="w-full border rounded-md p-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              >
+                             <select
+                 value={videoMetadata.subjectId}
+                 onChange={(e) => setVideoMetadata(prev => ({...prev, subjectId: e.target.value}))}
+                 className="w-full border rounded-md p-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                 required
+               >
                 <option value="">Selecciona una materia</option>
                 {subjects.map(subject => (
                   <option key={subject.id} value={subject.id}>
@@ -377,29 +362,29 @@ export default function VideoUpload({
               <label className="block text-sm font-medium text-gray-700">
                 Descripción
               </label>
-              <textarea
-                value={videoMetadata.description}
-                onChange={(e) => setVideoMetadata(prev => ({...prev, description: e.target.value}))}
-                className="w-full border rounded-md p-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                rows={3}
-                placeholder="Describe el contenido del video..."
-              />
+                             <textarea
+                 value={videoMetadata.description}
+                 onChange={(e) => setVideoMetadata(prev => ({...prev, description: e.target.value}))}
+                 className="w-full border rounded-md p-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-500"
+                 rows={3}
+                 placeholder="Describe el contenido del video..."
+               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Tags (separados por comas)
               </label>
-              <input
-                type="text"
-                value={videoMetadata.tags.join(', ')}
-                onChange={(e) => {
-                  const tags = e.target.value.split(',').map(tag => tag.trim()).filter(tag => tag);
-                  setVideoMetadata(prev => ({...prev, tags}));
-                }}
-                className="w-full border rounded-md p-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="anatomía, huesos, cráneo"
-              />
+                             <input
+                 type="text"
+                 value={videoMetadata.tags.join(', ')}
+                 onChange={(e) => {
+                   const tags = e.target.value.split(',').map(tag => tag.trim()).filter(tag => tag);
+                   setVideoMetadata(prev => ({...prev, tags}));
+                 }}
+                 className="w-full border rounded-md p-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-500"
+                 placeholder="anatomía, huesos, cráneo"
+               />
             </div>
           </div>
 

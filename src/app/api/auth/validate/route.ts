@@ -26,14 +26,7 @@ export async function POST(request: NextRequest) {
     const fingerprintVerified = fingerprintData?.verified || false;
     const ipAddress = getClientIp(request);
 
-    console.log("Validando código con fingerprint:", {
-      code,
-      browserFingerprint: browserFingerprint
-        ? `${browserFingerprint.substring(0, 10)}...`
-        : "No disponible",
-      fingerprintVerified,
-      ipAddress,
-    });
+
 
     if (!code) {
       return NextResponse.json(

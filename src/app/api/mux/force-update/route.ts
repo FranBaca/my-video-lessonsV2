@@ -15,11 +15,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`🔄 Forzando actualización del asset ${assetId}...`);
-
     // Verificar estado en Mux
     const assetInfo = await uploadService.getAssetInfo(assetId);
-    console.log(`📊 Asset ${assetId} - Estado en Mux: ${assetInfo.status}`);
 
     // Buscar video en Firebase
     const videoResult = await videoService.findByMuxAssetId(assetId);
@@ -54,7 +51,7 @@ export async function POST(request: NextRequest) {
         updatedAt: new Date()
       });
 
-      console.log(`✅ Video ${videoId} actualizado como listo`);
+
 
       return NextResponse.json({
         success: true,
@@ -77,7 +74,7 @@ export async function POST(request: NextRequest) {
         updatedAt: new Date()
       });
 
-      console.log(`❌ Video ${videoId} marcado como error`);
+
 
       return NextResponse.json({
         success: false,

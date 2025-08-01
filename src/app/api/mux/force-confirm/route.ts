@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('🔧 Forzando confirmación del video:', assetId);
+
 
     // Crear el video en la base de datos directamente
     const videoData: Omit<VideoType, "id"> = {
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
 
     const videoId = await videoService.create(professorId, subjectId, videoData);
 
-    console.log('✅ Video creado exitosamente:', videoId);
+
 
     return NextResponse.json({
       success: true,

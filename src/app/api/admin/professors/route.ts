@@ -74,8 +74,6 @@ export async function POST(request: NextRequest) {
     try {
       firebaseUser = await createUserWithEmailAndPassword(auth, email, tempPassword);
     } catch (error: any) {
-      console.error("Error creating Firebase Auth user:", error);
-      
       // Si el usuario ya existe, intentar obtenerlo
       if (error.code === 'auth/email-already-in-use') {
         return NextResponse.json(
@@ -118,7 +116,7 @@ export async function POST(request: NextRequest) {
       try {
         await firebaseUser.user.delete();
       } catch (deleteError) {
-        console.error("Error deleting Firebase Auth user after Firestore failure:", deleteError);
+        // Error handling silently for production
       }
       throw error;
     }
@@ -137,7 +135,6 @@ export async function POST(request: NextRequest) {
     }, { status: 201 });
 
   } catch (error) {
-    console.error("Error creating professor:", error);
     return NextResponse.json(
       {
         success: false,
@@ -171,7 +168,6 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error("Error getting professors:", error);
     return NextResponse.json(
       {
         success: false,

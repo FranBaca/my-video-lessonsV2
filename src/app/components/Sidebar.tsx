@@ -23,15 +23,7 @@ export default function Sidebar({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSmallScreen, setIsSmallScreen] = useState(false);
 
-  useEffect(() => {
-    console.log("Sidebar Props:", {
-      subjectsType: typeof subjects,
-      isSubjectsArray: Array.isArray(subjects),
-      subjects,
-      selectedSubject,
-      selectedVideo,
-    });
-  }, [subjects, selectedSubject, selectedVideo]);
+
 
   useEffect(() => {
     const checkScreenSize = () => {

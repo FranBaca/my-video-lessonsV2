@@ -80,7 +80,6 @@ export async function generateFingerprint(): Promise<string> {
 
     return uniqueId;
   } catch (error) {
-    console.error("Error al generar fingerprint:", error);
     // Fallback a UUID si algo falla
     return uuidv4();
   }
@@ -108,7 +107,6 @@ export async function getOrCreateFingerprint(): Promise<string> {
 
     return fingerprint;
   } catch (error) {
-    console.error("Error al obtener/crear fingerprint:", error);
     return uuidv4();
   }
 }
@@ -137,7 +135,6 @@ export async function verifyFingerprint(): Promise<boolean> {
     // Comparar los hashes
     return storedHash === currentHash;
   } catch (error) {
-    console.error("Error al verificar fingerprint:", error);
     return false;
   }
 }

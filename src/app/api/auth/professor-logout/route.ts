@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    console.log("🔓 Logout de profesor solicitado");
-
     // Configurar la respuesta
     const response = NextResponse.json({
       success: true,
@@ -19,8 +17,6 @@ export async function POST(request: NextRequest) {
       maxAge: 0, 
       path: "/" 
     });
-
-    console.log("✅ Cookies de profesor limpiadas");
 
     return response;
 

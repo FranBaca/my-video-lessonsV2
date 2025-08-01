@@ -75,8 +75,6 @@ export class UploadErrorHandler {
   }
 
   static handleGenericError(error: any): string {
-    console.error('Error no manejado:', error);
-    
     // Intentar clasificar el error
     if (error.message?.includes('network') || error.message?.includes('fetch')) {
       return this.handleNetworkError(error);
@@ -99,7 +97,6 @@ export class UploadErrorHandler {
     try {
       return this.handleGenericError(error);
     } catch (fallbackError) {
-      console.error('Error en el manejador de errores:', fallbackError);
       return 'Error inesperado. Intenta nuevamente.';
     }
   }

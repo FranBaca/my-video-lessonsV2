@@ -10,16 +10,12 @@ const uploadService = new MuxUploadService();
 // Función para buscar estudiantes (copiada del verify route)
 async function findStudentByCode(code: string): Promise<Student | null> {
   try {
-    console.log('🔍 Buscando estudiante con código:', code);
-    
     // Obtener todos los profesores
     const professorsSnapshot = await getDocs(collection(db, 'professors'));
-    console.log('📋 Profesores encontrados:', professorsSnapshot.size);
     
     // Buscar en cada profesor
     for (const professorDoc of professorsSnapshot.docs) {
       const professorId = professorDoc.id;
-      console.log(`🔍 Buscando en profesor: ${professorId}`);
       
       try {
         // Buscar estudiantes en este profesor
@@ -32,7 +28,6 @@ async function findStudentByCode(code: string): Promise<Student | null> {
         
         if (!studentsSnapshot.empty) {
           const studentDoc = studentsSnapshot.docs[0];
-          console.log('✅ Estudiante encontrado en profesor:', professorId);
           
           const studentData = {
             id: `${professorId}/${studentDoc.id}`,
@@ -41,27 +36,15 @@ async function findStudentByCode(code: string): Promise<Student | null> {
             lastAccess: studentDoc.data().lastAccess?.toDate()
           } as Student;
           
-          console.log('✅ Datos del estudiante:', {
-            id: studentData.id,
-            name: studentData.name,
-            code: studentData.code,
-            authorized: studentData.authorized,
-            deviceId: studentData.deviceId,
-            allowedSubjects: studentData.allowedSubjects?.length || 0
-          });
-          
           return studentData;
         }
       } catch (error) {
-        console.log(`⚠️ Error buscando en profesor ${professorId}:`, error);
         continue; // Try next professor
       }
     }
     
-    console.log('❌ No se encontró estudiante con código:', code);
     return null;
   } catch (error) {
-    console.error('❌ Error en findStudentByCode:', error);
     return null;
   }
 }
@@ -116,7 +99,7 @@ export async function GET(
       );
     }
 
-    console.log(`🔍 Estudiante ${student.name} solicitando video ${videoId}`);
+
 
     // Buscar el video en las materias permitidas del estudiante
     const allowedSubjects = student.allowedSubjects || [];
@@ -127,7 +110,7 @@ export async function GET(
     const pathParts = student.id?.split('/') || [];
     const professorId = pathParts[0]; // El primer elemento es el professorId
     
-    console.log(`🔍 Buscando videos en profesor: ${professorId}`);
+
 
     for (const subjectId of allowedSubjects) {
       try {
@@ -140,7 +123,7 @@ export async function GET(
           break;
         }
       } catch (error) {
-        console.error(`Error buscando video en materia ${subjectId}:`, error);
+        // Error handling silently for production
       }
     }
 
@@ -200,7 +183,7 @@ export async function GET(
         }
         
       } catch (error) {
-        console.error(`❌ Error verificando asset ${video.muxAssetId}:`, error);
+        // Error handling silently for production
         // No actualizar el video si hay error en la verificación
       }
     }

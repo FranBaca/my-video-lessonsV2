@@ -8,16 +8,12 @@ import { Student } from "@/app/types/firebase";
 // Función para buscar estudiantes (copiada del verify route)
 async function findStudentByCode(code: string): Promise<Student | null> {
   try {
-    console.log('🔍 Buscando estudiante con código:', code);
-    
     // Obtener todos los profesores
     const professorsSnapshot = await getDocs(collection(db, 'professors'));
-    console.log('📋 Profesores encontrados:', professorsSnapshot.size);
     
     // Buscar en cada profesor
     for (const professorDoc of professorsSnapshot.docs) {
       const professorId = professorDoc.id;
-      console.log(`🔍 Buscando en profesor: ${professorId}`);
       
       try {
         // Buscar estudiantes en este profesor
@@ -30,7 +26,6 @@ async function findStudentByCode(code: string): Promise<Student | null> {
         
         if (!studentsSnapshot.empty) {
           const studentDoc = studentsSnapshot.docs[0];
-          console.log('✅ Estudiante encontrado en profesor:', professorId);
           
           const studentData = {
             id: `${professorId}/${studentDoc.id}`,
@@ -39,27 +34,15 @@ async function findStudentByCode(code: string): Promise<Student | null> {
             lastAccess: studentDoc.data().lastAccess?.toDate()
           } as Student;
           
-          console.log('✅ Datos del estudiante:', {
-            id: studentData.id,
-            name: studentData.name,
-            code: studentData.code,
-            authorized: studentData.authorized,
-            deviceId: studentData.deviceId,
-            allowedSubjects: studentData.allowedSubjects?.length || 0
-          });
-          
           return studentData;
         }
       } catch (error) {
-        console.log(`⚠️ Error buscando en profesor ${professorId}:`, error);
         continue; // Try next professor
       }
     }
     
-    console.log('❌ No se encontró estudiante con código:', code);
     return null;
   } catch (error) {
-    console.error('❌ Error en findStudentByCode:', error);
     return null;
   }
 }
@@ -78,14 +61,14 @@ export async function GET(request: NextRequest) {
           allowedSubjects = student.allowedSubjects;
         }
       } catch (error) {
-        console.error("Error getting student allowed subjects:", error);
+        // Error handling silently for production
       }
     }
 
     // Verificar autenticación del profesor
     const professorId = await verifyProfessorAuth(request);
 
-    console.log(`📋 Obteniendo videos del profesor ${professorId}`);
+
 
     // Obtener todos los videos del profesor con información de materias
     const videosWithSubjects = await videoService.getByProfessorWithSubjects(professorId);
@@ -130,7 +113,6 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Error obteniendo videos:', error);
     return NextResponse.json(
       { 
         success: false, 

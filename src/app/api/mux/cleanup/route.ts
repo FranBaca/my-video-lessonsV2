@@ -72,11 +72,9 @@ export async function DELETE(request: NextRequest) {
     if (assetId) {
       try {
         // Nota: La eliminación de assets requiere permisos específicos en Mux
-        // Por ahora solo logueamos la intención
-        console.log(`Intentando eliminar asset ${assetId} de Mux...`);
         // TODO: Implementar eliminación de asset en Mux si es necesario
       } catch (error) {
-        console.error('Error eliminando asset de Mux:', error);
+        // Error handling silently for production
       }
     }
 
