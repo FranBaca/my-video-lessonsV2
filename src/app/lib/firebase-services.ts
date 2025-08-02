@@ -755,3 +755,56 @@ export const publicStudentService = {
     }
   }
 }; 
+
+// Servicios para Profesores (Admin SDK - para API routes)
+export const professorServiceAdmin = {
+  async getById(id: string): Promise<Professor | null> {
+    try {
+      if (!adminDb) {
+        throw new Error("Firebase Admin SDK no está disponible");
+      }
+      
+      const docRef = adminDb.collection('professors').doc(id);
+      const docSnap = await docRef.get();
+      
+      if (docSnap.exists) {
+        const data = docSnap.data();
+        return { 
+          id: docSnap.id, 
+          ...data,
+          createdAt: data?.createdAt?.toDate() || new Date()
+        } as Professor;
+      }
+      return null;
+    } catch (error) {
+      throw error;
+    }
+  }
+};
+
+// Servicios para Materias (Admin SDK - para API routes)
+export const subjectServiceAdmin = {
+  async getById(professorId: string, subjectId: string): Promise<Subject | null> {
+    try {
+      if (!adminDb) {
+        throw new Error("Firebase Admin SDK no está disponible");
+      }
+      
+      const docRef = adminDb.collection('professors').doc(professorId).collection('subjects').doc(subjectId);
+      const docSnap = await docRef.get();
+      
+      if (docSnap.exists) {
+        const data = docSnap.data();
+        return { 
+          id: docSnap.id, 
+          ...data,
+          createdAt: data?.createdAt?.toDate() || new Date(),
+          updatedAt: data?.updatedAt?.toDate()
+        } as Subject;
+      }
+      return null;
+    } catch (error) {
+      throw error;
+    }
+  }
+}; 

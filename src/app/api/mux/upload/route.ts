@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyProfessorAuth } from "@/app/lib/auth-utils";
-import { professorService, subjectService } from "@/app/lib/firebase-services";
+import { professorServiceClient, subjectServiceClient } from "@/app/lib/firebase-client";
 import { MuxUploadService } from "@/app/lib/mux-upload-service";
 
 const uploadService = new MuxUploadService();
@@ -10,8 +10,8 @@ export async function POST(request: NextRequest) {
     // Verificar autenticación del profesor
     const professorId = await verifyProfessorAuth(request);
 
-    // Verificar que el profesor existe
-    const professor = await professorService.getById(professorId);
+    // Verificar que el profesor existe usando el mismo servicio que otros endpoints
+    const professor = await professorServiceClient.getById(professorId);
     if (!professor) {
       return NextResponse.json(
         { success: false, message: "Profesor no encontrado" },
@@ -48,8 +48,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verificar que la materia existe
-    const subject = await subjectService.getById(professorId, subjectId);
+    // Verificar que la materia existe usando el mismo servicio que otros endpoints
+    const subject = await subjectServiceClient.getById(professorId, subjectId);
     if (!subject) {
       return NextResponse.json(
         { success: false, message: "Materia no encontrada" },
