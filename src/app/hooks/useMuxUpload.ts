@@ -51,20 +51,21 @@ export const useMuxUpload = () => {
     });
 
     try {
-      // 1. Obtener Direct Upload URL
-      const formData = new FormData();
-      formData.append('video', file);
-      formData.append('name', metadata.name);
-      formData.append('description', metadata.description);
-      formData.append('subjectId', metadata.subjectId);
-      formData.append('tags', JSON.stringify(metadata.tags));
-
+      // 1. Obtener Direct Upload URL (solo metadata, NO el archivo)
       const response = await fetch('/api/mux/upload', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json',
         },
-        body: formData
+        body: JSON.stringify({
+          name: metadata.name,
+          description: metadata.description,
+          subjectId: metadata.subjectId,
+          tags: metadata.tags,
+          size: file.size,
+          type: file.type
+        })
       });
 
       if (!response.ok) {
