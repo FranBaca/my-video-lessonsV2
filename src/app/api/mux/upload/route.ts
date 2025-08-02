@@ -19,24 +19,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Obtener datos del formulario
-    const formData = await request.formData();
-    const file = formData.get("video") as File;
-    const name = formData.get("name") as string;
-    const description = formData.get("description") as string;
-    const subjectId = formData.get("subjectId") as string;
-    const tags = formData.get("tags") ? JSON.parse(formData.get("tags") as string) : [];
+    // Obtener metadata del JSON (NO el archivo)
+    const body = await request.json();
+    const { name, description, subjectId, tags, size, type } = body;
 
     // Validaciones
-    if (!file || !name || !subjectId) {
+    if (!name || !subjectId || !size || !type) {
       return NextResponse.json(
-        { success: false, message: "Archivo, nombre y materia son requeridos" },
+        { success: false, message: "Nombre, materia, tamaño y tipo son requeridos" },
         { status: 400 }
       );
     }
 
     // Validar tipo de archivo
-    if (!file.type.startsWith("video/")) {
+    if (!type.startsWith("video/")) {
       return NextResponse.json(
         { success: false, message: "Solo se permiten archivos de video" },
         { status: 400 }
@@ -45,7 +41,7 @@ export async function POST(request: NextRequest) {
 
     // Validar tamaño (2GB máximo)
     const maxSize = 2 * 1024 * 1024 * 1024;
-    if (file.size > maxSize) {
+    if (size > maxSize) {
       return NextResponse.json(
         { success: false, message: "El archivo excede el tamaño máximo de 2GB" },
         { status: 400 }
@@ -62,7 +58,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 1. Crear Direct Upload URL optimizada
-    const upload = await uploadService.createDirectUploadUrl(file.size);
+    const upload = await uploadService.createDirectUploadUrl(size);
 
     // 2. Devolver la URL de upload para que el cliente suba directamente
     return NextResponse.json({
