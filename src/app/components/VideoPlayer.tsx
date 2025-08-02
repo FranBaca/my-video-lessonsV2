@@ -1,6 +1,6 @@
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import Hls from "hls.js";
 import { Video } from "@/app/types";
-import { useEffect, useRef, useState, useCallback } from "react";
-import Hls from 'hls.js';
 
 interface VideoPlayerProps {
   video: Video | null;
@@ -14,71 +14,109 @@ export default function VideoPlayer({ video, userName, isStudent = false }: Vide
   const [videoData, setVideoData] = useState<any>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-     const fetchVideoData = useCallback(async () => {
-       try {
-         // Si el video ya tiene playbackId o muxPlaybackId, usarlo directamente
-         const playbackId = video?.playbackId || video?.muxPlaybackId;
-         
-         if (playbackId) {
-           setVideoData({
-             streamingUrls: {
-               hls: `https://stream.mux.com/${playbackId}.m3u8`,
-               poster: `https://image.mux.com/${playbackId}/thumbnail.jpg?time=0`
-             }
-           });
-           setIsLoading(false);
-           return;
-         }
+  const fetchVideoData = useCallback(async () => {
+    try {
+      // Para estudiantes, siempre hacer la llamada API para obtener datos frescos
+      if (isStudent) {
+        const endpoint = `/api/student/video/${video?.id}`;
+        const response = await fetch(endpoint);
+        const data = await response.json();
+        
+        if (data.success) {
+          // Construir las URLs de streaming desde los datos del video
+          const videoDataFromApi = data.data;
+          const playbackId = videoDataFromApi.muxPlaybackId || videoDataFromApi.playbackId;
+          
+          if (playbackId) {
+            const streamingUrls = {
+              hls: `https://stream.mux.com/${playbackId}.m3u8`,
+              poster: `https://image.mux.com/${playbackId}/thumbnail.jpg?time=0`
+            };
+            setVideoData({
+              streamingUrls
+            });
+          } else {
+            // Check video status to provide better error messages
+            const videoStatus = videoDataFromApi.status;
+            if (videoStatus === 'processing') {
+              setError("La clase está siendo procesada. Inténtalo de nuevo en unos minutos.");
+            } else if (videoStatus === 'errored') {
+              setError("Error en el procesamiento de la clase. Contacta a tu profesor.");
+            } else if (videoStatus === 'upload_failed') {
+              setError("Error en la carga de la clase. Contacta a tu profesor.");
+            } else {
+              setError("Clase no disponible para reproducción");
+            }
+          }
+        } else {
+          setError(data.message || "Error al cargar la clase");
+        }
+        return;
+      }
 
-         // Si no tiene playbackId, intentar obtenerlo del endpoint
-         const endpoint = isStudent ? `/api/student/video/${video?.id}` : `/api/mux/video/${video?.id}`;
-         
-         const response = await fetch(endpoint);
-         const data = await response.json();
-         
-         if (data.success) {
-           // Construir las URLs de streaming desde los datos del video
-           const videoDataFromApi = data.data;
-           const playbackId = videoDataFromApi.muxPlaybackId || videoDataFromApi.playbackId;
-           
-           if (playbackId) {
-             const streamingUrls = {
-               hls: `https://stream.mux.com/${playbackId}.m3u8`,
-               poster: `https://image.mux.com/${playbackId}/thumbnail.jpg?time=0`
-             };
-             setVideoData({
-               streamingUrls
-             });
-           } else {
-             // Check video status to provide better error messages
-             const videoStatus = videoDataFromApi.status;
-             if (videoStatus === 'processing') {
-               setError("La clase está siendo procesada. Inténtalo de nuevo en unos minutos.");
-             } else if (videoStatus === 'errored') {
-               setError("Error en el procesamiento de la clase. Contacta a tu profesor.");
-             } else if (videoStatus === 'upload_failed') {
-               setError("Error en la carga de la clase. Contacta a tu profesor.");
-             } else {
-               setError("Clase no disponible para reproducción");
-             }
-           }
-         } else {
-           setError(data.message || "Error al cargar la clase");
-         }
-       } catch (error) {
-         setError("Error al cargar la clase");
-       } finally {
-         setIsLoading(false);
-       }
-     }, [video, isStudent]);
+      // Para profesores, usar la lógica original
+      const playbackId = video?.playbackId || video?.muxPlaybackId;
+      
+      if (playbackId) {
+        setVideoData({
+          streamingUrls: {
+            hls: `https://stream.mux.com/${playbackId}.m3u8`,
+            poster: `https://image.mux.com/${playbackId}/thumbnail.jpg?time=0`
+          }
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Si no tiene playbackId, intentar obtenerlo del endpoint
+      const endpoint = `/api/mux/video/${video?.id}`;
+      
+      const response = await fetch(endpoint);
+      const data = await response.json();
+      
+      if (data.success) {
+        // Construir las URLs de streaming desde los datos del video
+        const videoDataFromApi = data.data;
+        const playbackId = videoDataFromApi.muxPlaybackId || videoDataFromApi.playbackId;
+        
+        if (playbackId) {
+          const streamingUrls = {
+            hls: `https://stream.mux.com/${playbackId}.m3u8`,
+            poster: `https://image.mux.com/${playbackId}/thumbnail.jpg?time=0`
+          };
+          setVideoData({
+            streamingUrls
+          });
+        } else {
+          // Check video status to provide better error messages
+          const videoStatus = videoDataFromApi.status;
+          if (videoStatus === 'processing') {
+            setError("La clase está siendo procesada. Inténtalo de nuevo en unos minutos.");
+          } else if (videoStatus === 'errored') {
+            setError("Error en el procesamiento de la clase. Contacta a tu profesor.");
+          } else if (videoStatus === 'upload_failed') {
+            setError("Error en la carga de la clase. Contacta a tu profesor.");
+          } else {
+            setError("Clase no disponible para reproducción");
+          }
+        }
+      } else {
+        setError(data.message || "Error al cargar la clase");
+      }
+    } catch (error) {
+      setError("Error al cargar la clase");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [video?.id, isStudent]);
 
   useEffect(() => {
-    if (video) {
+    if (video?.id) {
       setIsLoading(true);
       setError(null);
       fetchVideoData();
     }
-  }, [video, fetchVideoData]);
+  }, [video?.id, fetchVideoData]);
 
   const handleLoadingComplete = () => {
     setIsLoading(false);

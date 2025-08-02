@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import crypto from 'crypto';
-import { videoService } from "@/app/lib/firebase-services";
-import { db } from "@/app/lib/firebase";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { adminDb } from "@/app/lib/firebase-admin";
 
 // Configuración para obtener raw body en App Router
 export const dynamic = 'force-dynamic';
@@ -32,6 +30,53 @@ function verifyMuxSignature(payload: string, header: string, secret: string): bo
     return isValid;
   } catch (error) {
     return false;
+  }
+}
+
+// Función para buscar video por muxAssetId usando Admin SDK
+async function findVideoByMuxAssetId(muxAssetId: string): Promise<{ video: any; professorId: string; subjectId: string; videoId: string } | null> {
+  try {
+    // Obtener todos los profesores
+    const professorsSnapshot = await adminDb.collection('professors').get();
+    
+    // Buscar en cada profesor
+    for (const professorDoc of professorsSnapshot.docs) {
+      const professorId = professorDoc.id;
+      
+      // Obtener todas las materias del profesor
+      const subjectsSnapshot = await adminDb.collection('professors').doc(professorId).collection('subjects').get();
+      
+      // Buscar en cada materia
+      for (const subjectDoc of subjectsSnapshot.docs) {
+        const subjectId = subjectDoc.id;
+        
+        // Buscar videos en esta materia
+        const videosQuery = adminDb.collection('professors').doc(professorId).collection('subjects').doc(subjectId).collection('videos').where('muxAssetId', '==', muxAssetId);
+        
+        const videosSnapshot = await videosQuery.get();
+        
+        if (!videosSnapshot.empty) {
+          const videoDoc = videosSnapshot.docs[0];
+          const video = {
+            id: videoDoc.id,
+            ...videoDoc.data(),
+            createdAt: videoDoc.data().createdAt?.toDate() || new Date(),
+            updatedAt: videoDoc.data().updatedAt?.toDate()
+          };
+          
+          return {
+            video,
+            professorId,
+            subjectId,
+            videoId: videoDoc.id
+          };
+        }
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    return null;
   }
 }
 
@@ -94,13 +139,15 @@ async function handleAssetReady(event: any, assetData: any) {
     const assetId = assetData.id;
     const playbackId = assetData.playback_ids?.[0]?.id;
     
-    // Buscar el video en Firebase por muxAssetId
-    const result = await videoService.findByMuxAssetId(assetId);
+    // Buscar el video en Firebase por muxAssetId usando Admin SDK
+    const result = await findVideoByMuxAssetId(assetId);
     
     if (result) {
       const { video, professorId, subjectId, videoId } = result;
       
-      await videoService.update(professorId, subjectId, videoId, {
+      // Actualizar el video usando Admin SDK
+      const docRef = adminDb.collection('professors').doc(professorId).collection('subjects').doc(subjectId).collection('videos').doc(videoId);
+      await docRef.update({
         muxPlaybackId: playbackId,
         duration: assetData.duration,
         aspectRatio: assetData.aspect_ratio,
@@ -121,13 +168,15 @@ async function handleAssetErrored(event: any, assetData: any) {
     const assetId = assetData.id;
     const errorMessage = assetData.errors?.message || 'Unknown error';
     
-    // Buscar el video en Firebase por muxAssetId
-    const result = await videoService.findByMuxAssetId(assetId);
+    // Buscar el video en Firebase por muxAssetId usando Admin SDK
+    const result = await findVideoByMuxAssetId(assetId);
     
     if (result) {
       const { video, professorId, subjectId, videoId } = result;
       
-      await videoService.update(professorId, subjectId, videoId, {
+      // Actualizar el video usando Admin SDK
+      const docRef = adminDb.collection('professors').doc(professorId).collection('subjects').doc(subjectId).collection('videos').doc(videoId);
+      await docRef.update({
         status: 'errored',
         isActive: false,
         updatedAt: new Date()
@@ -144,13 +193,14 @@ async function handleUploadAssetCreated(event: any, assetData: any) {
     const uploadId = event.object?.id; // El uploadId está en event.object.id
     
     // Buscar el video por uploadId (que es como se guardó originalmente)
-    const result = await videoService.findByMuxAssetId(uploadId);
+    const result = await findVideoByMuxAssetId(uploadId);
     
     if (result) {
       const { video, professorId, subjectId, videoId } = result;
       
-      // Actualizar el video con el assetId correcto
-      await videoService.update(professorId, subjectId, videoId, {
+      // Actualizar el video con el assetId correcto usando Admin SDK
+      const docRef = adminDb.collection('professors').doc(professorId).collection('subjects').doc(subjectId).collection('videos').doc(videoId);
+      await docRef.update({
         muxAssetId: assetId, // Cambiar uploadId por assetId
         status: 'processing',
         updatedAt: new Date()
@@ -169,7 +219,7 @@ async function handleAssetCreated(event: any, assetData: any) {
     const uploadId = assetData.upload_id;
     
     // Buscar el video en Firebase por muxAssetId
-    const result = await videoService.findByMuxAssetId(assetId);
+    const result = await findVideoByMuxAssetId(assetId);
     
     if (!result) {
       await createDefaultVideo(assetId, assetData);
@@ -200,21 +250,19 @@ async function createDefaultVideo(assetId: string, assetData: any) {
       aspectRatio: assetData.aspect_ratio,
     };
 
-    // Buscar en todos los profesores y materias
-    const professorsSnapshot = await getDocs(collection(db, 'professors'));
+    // Buscar en todos los profesores y materias usando Admin SDK
+    const professorsSnapshot = await adminDb.collection('professors').get();
     for (const professorDoc of professorsSnapshot.docs) {
       const professorId = professorDoc.id;
-      const subjectsSnapshot = await getDocs(collection(db, 'professors', professorId, 'subjects'));
+      const subjectsSnapshot = await adminDb.collection('professors').doc(professorId).collection('subjects').get();
       for (const subjectDoc of subjectsSnapshot.docs) {
         const subjectId = subjectDoc.id;
-        const videosQuery = query(
-          collection(db, 'professors', professorId, 'subjects', subjectId, 'videos'),
-          where('muxAssetId', '==', assetId)
-        );
-        const videosSnapshot = await getDocs(videosQuery);
+        const videosQuery = adminDb.collection('professors').doc(professorId).collection('subjects').doc(subjectId).collection('videos').where('muxAssetId', '==', assetId);
+        const videosSnapshot = await videosQuery.get();
         if (!videosSnapshot.empty) {
           const videoDoc = videosSnapshot.docs[0];
-          await videoService.update(professorId, subjectId, videoDoc.id, {
+          const docRef = adminDb.collection('professors').doc(professorId).collection('subjects').doc(subjectId).collection('videos').doc(videoDoc.id);
+          await docRef.update({
             muxPlaybackId: assetData.playback_ids?.[0]?.id || '',
             duration: assetData.duration,
             aspectRatio: assetData.aspect_ratio,

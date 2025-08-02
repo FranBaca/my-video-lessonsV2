@@ -28,7 +28,7 @@ function initializeFirebaseAdmin() {
     if (process.env.NODE_ENV === 'development') {
       return;
     } else {
-      throw new Error('Firebase Admin SDK requiere variables de entorno configuradas');
+      throw new Error(`Firebase Admin SDK requiere variables de entorno configuradas: ${missingVars.join(', ')}`);
     }
   }
 

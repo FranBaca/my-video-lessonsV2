@@ -1,18 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/app/lib/firebase";
-import { collection, getDocs, query, where, addDoc, Timestamp, doc, getDoc } from "firebase/firestore";
+import { adminDb } from "@/app/lib/firebase-admin";
 import { Student } from "@/app/types/firebase";
 import { createAuthMiddleware, AuthenticatedRequest } from "@/app/lib/auth-utils";
 
 // Función optimizada para buscar estudiantes solo en el profesor actual
 async function findStudentByCodeInProfessor(code: string, professorId: string): Promise<Student | null> {
   try {
-    const studentsQuery = query(
-      collection(db, 'professors', professorId, 'students'),
-      where('code', '==', code)
-    );
+    const studentsQuery = adminDb.collection('professors').doc(professorId).collection('students').where('code', '==', code);
     
-    const studentsSnapshot = await getDocs(studentsQuery);
+    const studentsSnapshot = await studentsQuery.get();
     
     if (!studentsSnapshot.empty) {
       const studentDoc = studentsSnapshot.docs[0];
@@ -36,8 +32,8 @@ async function findStudentByCodeInProfessor(code: string, professorId: string): 
 // Función para verificar que el profesor existe
 async function verifyProfessorExists(professorId: string): Promise<boolean> {
   try {
-    const professorDoc = await getDoc(doc(db, 'professors', professorId));
-    return professorDoc.exists();
+    const professorDoc = await adminDb.collection('professors').doc(professorId).get();
+    return professorDoc.exists;
   } catch (error) {
     return false;
   }
@@ -129,14 +125,11 @@ async function handleCreateStudent(request: AuthenticatedRequest) {
       lastAccess: new Date()
     };
 
-    const docRef = await addDoc(
-      collection(db, 'professors', professorId, 'students'),
-      {
-        ...studentData,
-        enrolledAt: Timestamp.now(),
-        lastAccess: Timestamp.now()
-      }
-    );
+    const docRef = await adminDb.collection('professors').doc(professorId).collection('students').add({
+      ...studentData,
+      enrolledAt: new Date(),
+      lastAccess: new Date()
+    });
 
 
 

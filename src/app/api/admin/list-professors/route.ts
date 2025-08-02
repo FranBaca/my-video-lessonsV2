@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/app/lib/firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { adminDb } from "@/app/lib/firebase-admin";
 
 export async function GET(request: NextRequest) {
   try {
-    const professorsSnapshot = await getDocs(collection(db, 'professors'));
+    const professorsSnapshot = await adminDb.collection('professors').get();
     const professors = professorsSnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()

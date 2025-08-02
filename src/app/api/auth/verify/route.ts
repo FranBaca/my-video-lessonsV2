@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/app/lib/firebase";
-import { collection, getDocs, query, where, updateDoc, doc, Timestamp } from "firebase/firestore";
+import { adminDb } from "@/app/lib/firebase-admin";
 import { Student } from "@/app/types/firebase";
 
 export const dynamic = 'force-dynamic';
@@ -43,7 +42,7 @@ function checkRateLimit(ip: string): boolean {
 async function findStudentByCode(code: string): Promise<Student | null> {
   try {
     // Obtener todos los profesores
-    const professorsSnapshot = await getDocs(collection(db, 'professors'));
+    const professorsSnapshot = await adminDb.collection('professors').get();
     
     // Buscar en cada profesor
     for (const professorDoc of professorsSnapshot.docs) {
@@ -51,12 +50,9 @@ async function findStudentByCode(code: string): Promise<Student | null> {
       
       try {
         // Buscar estudiantes en este profesor
-        const studentsQuery = query(
-          collection(db, 'professors', professorId, 'students'),
-          where('code', '==', code)
-        );
+        const studentsQuery = adminDb.collection('professors').doc(professorId).collection('students').where('code', '==', code);
         
-        const studentsSnapshot = await getDocs(studentsQuery);
+        const studentsSnapshot = await studentsQuery.get();
         
         if (!studentsSnapshot.empty) {
           const studentDoc = studentsSnapshot.docs[0];
@@ -91,6 +87,14 @@ function createErrorResponse(message: string, status: number = 400) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if Admin SDK is available
+    if (!adminDb) {
+      return createErrorResponse(
+        "Error de configuración del servidor. Por favor, contacta al administrador.",
+        500
+      );
+    }
+    
     // Rate limiting
     const ip = request.headers.get("x-forwarded-for") || "unknown";
     if (!checkRateLimit(ip)) {
@@ -102,8 +106,6 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const { code, deviceId } = body;
-
-
 
     if (!code || !deviceId) {
       return createErrorResponse("Por favor ingresa un código válido");
@@ -129,12 +131,11 @@ export async function POST(request: NextRequest) {
         const studentId = pathParts[1];
         
         if (professorId && studentId) {
-          const docRef = doc(db, 'professors', professorId, 'students', studentId);
-          await updateDoc(docRef, {
+          const docRef = adminDb.collection('professors').doc(professorId).collection('students').doc(studentId);
+          await docRef.update({
             deviceId,
-            lastAccess: Timestamp.now()
+            lastAccess: new Date()
           });
-
         }
       } else if (student.deviceId !== deviceId) {
         // Si el deviceId no coincide, permitir re-autenticación desde el mismo dispositivo
@@ -145,17 +146,14 @@ export async function POST(request: NextRequest) {
         const studentId = pathParts[1];
         
         if (professorId && studentId) {
-          const docRef = doc(db, 'professors', professorId, 'students', studentId);
-          await updateDoc(docRef, {
+          const docRef = adminDb.collection('professors').doc(professorId).collection('students').doc(studentId);
+          await docRef.update({
             deviceId,
-            lastAccess: Timestamp.now()
+            lastAccess: new Date()
           });
-
         }
       }
     }
-
-
 
     // Configurar la respuesta con las cookies
     const response = NextResponse.json({

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyProfessorAuth } from "@/app/lib/auth-utils";
-import { professorService, videoService, subjectService } from "@/app/lib/firebase-services";
+import { adminDb } from "@/app/lib/firebase-admin";
 import { Video as VideoType } from "@/app/types/firebase";
 import { MuxUploadService } from "@/app/lib/mux-upload-service";
 
@@ -20,9 +20,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verificar que la materia existe
-    const subject = await subjectService.getById(professorId, metadata.subjectId);
-    if (!subject) {
+    // Verificar que la materia existe usando Admin SDK
+    const subjectDoc = await adminDb.collection('professors').doc(professorId).collection('subjects').doc(metadata.subjectId).get();
+    if (!subjectDoc.exists) {
       return NextResponse.json(
         { success: false, message: "Materia no encontrada" },
         { status: 404 }
@@ -139,7 +139,7 @@ async function saveVideoToDatabase(professorId: string, metadata: any, assetInfo
     );
   }
 
-  // Guardar en Firestore con metadata completa
+  // Guardar en Firestore con metadata completa usando Admin SDK
   const videoData: Omit<VideoType, "id"> = {
     name: metadata.name,
     description: metadata.description,
@@ -159,12 +159,12 @@ async function saveVideoToDatabase(professorId: string, metadata: any, assetInfo
     aspectRatio: assetInfo.aspect_ratio,
   };
 
-  const videoId = await videoService.create(professorId, metadata.subjectId, videoData);
+  const docRef = await adminDb.collection('professors').doc(professorId).collection('subjects').doc(metadata.subjectId).collection('videos').add(videoData);
 
   return NextResponse.json({
     success: true,
     data: {
-      id: videoId,
+      id: docRef.id,
       name: metadata.name,
       description: metadata.description,
       subjectId: metadata.subjectId,
@@ -181,7 +181,7 @@ async function saveVideoToDatabase(professorId: string, metadata: any, assetInfo
 }
 
 async function saveVideoToDatabaseProcessing(professorId: string, metadata: any, assetId: string | null) {
-  // Guardar en Firestore con estado 'processing'
+  // Guardar en Firestore con estado 'processing' usando Admin SDK
   const videoData: Omit<VideoType, "id"> = {
     name: metadata.name,
     description: metadata.description,
@@ -199,13 +199,13 @@ async function saveVideoToDatabaseProcessing(professorId: string, metadata: any,
     uploadConfirmed: true,
   };
 
-  const videoId = await videoService.create(professorId, metadata.subjectId, videoData);
+  const docRef = await adminDb.collection('professors').doc(professorId).collection('subjects').doc(metadata.subjectId).collection('videos').add(videoData);
 
   return NextResponse.json({
     success: true,
     status: 'processing',
     data: {
-      id: videoId,
+      id: docRef.id,
       name: metadata.name,
       description: metadata.description,
       subjectId: metadata.subjectId,

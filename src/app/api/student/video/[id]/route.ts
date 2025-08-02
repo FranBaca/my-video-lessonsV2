@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { videoService, subjectService } from "@/app/lib/firebase-services";
 import { MuxUploadService } from "@/app/lib/mux-upload-service";
-import { db } from "@/app/lib/firebase";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { adminDb } from "@/app/lib/firebase-admin";
 import { Student } from "@/app/types/firebase";
 
 const uploadService = new MuxUploadService();
@@ -11,7 +9,7 @@ const uploadService = new MuxUploadService();
 async function findStudentByCode(code: string): Promise<Student | null> {
   try {
     // Obtener todos los profesores
-    const professorsSnapshot = await getDocs(collection(db, 'professors'));
+    const professorsSnapshot = await adminDb.collection('professors').get();
     
     // Buscar en cada profesor
     for (const professorDoc of professorsSnapshot.docs) {
@@ -19,12 +17,9 @@ async function findStudentByCode(code: string): Promise<Student | null> {
       
       try {
         // Buscar estudiantes en este profesor
-        const studentsQuery = query(
-          collection(db, 'professors', professorId, 'students'),
-          where('code', '==', code)
-        );
+        const studentsQuery = adminDb.collection('professors').doc(professorId).collection('students').where('code', '==', code);
         
-        const studentsSnapshot = await getDocs(studentsQuery);
+        const studentsSnapshot = await studentsQuery.get();
         
         if (!studentsSnapshot.empty) {
           const studentDoc = studentsSnapshot.docs[0];
@@ -43,6 +38,41 @@ async function findStudentByCode(code: string): Promise<Student | null> {
       }
     }
     
+    return null;
+  } catch (error) {
+    return null;
+  }
+}
+
+// Función para obtener videos de una materia usando Admin SDK
+async function getVideosBySubject(professorId: string, subjectId: string) {
+  try {
+    const videosQuery = adminDb.collection('professors').doc(professorId).collection('subjects').doc(subjectId).collection('videos').where('isActive', '==', true);
+    const videosSnapshot = await videosQuery.get();
+    
+    return videosSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      createdAt: doc.data().createdAt?.toDate() || new Date(),
+      updatedAt: doc.data().updatedAt?.toDate()
+    }));
+  } catch (error) {
+    return [];
+  }
+}
+
+// Función para obtener materia usando Admin SDK
+async function getSubjectById(professorId: string, subjectId: string) {
+  try {
+    const subjectDoc = await adminDb.collection('professors').doc(professorId).collection('subjects').doc(subjectId).get();
+    if (subjectDoc.exists) {
+      return {
+        id: subjectDoc.id,
+        ...subjectDoc.data(),
+        createdAt: subjectDoc.data().createdAt?.toDate() || new Date(),
+        updatedAt: subjectDoc.data().updatedAt?.toDate()
+      };
+    }
     return null;
   } catch (error) {
     return null;
@@ -99,8 +129,6 @@ export async function GET(
       );
     }
 
-
-
     // Buscar el video en las materias permitidas del estudiante
     const allowedSubjects = student.allowedSubjects || [];
     let video = null;
@@ -109,17 +137,15 @@ export async function GET(
     // Extraer el professorId del id del estudiante
     const pathParts = student.id?.split('/') || [];
     const professorId = pathParts[0]; // El primer elemento es el professorId
-    
-
 
     for (const subjectId of allowedSubjects) {
       try {
-        const videos = await videoService.getBySubject(professorId, subjectId);
+        const videos = await getVideosBySubject(professorId, subjectId);
         const foundVideo = videos.find(v => v.id === videoId);
         
         if (foundVideo) {
           video = foundVideo;
-          foundSubject = await subjectService.getById(professorId, subjectId);
+          foundSubject = await getSubjectById(professorId, subjectId);
           break;
         }
       } catch (error) {
@@ -140,20 +166,16 @@ export async function GET(
         const assetInfo = await uploadService.getAssetInfo(video.muxAssetId);
         
         if (assetInfo.status === 'ready') {
-          // Asset está listo, actualizar video
-          await videoService.update(
-            video.professorId, 
-            video.subjectId, 
-            video.id!, 
-            {
-              status: 'ready',
-              muxPlaybackId: assetInfo.playback_ids?.[0]?.id || '',
-              duration: assetInfo.duration,
-              aspectRatio: assetInfo.aspect_ratio,
-              isActive: true,
-              updatedAt: new Date()
-            }
-          );
+          // Asset está listo, actualizar video usando Admin SDK
+          const docRef = adminDb.collection('professors').doc(video.professorId).collection('subjects').doc(video.subjectId).collection('videos').doc(video.id);
+          await docRef.update({
+            status: 'ready',
+            muxPlaybackId: assetInfo.playback_ids?.[0]?.id || '',
+            duration: assetInfo.duration,
+            aspectRatio: assetInfo.aspect_ratio,
+            isActive: true,
+            updatedAt: new Date()
+          });
           
           // Actualizar el objeto video local
           video.status = 'ready';
@@ -163,30 +185,34 @@ export async function GET(
           video.isActive = true;
           
         } else if (assetInfo.status === 'errored') {
-          // Asset falló, marcar como error
-          await videoService.update(
-            video.professorId, 
-            video.subjectId, 
-            video.id!, 
-            {
-              status: 'errored',
-              errorMessage: assetInfo.errors?.message || 'Error desconocido',
-              isActive: false,
-              updatedAt: new Date()
-            }
-          );
+          // Asset falló, marcar como error usando Admin SDK
+          const docRef = adminDb.collection('professors').doc(video.professorId).collection('subjects').doc(video.subjectId).collection('videos').doc(video.id);
+          await docRef.update({
+            status: 'errored',
+            errorMessage: assetInfo.errors?.message || 'Error desconocido',
+            isActive: false,
+            updatedAt: new Date()
+          });
           
           // Actualizar el objeto video local
           video.status = 'errored';
           video.errorMessage = assetInfo.errors?.message || 'Error desconocido';
           video.isActive = false;
+        } else {
+          // Asset aún procesándose
         }
         
       } catch (error) {
+        console.error('❌ Error verificando asset en Mux:', error);
         // Error handling silently for production
         // No actualizar el video si hay error en la verificación
       }
     }
+
+    // Verificar si el video tiene los datos necesarios para reproducirse
+    const hasPlaybackId = video.muxPlaybackId && video.muxPlaybackId.length > 0;
+    const isReady = video.status === 'ready';
+    const isActive = video.isActive === true;
 
     const responseData = {
       success: true,
@@ -206,7 +232,13 @@ export async function GET(
         tags: video.tags,
         createdAt: video.createdAt,
         updatedAt: video.updatedAt,
-        errorMessage: video.errorMessage
+        errorMessage: video.errorMessage,
+        // Agregar información de debug
+        debug: {
+          hasPlaybackId,
+          isReady,
+          isActive
+        }
       }
     };
     

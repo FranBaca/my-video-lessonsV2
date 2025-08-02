@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyProfessorAuth } from "@/app/lib/auth-utils";
 import { videoService } from "@/app/lib/firebase-services";
-import { db } from "@/app/lib/firebase";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { adminDb } from "@/app/lib/firebase-admin";
 import { Student } from "@/app/types/firebase";
 
 // Función para buscar estudiantes (copiada del verify route)
 async function findStudentByCode(code: string): Promise<Student | null> {
   try {
     // Obtener todos los profesores
-    const professorsSnapshot = await getDocs(collection(db, 'professors'));
+    const professorsSnapshot = await adminDb.collection('professors').get();
     
     // Buscar en cada profesor
     for (const professorDoc of professorsSnapshot.docs) {
@@ -17,12 +16,9 @@ async function findStudentByCode(code: string): Promise<Student | null> {
       
       try {
         // Buscar estudiantes en este profesor
-        const studentsQuery = query(
-          collection(db, 'professors', professorId, 'students'),
-          where('code', '==', code)
-        );
+        const studentsQuery = adminDb.collection('professors').doc(professorId).collection('students').where('code', '==', code);
         
-        const studentsSnapshot = await getDocs(studentsQuery);
+        const studentsSnapshot = await studentsQuery.get();
         
         if (!studentsSnapshot.empty) {
           const studentDoc = studentsSnapshot.docs[0];

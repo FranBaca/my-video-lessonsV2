@@ -26,26 +26,34 @@ export default function Home() {
   const [authState, setAuthState] = useState<AuthState>("selecting");
   const [professorAuthData, setProfessorAuthData] = useState<ProfessorAuthData | null>(null);
 
-  // Verificar sesión de profesor al cargar
+  // Verificar sesión unificada al cargar
   useEffect(() => {
-    const checkProfessorSession = async () => {
+    const checkUnifiedSession = async () => {
       try {
-        const sessionData = await authService.checkProfessorSession();
-        
-        if (sessionData.authenticated && sessionData.professor) {
-          // Profesor autenticado con cookies válidas
-          setProfessorAuthData({
-            user: {
-              uid: sessionData.professor.id,
-              email: sessionData.professor.email,
-              displayName: sessionData.professor.name,
-              photoURL: undefined
-            },
-            professor: sessionData.professor
-          });
-          setAuthState("professor-dashboard");
+        const response = await fetch("/api/auth/check-session");
+        const data = await response.json();
+
+        if (data.success && data.authenticated) {
+          if (data.type === 'professor') {
+            // Profesor autenticado
+            setProfessorAuthData({
+              user: {
+                uid: data.professor.id,
+                email: data.professor.email,
+                displayName: data.professor.name,
+                photoURL: undefined
+              },
+              professor: data.professor
+            });
+            setAuthState("professor-dashboard");
+          } else if (data.type === 'student') {
+            // Estudiante autenticado
+            setStudentName(data.student.name);
+            setIsStudentAuthenticated(true);
+            setAuthState("student-dashboard");
+          }
         } else {
-          // Verificar Firebase Auth como fallback
+          // No hay sesión válida, verificar Firebase Auth como fallback
           const unsubscribe = authService.onAuthStateChange((user) => {
             if (user) {
               // Usuario autenticado, verificar si es profesor
@@ -69,32 +77,7 @@ export default function Home() {
       }
     };
 
-    checkProfessorSession();
-  }, []);
-
-  // Verificar sesión de estudiante al cargar
-  useEffect(() => {
-    const checkStudentSession = async () => {
-      try {
-        const response = await fetch("/api/auth/check-session");
-        const data = await response.json();
-
-        if (data.success && data.authenticated) {
-          setStudentName(data.student.name);
-          setIsStudentAuthenticated(true);
-          setAuthState("student-dashboard");
-        } else {
-          // Limpiar localStorage si no hay sesión válida
-          localStorage.removeItem("deviceId");
-          localStorage.removeItem("studentCode");
-          localStorage.removeItem("lastLogin");
-        }
-      } catch (error) {
-        // Error handling silently for production
-      }
-    };
-
-    checkStudentSession();
+    checkUnifiedSession();
   }, []);
 
   // Cargar datos del profesor

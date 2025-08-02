@@ -149,32 +149,5 @@ export const authService = {
     } catch (error) {
       return false;
     }
-  },
-
-  // Verificar sesión de profesor desde cookies
-  async checkProfessorSession(): Promise<{ authenticated: boolean; professor?: any }> {
-    try {
-      const response = await fetch('/api/auth/check-professor-session');
-      const data = await response.json();
-      
-      return {
-        authenticated: data.success && data.authenticated,
-        professor: data.professor
-      };
-    } catch (error) {
-      return { authenticated: false };
-    }
-  },
-
-  // Verificar rápidamente si hay una sesión de profesor
-  async hasProfessorSession(): Promise<boolean> {
-    try {
-      const response = await fetch('/api/auth/professor-session');
-      const data = await response.json();
-      
-      return data.success && data.hasSession;
-    } catch (error) {
-      return false;
-    }
   }
 }; 
