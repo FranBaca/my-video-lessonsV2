@@ -14,7 +14,7 @@ export class MuxUploadService {
   async createDirectUploadUrl(fileSize: number) {
     try {
       const upload = await this.muxClient.video.uploads.create({
-        cors_origin: 'https://my-video-lessons-v2.vercel.app', // Dominio específico
+        cors_origin: 'https://my-video-lessons-v2.vercel.app',
         new_asset_settings: {
           playback_policy: ['public'],
           // Basic assets don't support mp4_support setting
