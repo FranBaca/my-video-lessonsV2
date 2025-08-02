@@ -163,6 +163,7 @@ export default function Home() {
 
   const handleStudentLogout = async () => {
     try {
+      // Call logout API
       const response = await fetch("/api/auth/logout", {
         method: "POST",
       });
@@ -171,15 +172,49 @@ export default function Home() {
         throw new Error("Error al cerrar sesión");
       }
 
-      // Limpiar el estado y redirigir al selector
+      // Clear all cookies
+      document.cookie.split(";").forEach((c) => {
+        const eqPos = c.indexOf("=");
+        const name = eqPos > -1 ? c.substr(0, eqPos) : c;
+        document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+      });
+
+      // Clear localStorage and sessionStorage
+      localStorage.clear();
+      sessionStorage.clear();
+
+      // Clear cache for the current domain
+      if ('caches' in window) {
+        try {
+          const cacheNames = await caches.keys();
+          await Promise.all(
+            cacheNames.map(cacheName => caches.delete(cacheName))
+          );
+        } catch (cacheError) {
+          console.log('Cache clearing failed:', cacheError);
+        }
+      }
+
+      // Clear state and redirect to selector
       setIsStudentAuthenticated(false);
       setStudentName("");
       setSubjects([]);
       setSelectedSubject(null);
       setSelectedVideo(null);
       setAuthState("selecting");
+
+      // Force page reload to ensure complete cleanup
+      window.location.reload();
     } catch (error) {
-      // Error handling silently for production
+      console.error('Logout error:', error);
+      // Even if there's an error, clear local state and redirect
+      setIsStudentAuthenticated(false);
+      setStudentName("");
+      setSubjects([]);
+      setSelectedSubject(null);
+      setSelectedVideo(null);
+      setAuthState("selecting");
+      window.location.reload();
     }
   };
 

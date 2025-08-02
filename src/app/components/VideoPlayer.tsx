@@ -13,6 +13,7 @@ export default function VideoPlayer({ video, userName, isStudent = false }: Vide
   const [error, setError] = useState<string | null>(null);
   const [videoData, setVideoData] = useState<any>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const hlsRef = useRef<Hls | null>(null);
 
   const fetchVideoData = useCallback(async () => {
     try {
@@ -33,7 +34,8 @@ export default function VideoPlayer({ video, userName, isStudent = false }: Vide
               poster: `https://image.mux.com/${playbackId}/thumbnail.jpg?time=0`
             };
             setVideoData({
-              streamingUrls
+              streamingUrls,
+              videoId: video?.id
             });
           } else {
             // Check video status to provide better error messages
@@ -62,7 +64,8 @@ export default function VideoPlayer({ video, userName, isStudent = false }: Vide
           streamingUrls: {
             hls: `https://stream.mux.com/${playbackId}.m3u8`,
             poster: `https://image.mux.com/${playbackId}/thumbnail.jpg?time=0`
-          }
+          },
+          videoId: video?.id
         });
         setIsLoading(false);
         return;
@@ -85,7 +88,8 @@ export default function VideoPlayer({ video, userName, isStudent = false }: Vide
             poster: `https://image.mux.com/${playbackId}/thumbnail.jpg?time=0`
           };
           setVideoData({
-            streamingUrls
+            streamingUrls,
+            videoId: video?.id
           });
         } else {
           // Check video status to provide better error messages
@@ -114,9 +118,23 @@ export default function VideoPlayer({ video, userName, isStudent = false }: Vide
     if (video?.id) {
       setIsLoading(true);
       setError(null);
+      // Only reset video data if we're switching to a different video
+      if (!videoData || videoData.videoId !== video.id) {
+        setVideoData(null);
+      }
       fetchVideoData();
     }
   }, [video?.id, fetchVideoData]);
+
+  // Cleanup HLS instance only when component unmounts
+  useEffect(() => {
+    return () => {
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
+    };
+  }, []);
 
   const handleLoadingComplete = () => {
     setIsLoading(false);
@@ -128,18 +146,30 @@ export default function VideoPlayer({ video, userName, isStudent = false }: Vide
        const video = videoRef.current;
        const hlsUrl = videoData.streamingUrls.hls;
        
+       // Only clean up if we have a different URL
+       if (hlsRef.current && hlsRef.current.url !== hlsUrl) {
+         hlsRef.current.destroy();
+         hlsRef.current = null;
+       }
+       
        if (Hls.isSupported()) {
-         const hls = new Hls();
-         hls.loadSource(hlsUrl);
-         hls.attachMedia(video);
+         // Only create new HLS instance if we don't have one or URL changed
+         if (!hlsRef.current) {
+           const hls = new Hls();
+           hlsRef.current = hls;
+           hls.attachMedia(video);
+           
+           hls.on(Hls.Events.MANIFEST_PARSED, () => {
+             setIsLoading(false);
+           });
+           
+           hls.on(Hls.Events.ERROR, (event, data) => {
+             setError("Error al reproducir la clase HLS");
+           });
+         }
          
-         hls.on(Hls.Events.MANIFEST_PARSED, () => {
-           setIsLoading(false);
-         });
-         
-         hls.on(Hls.Events.ERROR, (event, data) => {
-           setError("Error al reproducir la clase HLS");
-         });
+         // Load the new source
+         hlsRef.current.loadSource(hlsUrl);
        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
          // Native HLS support (Safari)
          video.src = hlsUrl;

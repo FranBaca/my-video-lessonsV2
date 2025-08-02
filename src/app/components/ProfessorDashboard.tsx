@@ -47,9 +47,22 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
       setSubjects(subjectsData);
       setStudents(studentsData);
     } catch (error) {
-      // Error handling silently for production
+      console.error('Error loading dashboard data:', error);
+      // Show error notification in development
+      if (process.env.NODE_ENV === 'development') {
+        showNotification.error('Error al cargar los datos del dashboard');
+      }
     } finally {
       setLoading(false);
+    }
+  }, [professorId]);
+
+  const refreshSubjects = useCallback(async () => {
+    try {
+      const subjectsData = await subjectServiceClient.getByProfessor(professorId);
+      setSubjects(subjectsData);
+    } catch (error) {
+      console.error('Error refreshing subjects:', error);
     }
   }, [professorId]);
 
@@ -75,8 +88,24 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
       // Cerrar el modal antes de recargar datos
       setShowCreateSubjectModal(false);
       
-      // Recargar datos una sola vez
-      await loadDashboardData();
+      // Actualizar inmediatamente el estado local con la nueva materia
+      const newSubject: Subject = {
+        id: subjectId,
+        ...subjectData,
+        createdAt: new Date(),
+        updatedAt: undefined
+      };
+      
+      setSubjects(prev => [...prev, newSubject]);
+      
+      // Refrescar subjects específicamente después de un breve delay
+      setTimeout(async () => {
+        try {
+          await refreshSubjects();
+        } catch (error) {
+          console.error('Error refreshing subjects:', error);
+        }
+      }, 1000);
       
       showNotification.success('Materia creada exitosamente');
     } catch (error) {
