@@ -5,6 +5,15 @@ export interface Video {
   thumbnailLink?: string;
   createdTime: string;
   mimeType?: string;
+  // Additional properties for video playback
+  playbackId?: string;
+  muxPlaybackId?: string;
+  description?: string;
+  status?: string;
+  duration?: number;
+  thumbnailUrl?: string;
+  createdAt?: any;
+  updatedAt?: any;
 }
 
 export interface Section {

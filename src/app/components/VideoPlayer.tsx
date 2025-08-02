@@ -1,25 +1,116 @@
 import { Video } from "@/app/types";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
+import Hls from 'hls.js';
 
 interface VideoPlayerProps {
   video: Video | null;
   userName: string;
+  isStudent?: boolean;
 }
 
-export default function VideoPlayer({ video, userName }: VideoPlayerProps) {
+export default function VideoPlayer({ video, userName, isStudent = false }: VideoPlayerProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [videoData, setVideoData] = useState<any>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+     const fetchVideoData = useCallback(async () => {
+       try {
+         // Si el video ya tiene playbackId o muxPlaybackId, usarlo directamente
+         const playbackId = video?.playbackId || video?.muxPlaybackId;
+         
+         if (playbackId) {
+           setVideoData({
+             streamingUrls: {
+               hls: `https://stream.mux.com/${playbackId}.m3u8`,
+               poster: `https://image.mux.com/${playbackId}/thumbnail.jpg?time=0`
+             }
+           });
+           setIsLoading(false);
+           return;
+         }
+
+         // Si no tiene playbackId, intentar obtenerlo del endpoint
+         const endpoint = isStudent ? `/api/student/video/${video?.id}` : `/api/mux/video/${video?.id}`;
+         
+         const response = await fetch(endpoint);
+         const data = await response.json();
+         
+         if (data.success) {
+           // Construir las URLs de streaming desde los datos del video
+           const videoDataFromApi = data.data;
+           const playbackId = videoDataFromApi.muxPlaybackId || videoDataFromApi.playbackId;
+           
+           if (playbackId) {
+             const streamingUrls = {
+               hls: `https://stream.mux.com/${playbackId}.m3u8`,
+               poster: `https://image.mux.com/${playbackId}/thumbnail.jpg?time=0`
+             };
+             setVideoData({
+               streamingUrls
+             });
+           } else {
+             // Check video status to provide better error messages
+             const videoStatus = videoDataFromApi.status;
+             if (videoStatus === 'processing') {
+               setError("La clase está siendo procesada. Inténtalo de nuevo en unos minutos.");
+             } else if (videoStatus === 'errored') {
+               setError("Error en el procesamiento de la clase. Contacta a tu profesor.");
+             } else if (videoStatus === 'upload_failed') {
+               setError("Error en la carga de la clase. Contacta a tu profesor.");
+             } else {
+               setError("Clase no disponible para reproducción");
+             }
+           }
+         } else {
+           setError(data.message || "Error al cargar la clase");
+         }
+       } catch (error) {
+         setError("Error al cargar la clase");
+       } finally {
+         setIsLoading(false);
+       }
+     }, [video, isStudent]);
 
   useEffect(() => {
     if (video) {
       setIsLoading(true);
       setError(null);
+      fetchVideoData();
     }
-  }, [video?.id]);
+  }, [video, fetchVideoData]);
 
   const handleLoadingComplete = () => {
     setIsLoading(false);
   };
+
+     // Initialize HLS.js when video data is available
+   useEffect(() => {
+     if (videoData?.streamingUrls?.hls && videoRef.current) {
+       const video = videoRef.current;
+       const hlsUrl = videoData.streamingUrls.hls;
+       
+       if (Hls.isSupported()) {
+         const hls = new Hls();
+         hls.loadSource(hlsUrl);
+         hls.attachMedia(video);
+         
+         hls.on(Hls.Events.MANIFEST_PARSED, () => {
+           setIsLoading(false);
+         });
+         
+         hls.on(Hls.Events.ERROR, (event, data) => {
+           setError("Error al reproducir la clase HLS");
+         });
+       } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+         // Native HLS support (Safari)
+         video.src = hlsUrl;
+         setIsLoading(false);
+       } else {
+         setError("Tu navegador no soporta reproducción HLS");
+       }
+     }
+   }, [videoData]);
 
   // Prevenir capturas de pantalla
   useEffect(() => {
@@ -67,6 +158,32 @@ export default function VideoPlayer({ video, userName }: VideoPlayerProps) {
     );
   }
 
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center max-w-md bg-white rounded-xl shadow-sm p-8">
+          <svg
+            className="mx-auto h-12 w-12 text-red-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+            />
+          </svg>
+          <h3 className="mt-4 text-xl text-gray-700 font-medium">
+            Error al cargar la clase
+          </h3>
+          <p className="mt-2 text-base text-gray-600">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full flex flex-col">
       <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
@@ -77,63 +194,55 @@ export default function VideoPlayer({ video, userName }: VideoPlayerProps) {
             <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10">
               <div className="flex flex-col items-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
-                <p className="text-white mt-4">Cargando video...</p>
+                <p className="text-white mt-4">Cargando clase...</p>
               </div>
             </div>
           )}
           <div className="relative w-full h-full">
-            <div className="embed-container">
-              <iframe
-                src={`https://drive.google.com/file/d/${video.id}/preview`}
-                className="w-full h-full"
-                allow="autoplay; encrypted-media"
-                allowFullScreen
-                onLoad={handleLoadingComplete}
-                style={{
-                  userSelect: "none",
-                  WebkitUserSelect: "none",
-                  MozUserSelect: "none",
-                  msUserSelect: "none",
-                }}
-              />
+                         {videoData && (
+               <video
+                 ref={videoRef}
+                 className="w-full h-full"
+                 controls
+                 poster={videoData.streamingUrls?.poster}
+                 style={{
+                   userSelect: "none",
+                   WebkitUserSelect: "none",
+                   MozUserSelect: "none",
+                   msUserSelect: "none",
+                 }}
+               >
+                 <source src={videoData.streamingUrls?.hls} type="application/x-mpegURL" />
+                 Tu navegador no soporta la reproducción de clases HLS.
+               </video>
+             )}
+
+            {/* Marca de agua */}
+            <div className="absolute bottom-4 right-4 pointer-events-none z-20">
+              <span className="text-white text-lg font-medium opacity-30 drop-shadow-lg">
+                {userName}
+              </span>
             </div>
 
             <style jsx>{`
-              .embed-container {
-                position: relative;
-                width: 100%;
-                height: 100%;
-                overflow: hidden;
-              }
-
-              .embed-container iframe {
-                position: absolute;
-                top: -60px;
-                left: 0;
-                width: 100%;
-                height: calc(100% + 60px);
-                border: 0;
-              }
-
-              /* Prevenir capturas de pantalla */
-              .embed-container {
+              video {
                 -webkit-user-select: none;
                 -moz-user-select: none;
                 -ms-user-select: none;
                 user-select: none;
               }
 
-              /* Agregar marca de agua */
-              .embed-container::after {
-                content: "${userName}";
-                position: absolute;
-                bottom: 20px;
-                right: 20px;
-                color: rgba(255, 255, 255, 0.3);
-                font-size: 19px;
-                pointer-events: none;
-                z-index: 1000;
-                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+              /* Prevenir descarga de video */
+              video::-webkit-media-controls-download-button {
+                display: none;
+              }
+
+              video::-webkit-media-controls-enclosure {
+                overflow: hidden;
+              }
+
+              video::-webkit-media-controls-panel {
+                width: calc(100% + 30px);
               }
             `}</style>
           </div>
