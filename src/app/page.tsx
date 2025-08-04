@@ -18,6 +18,7 @@ export default function Home() {
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Load videos when student is authenticated
   useEffect(() => {
@@ -28,6 +29,7 @@ export default function Home() {
 
   const loadVideos = async () => {
     setLoading(true);
+    setError(null);
     try {
       const response = await fetch("/api/student/videos");
       const data = await response.json();
@@ -48,6 +50,7 @@ export default function Home() {
       }
     } catch (error) {
       console.error('Error loading videos:', error);
+      setError(error instanceof Error ? error.message : "Error al cargar las clases");
     } finally {
       setLoading(false);
     }
@@ -69,6 +72,7 @@ export default function Home() {
     setSubjects([]);
     setSelectedSubject(null);
     setSelectedVideo(null);
+    setError(null);
   };
 
   // Loading state
@@ -214,6 +218,27 @@ export default function Home() {
                 </p>
               </div>
             </div>
+          ) : error ? (
+            <div className="flex items-center justify-center h-full p-6">
+              <div className="text-center max-w-md bg-white rounded-xl shadow-sm p-8">
+                <svg className="mx-auto h-12 w-12 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                <h3 className="mt-4 text-xl text-gray-700 font-medium">
+                  Error al cargar las clases
+                </h3>
+                <p className="mt-2 text-base text-gray-600">
+                  {error}
+                </p>
+                <button
+                  onClick={loadVideos}
+                  disabled={loading}
+                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {loading ? "Cargando..." : "Reintentar"}
+                </button>
+              </div>
+            </div>
           ) : subjects.length === 0 ? (
             <div className="flex items-center justify-center h-full p-6">
               <div className="text-center max-w-md bg-white rounded-xl shadow-sm p-8">
@@ -226,6 +251,13 @@ export default function Home() {
                 <p className="mt-2 text-base text-gray-600">
                   Vuelve a intentarlo más tarde
                 </p>
+                <button
+                  onClick={loadVideos}
+                  disabled={loading}
+                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {loading ? "Cargando..." : "Reintentar"}
+                </button>
               </div>
             </div>
           ) : (
