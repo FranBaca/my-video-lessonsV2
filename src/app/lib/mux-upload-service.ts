@@ -151,4 +151,34 @@ export class MuxUploadService {
       throw new Error(`Error obteniendo estadísticas: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     }
   }
+
+  // Eliminar asset de Mux
+  async deleteAsset(assetId: string) {
+    try {
+      // Verificar que el asset existe antes de intentar eliminarlo
+      const asset = await this.muxClient.video.assets.retrieve(assetId);
+      
+      if (!asset) {
+        return;
+      }
+
+      // Eliminar el asset usando el método correcto
+      await this.muxClient.video.assets.delete(assetId);
+    } catch (error: any) {
+      // Manejar errores específicos de Mux
+      if (error && typeof error === 'object' && 'status' in error) {
+        if (error.status === 404) {
+          return; // No es un error crítico si ya no existe
+        }
+        if (error.status === 401) {
+          throw new Error('Error de autenticación con Mux al eliminar asset');
+        }
+        if (error.status === 403) {
+          throw new Error('Error de permisos con Mux al eliminar asset');
+        }
+      }
+      
+      throw new Error(`Error eliminando asset de Mux: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    }
+  }
 } 

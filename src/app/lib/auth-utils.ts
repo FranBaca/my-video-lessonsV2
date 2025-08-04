@@ -34,14 +34,14 @@ export async function verifyProfessorAuth(request: NextRequest): Promise<string>
   }
 }
 
-export function createAuthMiddleware(handler: (request: AuthenticatedRequest) => Promise<Response>) {
-  return async (request: NextRequest): Promise<Response> => {
+export function createAuthMiddleware(handler: (request: AuthenticatedRequest, context?: any) => Promise<Response>) {
+  return async (request: NextRequest, context?: any): Promise<Response> => {
     try {
       const professorId = await verifyProfessorAuth(request);
       const authenticatedRequest = request as AuthenticatedRequest;
       authenticatedRequest.professorId = professorId;
       
-      return await handler(authenticatedRequest);
+      return await handler(authenticatedRequest, context);
     } catch (error: any) {
       return new Response(
         JSON.stringify({ 

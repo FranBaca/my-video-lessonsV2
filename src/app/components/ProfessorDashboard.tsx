@@ -7,6 +7,7 @@ import { Professor, Video, Student, Subject } from '../types/firebase';
 import CreateSubjectModal from './CreateSubjectModal';
 import SubjectCard from './SubjectCard';
 import VideoUpload from './VideoUpload';
+import EditStudentModal from './EditStudentModal';
 import { showNotification, showConfirmation } from '../lib/notifications';
 
 interface ProfessorDashboardProps {
@@ -26,6 +27,8 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
   const [showCreateSubjectModal, setShowCreateSubjectModal] = useState(false);
   const [showVideoUploadModal, setShowVideoUploadModal] = useState(false);
   const [showCreateStudentModal, setShowCreateStudentModal] = useState(false);
+  const [showEditStudentModal, setShowEditStudentModal] = useState(false);
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   
   // Estados para crear estudiante
   const [creatingStudent, setCreatingStudent] = useState(false);
@@ -137,6 +140,38 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
     showNotification.error(`Error al subir el video: ${error}`);
   };
 
+  const handleDeleteVideo = async (videoId: string) => {
+    const confirmed = await showConfirmation('¿Estás seguro de que quieres eliminar este video? Esta acción no se puede deshacer.');
+    if (!confirmed) return;
+
+    try {
+      // Get the current user's ID token for authentication
+      const currentUser = authService.getCurrentUser();
+      if (!currentUser) {
+        throw new Error('No hay usuario autenticado');
+      }
+
+      const token = await currentUser.getIdToken();
+      
+      const response = await fetch(`/api/admin/videos/${videoId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al eliminar el video');
+      }
+
+      await loadDashboardData();
+      showNotification.success('Video eliminado exitosamente');
+    } catch (error) {
+      showNotification.error(`Error al eliminar el video: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    }
+  };
+
   // Funciones para crear estudiantes
   const handleCreateStudent = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -182,6 +217,43 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
       showNotification.success('Estudiante eliminado exitosamente');
     } catch (error) {
       showNotification.error('Error al eliminar el estudiante');
+    }
+  };
+
+  const handleEditStudent = (student: Student) => {
+    setEditingStudent(student);
+    setShowEditStudentModal(true);
+  };
+
+  const handleUpdateStudent = async (studentId: string, subjectsToAdd: string[]) => {
+    try {
+      // Get the current user's ID token for authentication
+      const currentUser = authService.getCurrentUser();
+      if (!currentUser) {
+        throw new Error('No hay usuario autenticado');
+      }
+
+      const token = await currentUser.getIdToken();
+      
+      const response = await fetch(`/api/admin/students/${studentId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ subjectsToAdd }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al actualizar el estudiante');
+      }
+
+      await loadDashboardData();
+      showNotification.success('Estudiante actualizado exitosamente');
+    } catch (error) {
+      showNotification.error(`Error al actualizar el estudiante: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      throw error; // Re-throw to let the modal handle it
     }
   };
 
@@ -455,8 +527,20 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
                               </div>
                             </div>
                           </div>
-                          <div className="text-sm text-gray-500">
-                            {video.isActive ? 'Activo' : 'Inactivo'}
+                          <div className="flex items-center space-x-2">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              video.isActive 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-gray-100 text-gray-800'
+                            }`}>
+                              {video.isActive ? 'Activo' : 'Inactivo'}
+                            </span>
+                            <button
+                              onClick={() => handleDeleteVideo(video.id!)}
+                              className="text-red-600 hover:text-red-900 text-sm font-medium"
+                            >
+                              Eliminar
+                            </button>
                           </div>
                         </div>
                       </li>
@@ -523,6 +607,12 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
                           }`}>
                             {student.authorized ? 'Autorizado' : 'No autorizado'}
                           </span>
+                          <button
+                            onClick={() => handleEditStudent(student)}
+                            className="text-blue-600 hover:text-blue-900 text-sm font-medium mr-2"
+                          >
+                            Editar
+                          </button>
                           <button
                             onClick={() => handleDeleteStudent(student.id!)}
                             className="text-red-600 hover:text-red-900 text-sm font-medium"
@@ -640,6 +730,20 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal para editar estudiante */}
+      {showEditStudentModal && editingStudent && (
+        <EditStudentModal
+          isOpen={showEditStudentModal}
+          onClose={() => {
+            setShowEditStudentModal(false);
+            setEditingStudent(null);
+          }}
+          onSubmit={handleUpdateStudent}
+          student={editingStudent}
+          subjects={subjects}
+        />
       )}
     </div>
   );

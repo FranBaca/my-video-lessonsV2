@@ -73,7 +73,7 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
                 name="code"
                 type="text"
                 required
-                className="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+                className="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
                 placeholder="Ingresa tu código de acceso"
                 value={code}
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
