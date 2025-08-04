@@ -12,6 +12,7 @@ export default function VideoPlayer({ video, userName, isStudent = false }: Vide
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [videoData, setVideoData] = useState<any>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
 
@@ -136,9 +137,9 @@ export default function VideoPlayer({ video, userName, isStudent = false }: Vide
     };
   }, []);
 
-  const handleLoadingComplete = () => {
-    setIsLoading(false);
-  };
+
+
+
 
      // Initialize HLS.js when video data is available
    useEffect(() => {
@@ -180,7 +181,7 @@ export default function VideoPlayer({ video, userName, isStudent = false }: Vide
      }
    }, [videoData]);
 
-  // Prevenir capturas de pantalla
+  // Prevenir capturas de pantalla y manejar fullscreen
   useEffect(() => {
     const preventScreenCapture = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && (e.key === "p" || e.key === "s")) {
@@ -188,8 +189,61 @@ export default function VideoPlayer({ video, userName, isStudent = false }: Vide
       }
     };
 
+    const handleFullscreenChange = () => {
+      const isFullscreenNow = !!document.fullscreenElement;
+      setIsFullscreen(isFullscreenNow);
+    };
+
+    // Interceptar el fullscreen nativo del video
+    const handleVideoFullscreen = (e: Event) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const videoContainer = document.getElementById('video-container');
+      if (videoContainer && !document.fullscreenElement) {
+        videoContainer.requestFullscreen().catch(err => {
+          console.error('Error al entrar en fullscreen:', err);
+        });
+      }
+    };
+
+    // También prevenir con teclas
+    const preventFullscreenKey = (e: KeyboardEvent) => {
+      if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        const videoContainer = document.getElementById('video-container');
+        if (videoContainer && !document.fullscreenElement) {
+          videoContainer.requestFullscreen().catch(err => {
+            console.error('Error al entrar en fullscreen:', err);
+          });
+        }
+      }
+    };
+
     document.addEventListener("keydown", preventScreenCapture);
-    return () => document.removeEventListener("keydown", preventScreenCapture);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    
+    // Agregar listener al video para interceptar fullscreen nativo
+    if (videoRef.current) {
+      videoRef.current.addEventListener('webkitbeginfullscreen', handleVideoFullscreen);
+      videoRef.current.addEventListener('webkitendfullscreen', handleVideoFullscreen);
+      videoRef.current.addEventListener('mozfullscreenchange', handleVideoFullscreen);
+      videoRef.current.addEventListener('fullscreenchange', handleVideoFullscreen);
+      videoRef.current.addEventListener('keydown', preventFullscreenKey);
+    }
+    
+    return () => {
+      document.removeEventListener("keydown", preventScreenCapture);
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      
+      if (videoRef.current) {
+        videoRef.current.removeEventListener('webkitbeginfullscreen', handleVideoFullscreen);
+        videoRef.current.removeEventListener('webkitendfullscreen', handleVideoFullscreen);
+        videoRef.current.removeEventListener('mozfullscreenchange', handleVideoFullscreen);
+        videoRef.current.removeEventListener('fullscreenchange', handleVideoFullscreen);
+        videoRef.current.removeEventListener('keydown', preventFullscreenKey);
+      }
+    };
   }, []);
 
   if (!video) {
@@ -252,12 +306,12 @@ export default function VideoPlayer({ video, userName, isStudent = false }: Vide
     );
   }
 
-  return (
+    return (
     <div className="h-full flex flex-col">
       <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
         <h1 className="text-2xl font-bold text-gray-800 mb-2">{video.name}</h1>
         <div className="h-px bg-gray-200 w-full mb-6" />
-        <div className="aspect-video w-full max-w-5xl mx-auto bg-black rounded-xl overflow-hidden shadow-lg relative">
+        <div id="video-container" className="aspect-video w-full max-w-5xl mx-auto bg-black rounded-xl overflow-hidden shadow-lg relative">
           {isLoading && (
             <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10">
               <div className="flex flex-col items-center">
@@ -267,23 +321,23 @@ export default function VideoPlayer({ video, userName, isStudent = false }: Vide
             </div>
           )}
           <div className="relative w-full h-full">
-                         {videoData && (
-               <video
-                 ref={videoRef}
-                 className="w-full h-full"
-                 controls
-                 poster={videoData.streamingUrls?.poster}
-                 style={{
-                   userSelect: "none",
-                   WebkitUserSelect: "none",
-                   MozUserSelect: "none",
-                   msUserSelect: "none",
-                 }}
-               >
-                 <source src={videoData.streamingUrls?.hls} type="application/x-mpegURL" />
-                 Tu navegador no soporta la reproducción de clases HLS.
-               </video>
-             )}
+            {videoData && (
+              <video
+                ref={videoRef}
+                className="w-full h-full"
+                controls
+                poster={videoData.streamingUrls?.poster}
+                style={{
+                  userSelect: "none",
+                  WebkitUserSelect: "none",
+                  MozUserSelect: "none",
+                  msUserSelect: "none",
+                }}
+              >
+                <source src={videoData.streamingUrls?.hls} type="application/x-mpegURL" />
+                Tu navegador no soporta la reproducción de clases HLS.
+              </video>
+            )}
 
             {/* Marca de agua */}
             <div className="absolute bottom-4 right-4 pointer-events-none z-20">
@@ -291,6 +345,36 @@ export default function VideoPlayer({ video, userName, isStudent = false }: Vide
                 {userName}
               </span>
             </div>
+
+            {/* Botón de fullscreen personalizado */}
+            <button
+              onClick={() => {
+                const videoContainer = document.getElementById('video-container');
+                if (videoContainer) {
+                  if (!document.fullscreenElement) {
+                    videoContainer.requestFullscreen().catch(err => {
+                      console.error('Error al entrar en fullscreen:', err);
+                    });
+                  } else {
+                    document.exitFullscreen().catch(err => {
+                      console.error('Error al salir de fullscreen:', err);
+                    });
+                  }
+                }
+              }}
+              className="absolute top-4 right-4 bg-black bg-opacity-50 hover:bg-opacity-70 text-white p-2 rounded-md transition-all duration-200 z-30"
+              title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+            >
+              {isFullscreen ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                </svg>
+              )}
+            </button>
 
             <style jsx>{`
               video {
@@ -305,12 +389,79 @@ export default function VideoPlayer({ video, userName, isStudent = false }: Vide
                 display: none;
               }
 
+              /* Ocultar botón de fullscreen nativo */
+              video::-webkit-media-controls-fullscreen-button {
+                display: none !important;
+              }
+
+              video::-moz-media-controls-fullscreen-button {
+                display: none !important;
+              }
+
+              video::-ms-media-controls-fullscreen-button {
+                display: none !important;
+              }
+
               video::-webkit-media-controls-enclosure {
                 overflow: hidden;
               }
 
               video::-webkit-media-controls-panel {
                 width: calc(100% + 30px);
+              }
+
+              /* Estilos para fullscreen */
+              #video-container:fullscreen {
+                background: black;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              }
+
+              #video-container:fullscreen video {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+              }
+
+              #video-container:fullscreen .absolute {
+                position: absolute;
+              }
+
+              /* Soporte para webkit (Safari) */
+              #video-container:-webkit-full-screen {
+                background: black;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              }
+
+              #video-container:-webkit-full-screen video {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+              }
+
+              #video-container:-webkit-full-screen .absolute {
+                position: absolute;
+              }
+
+              /* Soporte para Mozilla */
+              #video-container:-moz-full-screen {
+                background: black;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              }
+
+              #video-container:-moz-full-screen video {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+              }
+
+              #video-container:-moz-full-screen .absolute {
+                position: absolute;
               }
             `}</style>
           </div>
