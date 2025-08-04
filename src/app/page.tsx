@@ -1,115 +1,31 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSession } from './providers/SessionProvider';
 import LoginForm from "./components/LoginForm";
 import ProfessorLogin from "./components/ProfessorLogin";
 import ProfessorDashboard from "./components/ProfessorDashboard";
 import VideoPlayer from "./components/VideoPlayer";
 import Sidebar from "./components/Sidebar";
 import { Subject, Video } from "./types";
-import { authService } from "./lib/auth-service";
-import { ProfessorAuthData } from "./lib/auth-service";
-import { professorServiceClient } from "./lib/firebase-client";
 
-type AuthState = "selecting" | "professor-login" | "student-login" | "professor-dashboard" | "student-dashboard";
+type AuthState = "selecting" | "professor-login" | "student-login";
 
 export default function Home() {
-  // Estados para estudiantes (mantener funcionalidad actual)
-  const [isStudentAuthenticated, setIsStudentAuthenticated] = useState(false);
-  const [studentName, setStudentName] = useState("");
+  const { state, loginStudent, loginProfessor, logout } = useSession();
+  const [authState, setAuthState] = useState<AuthState>("selecting");
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Estados para profesores
-  const [authState, setAuthState] = useState<AuthState>("selecting");
-  const [professorAuthData, setProfessorAuthData] = useState<ProfessorAuthData | null>(null);
-
-  // Verificar sesión unificada al cargar
+  // Load videos when student is authenticated
   useEffect(() => {
-    const checkUnifiedSession = async () => {
-      try {
-        const response = await fetch("/api/auth/check-session");
-        const data = await response.json();
-
-        if (data.success && data.authenticated) {
-          if (data.type === 'professor') {
-            // Profesor autenticado
-            setProfessorAuthData({
-              user: {
-                uid: data.professor.id,
-                email: data.professor.email,
-                displayName: data.professor.name,
-                photoURL: undefined
-              },
-              professor: data.professor
-            });
-            setAuthState("professor-dashboard");
-          } else if (data.type === 'student') {
-            // Estudiante autenticado
-            setStudentName(data.student.name);
-            setIsStudentAuthenticated(true);
-            setAuthState("student-dashboard");
-          }
-        } else {
-          // No hay sesión válida, verificar Firebase Auth como fallback
-          const unsubscribe = authService.onAuthStateChange((user) => {
-            if (user) {
-              // Usuario autenticado, verificar si es profesor
-              authService.isProfessor(user.uid).then((isProfessor) => {
-                if (isProfessor) {
-                  // Es profesor, cargar datos del profesor
-                  loadProfessorData(user.uid);
-                }
-              });
-            } else {
-              // No hay sesión, volver al selector
-              setAuthState("selecting");
-              setProfessorAuthData(null);
-            }
-          });
-
-          return () => unsubscribe();
-        }
-      } catch (error) {
-        setAuthState("selecting");
-      }
-    };
-
-    checkUnifiedSession();
-  }, []);
-
-  // Cargar datos del profesor
-  const loadProfessorData = async (professorId: string) => {
-    try {
-      const professor = await professorServiceClient.getById(professorId);
-      
-      if (professor) {
-        setProfessorAuthData({
-          user: {
-            uid: professorId,
-            email: professor.email,
-            displayName: professor.name,
-            photoURL: undefined // Removido profileImage que no existe en el tipo
-          },
-          professor
-        });
-        setAuthState("professor-dashboard");
-      }
-    } catch (error) {
-      setAuthState("selecting");
-    }
-  };
-
-  // Cargar videos cuando el estudiante está autenticado
-  useEffect(() => {
-    if (isStudentAuthenticated) {
+    if (state.userType === 'student' && state.isAuthenticated) {
       loadVideos();
     }
-  }, [isStudentAuthenticated]);
+  }, [state.userType, state.isAuthenticated]);
 
-  // Cargar videos del servidor
   const loadVideos = async () => {
     setLoading(true);
     try {
@@ -126,118 +42,103 @@ export default function Home() {
         const firstSubject = data.subjects[0];
         setSelectedSubject(firstSubject);
         
-        if (
-          firstSubject.sections.length > 0 &&
-          firstSubject.sections[0].videos.length > 0
-        ) {
-          const firstVideo = firstSubject.sections[0].videos[0];
-          setSelectedVideo(firstVideo);
+        if (firstSubject.sections.length > 0 && firstSubject.sections[0].videos.length > 0) {
+          setSelectedVideo(firstSubject.sections[0].videos[0]);
         }
       }
     } catch (error) {
-      // Error handling silently for production
+      console.error('Error loading videos:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  // Handlers para estudiantes
-  const handleStudentLoginSuccess = (name: string, allowedSubjects: string[]) => {
-    setStudentName(name);
-    setIsStudentAuthenticated(true);
-    setAuthState("student-dashboard");
-  };
-
-  const handleSubjectSelect = (subject: Subject) => {
-    setSelectedSubject(subject);
-    if (subject.sections.length > 0 && subject.sections[0].videos.length > 0) {
-      setSelectedVideo(subject.sections[0].videos[0]);
-    } else {
-      setSelectedVideo(null);
-    }
-  };
-
-  const handleVideoSelect = (video: Video) => {
-    setSelectedVideo(video);
-  };
-
-  const handleStudentLogout = async () => {
+  const handleStudentLoginSuccess = async (code: string) => {
     try {
-      // Call logout API
-      const response = await fetch("/api/auth/logout", {
-        method: "POST",
-      });
-
-      if (!response.ok) {
-        throw new Error("Error al cerrar sesión");
-      }
-
-      // Clear all cookies
-      document.cookie.split(";").forEach((c) => {
-        const eqPos = c.indexOf("=");
-        const name = eqPos > -1 ? c.substr(0, eqPos) : c;
-        document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
-      });
-
-      // Clear localStorage and sessionStorage
-      localStorage.clear();
-      sessionStorage.clear();
-
-      // Clear cache for the current domain
-      if ('caches' in window) {
-        try {
-          const cacheNames = await caches.keys();
-          await Promise.all(
-            cacheNames.map(cacheName => caches.delete(cacheName))
-          );
-        } catch (cacheError) {
-          console.log('Cache clearing failed:', cacheError);
-        }
-      }
-
-      // Clear state and redirect to selector
-      setIsStudentAuthenticated(false);
-      setStudentName("");
-      setSubjects([]);
-      setSelectedSubject(null);
-      setSelectedVideo(null);
-      setAuthState("selecting");
-
-      // Force page reload to ensure complete cleanup
-      window.location.reload();
+      await loginStudent(code);
     } catch (error) {
-      console.error('Logout error:', error);
-      // Even if there's an error, clear local state and redirect
-      setIsStudentAuthenticated(false);
-      setStudentName("");
-      setSubjects([]);
-      setSelectedSubject(null);
-      setSelectedVideo(null);
-      setAuthState("selecting");
-      window.location.reload();
+      // Error is handled by SessionProvider
     }
   };
 
-  // Handlers para profesores
-  const handleProfessorLoginSuccess = (authData: ProfessorAuthData) => {
-    setProfessorAuthData(authData);
-    setAuthState("professor-dashboard");
+
+
+  const handleLogout = async () => {
+    await logout();
+    // Reset local state
+    setSubjects([]);
+    setSelectedSubject(null);
+    setSelectedVideo(null);
   };
 
-  const handleProfessorLogout = async () => {
-    try {
-      await authService.logout();
-      setProfessorAuthData(null);
-      setAuthState("selecting");
-    } catch (error) {
-      // Aún así, limpiar el estado local
-      setProfessorAuthData(null);
-      setAuthState("selecting");
+  // Loading state
+  if (state.isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (state.error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg">
+            <p className="text-red-800">{state.error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            >
+              Recargar
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Not authenticated - show login options or login forms
+  if (!state.isAuthenticated) {
+    // Show login forms if authState is set
+    if (authState === "professor-login") {
+      return (
+        <div>
+          <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-md w-full space-y-8">
+              <ProfessorLogin
+                onSwitchToStudent={() => setAuthState("student-login")}
+              />
+            </div>
+          </div>
+        </div>
+      );
     }
-  };
 
-  // Selector de tipo de usuario
-  if (authState === "selecting") {
+    if (authState === "student-login") {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-md w-full space-y-8">
+            <LoginForm onSuccess={handleStudentLoginSuccess} />
+            
+            <div className="text-center">
+              <button
+                onClick={() => setAuthState("professor-login")}
+                className="text-sm text-blue-600 hover:text-blue-500"
+              >
+                ¿Eres profesor? Accede aquí
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Show main login options
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8">
@@ -276,68 +177,31 @@ export default function Home() {
     );
   }
 
-  // Login de profesores
-  if (authState === "professor-login") {
-    return (
-      <ProfessorLogin
-        onLoginSuccess={handleProfessorLoginSuccess}
-        onSwitchToStudent={() => setAuthState("student-login")}
-      />
-    );
-  }
 
-  // Login de estudiantes
-  if (authState === "student-login") {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <div>
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-              Acceso para Estudiantes
-            </h2>
-            <p className="mt-2 text-center text-sm text-gray-600">
-              Ingresa tu código de estudiante
-            </p>
-          </div>
-          
-          <LoginForm onSuccess={handleStudentLoginSuccess} />
-          
-          <div className="text-center">
-            <button
-              onClick={() => setAuthState("professor-login")}
-              className="text-sm text-blue-600 hover:text-blue-500"
-            >
-              ¿Eres profesor? Accede aquí
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
-  // Dashboard de profesores
-  if (authState === "professor-dashboard" && professorAuthData) {
+  // Professor dashboard
+  if (state.userType === 'professor' && state.professor) {
     return (
       <ProfessorDashboard
-        professorId={professorAuthData.user.uid}
-        professor={professorAuthData.professor}
-        onLogout={handleProfessorLogout}
+        professorId={state.professor.user.uid}
+        professor={state.professor.professor}
+        onLogout={handleLogout}
       />
     );
   }
 
-  // Vista de estudiantes (mantener funcionalidad actual)
-  if (authState === "student-dashboard" && isStudentAuthenticated) {
+  // Student dashboard
+  if (state.userType === 'student' && state.student) {
     return (
       <div className="flex h-screen bg-gray-50">
         <Sidebar
           subjects={subjects}
           selectedSubject={selectedSubject}
           selectedVideo={selectedVideo}
-          onSubjectSelect={handleSubjectSelect}
-          onVideoSelect={handleVideoSelect}
-          onLogout={handleStudentLogout}
-          studentName={studentName}
+          onSubjectSelect={setSelectedSubject}
+          onVideoSelect={setSelectedVideo}
+          onLogout={handleLogout}
+          studentName={state.student.name}
         />
 
         <main className="flex-1 overflow-auto">
@@ -353,18 +217,8 @@ export default function Home() {
           ) : subjects.length === 0 ? (
             <div className="flex items-center justify-center h-full p-6">
               <div className="text-center max-w-md bg-white rounded-xl shadow-sm p-8">
-                <svg
-                  className="mx-auto h-12 w-12 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"
-                  />
+                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
                 </svg>
                 <h3 className="mt-4 text-xl text-gray-700 font-medium">
                   No hay clases disponibles
@@ -376,7 +230,7 @@ export default function Home() {
             </div>
           ) : (
             <div className="p-6">
-              <VideoPlayer video={selectedVideo} userName={studentName} isStudent={true} />
+              <VideoPlayer video={selectedVideo} userName={state.student.name} isStudent={true} />
             </div>
           )}
         </main>
@@ -384,13 +238,5 @@ export default function Home() {
     );
   }
 
-  // Estado de carga por defecto
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Cargando...</p>
-      </div>
-    </div>
-  );
+  return null;
 }

@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { v4 as uuidv4 } from "uuid";
+import { useState } from "react";
 
 interface LoginFormProps {
-  onSuccess: (studentName: string, allowedSubjects: string[]) => void;
+  onSuccess: (code: string) => void;
 }
 
 export default function LoginForm({ onSuccess }: LoginFormProps) {
@@ -12,28 +11,7 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Verificar sesión automáticamente al cargar
-  useEffect(() => {
-    const checkExistingSession = async () => {
-      try {
-        const response = await fetch("/api/auth/check-session");
 
-        const data = await response.json();
-        
-        if (data.success && data.authenticated) {
-          onSuccess(data.student.name, data.student.allowedSubjects);
-        } else {
-          localStorage.removeItem("deviceId");
-          localStorage.removeItem("studentCode");
-          localStorage.removeItem("lastLogin");
-        }
-      } catch (error) {
-        // Error handling silently for production
-      }
-    };
-
-    checkExistingSession();
-  }, [onSuccess]);
 
   // Validar formato del código
   const validateCode = (code: string) => {
@@ -61,59 +39,21 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
         );
       }
 
-      // Generar o recuperar deviceId
-      const deviceId = localStorage.getItem("deviceId") || uuidv4();
-
-      // Enviar código y deviceId al servidor con timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos timeout
-
-      const response = await fetch("/api/auth/verify", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ code, deviceId }),
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-      const data = await response.json();
-
-      if (!response.ok) {
-        // Limpiar localStorage si el código no es válido
-        if (response.status === 403) {
-          localStorage.removeItem("deviceId");
-          localStorage.removeItem("studentCode");
-          localStorage.removeItem("lastLogin");
-        }
-        throw new Error(data.message || "Error al verificar el código");
-      }
-
-      // Guardar en localStorage solo si la verificación fue exitosa
-      localStorage.setItem("deviceId", deviceId);
-      localStorage.setItem("studentCode", code);
-      localStorage.setItem("lastLogin", new Date().toISOString());
-
-      // Llamar al callback de éxito
-      onSuccess(data.student.name, data.student.allowedSubjects);
+      // Llamar al callback de éxito con el código
+      onSuccess(code);
     } catch (error: any) {
-      if (error.name === "AbortError") {
-        handleError(
-          "La verificación está tomando demasiado tiempo. Por favor, intenta nuevamente."
-        );
-      } else {
-        handleError(error.message);
-      }
+      handleError(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex text-black items-center justify-center bg-gray-100 py-6 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-6 bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+    <div className="w-full">
+      <div className="max-w-md w-full space-y-6 bg-white p-6 sm:p-8 rounded-xl shadow-lg mx-auto">
         <div>
           <h2 className="text-center text-2xl sm:text-3xl font-bold text-gray-800">
-            Acceso a Video Lecciones
+            Acceso a My Video Lessons
           </h2>
           <p className="mt-3 text-center text-base text-gray-700">
             Ingresa tu código de acceso para ver las clases

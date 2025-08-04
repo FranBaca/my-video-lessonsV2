@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
+import { SessionProvider } from "./providers/SessionProvider";
 
 export const metadata: Metadata = {
   title: "My Video Lessons",
@@ -19,7 +20,9 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
       <body className="antialiased">
-        {children}
+        <SessionProvider>
+          {children}
+        </SessionProvider>
         <Toaster 
           position="top-right"
           toastOptions={{

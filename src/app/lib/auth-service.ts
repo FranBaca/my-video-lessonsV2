@@ -41,20 +41,6 @@ export const authService = {
       // Obtener el token de ID para usar en las API calls
       const token = await user.getIdToken();
 
-      // Establecer cookies de sesión en el servidor
-      const response = await fetch('/api/auth/professor-login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ idToken: token }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al establecer sesión');
-      }
-
       return {
         user: {
           uid: user.uid,
@@ -111,11 +97,6 @@ export const authService = {
   // Logout
   async logout(): Promise<void> {
     try {
-      // Limpiar cookies de sesión en el servidor
-      await fetch('/api/auth/professor-logout', {
-        method: 'POST',
-      });
-      
       await signOut(auth);
     } catch (error) {
       throw error;

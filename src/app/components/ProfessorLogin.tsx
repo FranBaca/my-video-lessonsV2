@@ -1,14 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { authService } from '../lib/auth-service';
+import { useSession } from '../providers/SessionProvider';
 
 interface ProfessorLoginProps {
-  onLoginSuccess: (authData: any) => void;
   onSwitchToStudent: () => void;
 }
 
-export default function ProfessorLogin({ onLoginSuccess, onSwitchToStudent }: ProfessorLoginProps) {
+export default function ProfessorLogin({ onSwitchToStudent }: ProfessorLoginProps) {
+  const { loginProfessor } = useSession();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -20,8 +20,9 @@ export default function ProfessorLogin({ onLoginSuccess, onSwitchToStudent }: Pr
     setError('');
 
     try {
-      const authData = await authService.loginProfessor(email, password);
-      onLoginSuccess(authData);
+      await loginProfessor(email, password);
+      // The SessionProvider will handle the state update automatically
+      // We don't need to call onLoginSuccess anymore
     } catch (error: any) {
       setError(error.message || 'Error al iniciar sesión');
     } finally {
@@ -30,18 +31,17 @@ export default function ProfessorLogin({ onLoginSuccess, onSwitchToStudent }: Pr
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Acceso para Profesores
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Gestiona tus clases y estudiantes
-          </p>
-        </div>
-        
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+    <div className="w-full">
+      <div>
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          Acceso para Profesores
+        </h2>
+        <p className="mt-2 text-center text-sm text-gray-600">
+          Gestiona tus clases y estudiantes
+        </p>
+      </div>
+      
+      <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
               <label htmlFor="email" className="sr-only">
@@ -110,7 +110,6 @@ export default function ProfessorLogin({ onLoginSuccess, onSwitchToStudent }: Pr
             </button>
           </div>
         </form>
-      </div>
     </div>
   );
 } 
