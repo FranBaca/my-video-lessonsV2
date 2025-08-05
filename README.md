@@ -1,164 +1,259 @@
 # My Video Lessons
 
-Una aplicación Next.js para gestionar y visualizar clases en video almacenadas en Google Drive, con acceso mediante código único de estudiante.
+Una aplicación Next.js completa para gestionar y visualizar clases en video, con sistema de autenticación diferenciado para estudiantes y profesores, integración con Mux para streaming de video, y panel de administración.
 
-## Características
+## 🚀 Características Principales
 
-- Autenticación con código único por estudiante
-- Validación de dispositivo para prevenir acceso desde múltiples dispositivos
-- Visualización de videos por asignatura (Anatomía e Histología)
-- Acceso diferenciado según el tipo de código (solo Anatomía, solo Histología, o ambas)
-- Interfaz intuitiva con sidebar de navegación
-- Reproductor de video integrado
-- Diseño responsive para todos los dispositivos
-- **No requiere base de datos externa** - Funciona completamente con Vercel
+### Para Estudiantes
+- **Autenticación con código único** por estudiante
+- **Validación de dispositivo** para prevenir acceso desde múltiples dispositivos
+- **Visualización de videos por asignatura** con interfaz intuitiva
+- **Acceso diferenciado** según el tipo de código (solo Anatomía, solo Histología, o ambas)
+- **Reproductor de video integrado** con HLS.js para streaming optimizado
+- **Sidebar de navegación** con lista de asignaturas y videos
+- **Diseño responsive** para todos los dispositivos
 
-## Requisitos Previos
+### Para Profesores
+- **Panel de administración completo** con Firebase Authentication
+- **Gestión de estudiantes** (crear, editar, listar)
+- **Gestión de asignaturas** (crear, editar, eliminar)
+- **Sistema de carga de videos** con integración a Mux
+- **Monitoreo de estado de videos** (procesando, listo, error)
+- **Gestión de profesores** y permisos
+- **Recuperación de contraseñas** para profesores
+
+### Tecnologías Avanzadas
+- **Integración con Mux** para streaming de video profesional
+- **Firebase Authentication** para profesores
+- **Firebase Admin SDK** para gestión de datos
+- **Fingerprinting de dispositivos** para seguridad
+- **Sistema de notificaciones** en tiempo real
+- **API RESTful** completa con endpoints para todas las funcionalidades
+
+## 🛠️ Stack Tecnológico
+
+- **Frontend**: Next.js 13, React 18, TypeScript
+- **Styling**: Tailwind CSS
+- **Autenticación**: Firebase Auth
+- **Base de Datos**: Firebase Firestore
+- **Video Streaming**: Mux
+- **Deployment**: Vercel
+- **Notificaciones**: React Hot Toast
+
+## 📋 Requisitos Previos
 
 - Node.js 18.14.2 o superior
-- Cuenta de Google y acceso a Google Cloud Console
-- Carpetas en Google Drive con los videos de las clases
+- Cuenta de Firebase
+- Cuenta de Mux
+- Cuenta de Google Cloud Console (para Google Drive)
 
-## Configuración
+## ⚙️ Configuración
 
-1. Clona el repositorio:
+### 1. Clonar el repositorio
 
-   ```bash
-   git clone <repository-url>
-   cd my-video-lessons
-   ```
-
-2. Instala las dependencias:
-
-   ```bash
-   npm install
-   ```
-
-3. Configura las credenciales de Google:
-
-   - Ve a [Google Cloud Console](https://console.cloud.google.com)
-   - Crea un nuevo proyecto
-   - Habilita la API de Google Drive
-   - Crea credenciales OAuth 2.0
-   - Configura la URI de redirección como `https://tu-dominio.vercel.app/api/auth/callback` (o `http://localhost:3000/api/auth/callback` para desarrollo)
-   - Descarga el archivo de credenciales
-
-4. Configura las variables de entorno:
-
-   - Crea un archivo `.env.local` en la raíz del proyecto para desarrollo local
-   - Añade las siguientes variables:
-     ```
-     GOOGLE_CLIENT_ID=your_client_id
-     GOOGLE_CLIENT_SECRET=your_client_secret
-     GOOGLE_DRIVE_FOLDER_MATH=your_anatomia_folder_id
-     GOOGLE_DRIVE_FOLDER_SCIENCE=your_histologia_folder_id
-     NEXTAUTH_URL=http://localhost:3000
-     NEXTAUTH_SECRET=your_secret
-     COOKIE_NAME=video_lessons_session
-     COOKIE_PASSWORD=your_cookie_password
-     ```
-
-5. Configura los códigos de estudiantes:
-   - Edita el archivo `src/app/data/students.json` para añadir los códigos únicos de los estudiantes autorizados
-
-## Desarrollo
-
-1. Inicia el servidor de desarrollo:
-
-   ```bash
-   npm run dev
-   ```
-
-2. Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
-
-## Estructura de Carpetas en Google Drive
-
-Organiza tus videos en carpetas separadas por asignatura:
-
-```
-Google Drive/
-├── Anatomía/
-│   ├── Clase1.mp4
-│   ├── Clase2.mp4
-└── Histología/
-    ├── Clase1.mp4
-    └── Clase2.mp4
+```bash
+git clone <repository-url>
+cd my-video-lessons
 ```
 
-## Flujo de Trabajo
+### 2. Instalar dependencias
 
-1. El estudiante ingresa su código único en la pantalla de login
-2. El sistema valida el código y asocia el dispositivo al estudiante
-3. Se muestra una pantalla de bienvenida personalizada según el tipo de acceso
-4. Se muestran las carpetas de Anatomía y/o Histología según el tipo de acceso
-5. El estudiante selecciona una asignatura y luego una clase
-6. El video se reproduce en el reproductor integrado
+```bash
+npm install
+```
 
-## Tipos de Códigos
+### 3. Configurar Firebase
 
-La aplicación soporta tres tipos de códigos:
+1. Ve a [Firebase Console](https://console.firebase.google.com)
+2. Crea un nuevo proyecto
+3. Habilita Authentication y Firestore
+4. Configura los métodos de autenticación (Email/Password)
+5. Descarga la configuración de Firebase
 
-1. **Códigos para Anatomía**: Dan acceso solo a los videos de Anatomía
-2. **Códigos para Histología**: Dan acceso solo a los videos de Histología
-3. **Códigos Completos**: Dan acceso a los videos de ambas materias
+### 4. Configurar Mux
 
-## Despliegue en Vercel
+1. Ve a [Mux Dashboard](https://dashboard.mux.com)
+2. Crea una cuenta y obtén tus credenciales
+3. Configura webhooks para notificaciones de estado de video
 
-1. Crea una cuenta en [Vercel](https://vercel.com) si aún no tienes una
+### 5. Configurar Google Drive (Opcional)
 
-2. Prepara el proyecto para despliegue:
+Si usas Google Drive para almacenar videos:
+1. Ve a [Google Cloud Console](https://console.cloud.google.com)
+2. Habilita la API de Google Drive
+3. Crea credenciales OAuth 2.0
 
-   ```bash
-   npm run prepare-deploy
-   ```
+### 6. Variables de Entorno
 
-3. Despliega desde la línea de comandos (opcional):
+Crea un archivo `.env.local` en la raíz del proyecto:
 
-   ```bash
-   vercel
-   ```
+```env
+# Firebase Configuration
+FIREBASE_API_KEY=your_firebase_api_key
+FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+FIREBASE_PROJECT_ID=your_project_id
+FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+FIREBASE_APP_ID=your_app_id
 
-4. Alternativa: Conecta tu repositorio de GitHub con Vercel:
+# Firebase Admin (para el servidor)
+FIREBASE_ADMIN_PROJECT_ID=your_project_id
+FIREBASE_ADMIN_PRIVATE_KEY=your_private_key
+FIREBASE_ADMIN_CLIENT_EMAIL=your_client_email
 
-   - Sube tu código a GitHub
-   - En Vercel, haz clic en "New Project"
-   - Importa tu repositorio
-   - Configura el proyecto:
-     - Framework Preset: Next.js
-     - Root Directory: ./
-     - Build Command: npm run build
-     - Output Directory: .next
+# Mux Configuration
+MUX_TOKEN_ID=your_mux_token_id
+MUX_TOKEN_SECRET=your_mux_token_secret
+MUX_WEBHOOK_SECRET=your_webhook_secret
 
-5. Configura las variables de entorno en Vercel:
+# App Configuration
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your_nextauth_secret
+COOKIE_NAME=video_lessons_session
+COOKIE_PASSWORD=your_cookie_password
+```
 
-   - En la configuración del proyecto, ve a "Environment Variables"
-   - Añade todas las variables de entorno mencionadas anteriormente
-   - Asegúrate de actualizar `NEXTAUTH_URL` con la URL de tu aplicación desplegada
+## 🚀 Desarrollo
 
-6. Despliega la aplicación:
-   - Vercel desplegará automáticamente tu aplicación
-   - Cada vez que hagas push a la rama principal, se desplegará una nueva versión
+### Iniciar servidor de desarrollo
 
-## Cómo funciona sin base de datos
+```bash
+npm run dev
+```
 
-Esta aplicación está diseñada para funcionar sin necesidad de una base de datos externa:
+Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 
-1. **En desarrollo local**:
+### Scripts disponibles
 
-   - Utiliza archivos JSON para almacenar información de estudiantes y códigos utilizados
-   - Permite probar todas las funcionalidades en un entorno local
+```bash
+npm run dev          # Servidor de desarrollo
+npm run build        # Construir para producción
+npm run start        # Iniciar servidor de producción
+npm run lint         # Ejecutar linter
+```
 
-2. **En producción (Vercel)**:
-   - Utiliza cookies HTTP para almacenar la información de sesión y validación
-   - Cada código de estudiante se asocia con un dispositivo específico mediante cookies
-   - No requiere configuración de base de datos externa
+## 🏗️ Estructura del Proyecto
 
-### Limitaciones
+```
+src/
+├── app/
+│   ├── api/                    # API Routes
+│   │   ├── admin/             # Endpoints de administración
+│   │   ├── auth/              # Autenticación
+│   │   ├── mux/               # Integración con Mux
+│   │   ├── student/           # Endpoints para estudiantes
+│   │   └── health/            # Health checks
+│   ├── components/             # Componentes React
+│   │   ├── ProfessorDashboard.tsx
+│   │   ├── VideoPlayer.tsx
+│   │   ├── VideoUpload.tsx
+│   │   └── ...
+│   ├── config/                 # Configuraciones
+│   ├── hooks/                  # Custom hooks
+│   ├── lib/                    # Utilidades y servicios
+│   ├── providers/              # Context providers
+│   └── types/                  # TypeScript types
+```
 
-- Las cookies tienen un tiempo de vida limitado (30 días por defecto)
-- Si un usuario borra sus cookies, podrá volver a usar su código en ese dispositivo
-- No hay persistencia entre diferentes despliegues de la aplicación
+## 👥 Flujos de Usuario
 
-## Licencia
+### Para Estudiantes
+
+1. **Acceso**: El estudiante ingresa su código único
+2. **Validación**: Sistema valida el código y asocia el dispositivo
+3. **Navegación**: Se muestra la lista de asignaturas disponibles
+4. **Reproducción**: Selecciona una clase y reproduce el video
+5. **Seguimiento**: Sistema registra el progreso y acceso
+
+### Para Profesores
+
+1. **Login**: Acceso con email y contraseña de Firebase
+2. **Dashboard**: Panel principal con estadísticas y acciones rápidas
+3. **Gestión de Contenido**: 
+   - Crear/editar asignaturas
+   - Subir videos con procesamiento automático
+   - Monitorear estado de procesamiento
+4. **Gestión de Usuarios**: Administrar estudiantes y otros profesores
+
+## 🔧 API Endpoints
+
+### Autenticación
+- `POST /api/auth/verify` - Verificar sesión
+- `POST /api/auth/logout` - Cerrar sesión
+- `POST /api/auth/check-student-session` - Verificar sesión de estudiante
+
+### Estudiantes
+- `GET /api/student/videos` - Obtener videos disponibles
+- `GET /api/student/video/[id]` - Obtener video específico
+
+### Administración
+- `POST /api/admin/create-student` - Crear estudiante
+- `GET /api/admin/students` - Listar estudiantes
+- `PUT /api/admin/students/[studentId]` - Actualizar estudiante
+- `POST /api/admin/subjects` - Crear asignatura
+- `GET /api/admin/professors` - Listar profesores
+- `POST /api/admin/forgot-password` - Recuperar contraseña
+
+### Mux (Video Processing)
+- `POST /api/mux/upload` - Subir video a Mux
+- `POST /api/mux/confirm` - Confirmar procesamiento
+- `GET /api/mux/status/[assetId]` - Estado del procesamiento
+- `POST /api/mux/webhook` - Webhook para notificaciones
+
+## 🎥 Integración con Mux
+
+La aplicación utiliza Mux para el procesamiento y streaming de videos:
+
+1. **Subida**: Los videos se suben directamente a Mux
+2. **Procesamiento**: Mux procesa automáticamente los videos
+3. **Streaming**: Los videos se reproducen usando HLS.js
+4. **Monitoreo**: Webhooks notifican cambios de estado
+
+## 🔐 Seguridad
+
+- **Fingerprinting de dispositivos** para prevenir acceso múltiple
+- **Autenticación Firebase** para profesores
+- **Validación de códigos únicos** para estudiantes
+- **Cookies seguras** para sesiones
+- **Validación de permisos** en todos los endpoints
+
+## 🚀 Despliegue en Vercel
+
+### 1. Preparar el proyecto
+
+```bash
+npm run build
+```
+
+### 2. Configurar en Vercel
+
+1. Conecta tu repositorio de GitHub con Vercel
+2. Configura las variables de entorno en el dashboard de Vercel
+3. Asegúrate de actualizar `NEXTAUTH_URL` con tu dominio
+
+### 3. Variables de entorno en Vercel
+
+Configura todas las variables de entorno mencionadas anteriormente en el dashboard de Vercel.
+
+## 📊 Monitoreo y Mantenimiento
+
+- **Health checks** en `/api/health`
+- **Logs automáticos** en Vercel
+- **Notificaciones** para errores de procesamiento
+- **Dashboard de administración** para monitoreo
+
+## 🤝 Contribución
+
+1. Fork el proyecto
+2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
+
+## 📝 Licencia
 
 MIT
+
+## 🆘 Soporte
+
+Para soporte técnico o preguntas sobre la implementación, contacta al equipo de desarrollo.
