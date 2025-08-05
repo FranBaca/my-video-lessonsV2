@@ -180,14 +180,20 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
     try {
       setCreatingStudent(true);
       
-      const result = await studentServiceClient.createWithGeneratedCode(professorId, {
+      const studentData: any = {
         name: newStudentName.trim(),
-        email: newStudentEmail.trim() || undefined,
         authorized: true,
         allowedVideos: [], // Por ahora vacío, se puede implementar después
         allowedSubjects: selectedSubjects,
         enrolledAt: new Date()
-      });
+      };
+
+      // Solo incluir email si no está vacío
+      if (newStudentEmail.trim()) {
+        studentData.email = newStudentEmail.trim();
+      }
+
+      const result = await studentServiceClient.createWithGeneratedCode(professorId, studentData);
 
       // Limpiar formulario
       setNewStudentName('');

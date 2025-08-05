@@ -3,8 +3,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { SessionState, SessionContext, StudentAuthData } from '../types/session';
 import { authService, ProfessorAuthData } from '../lib/auth-service';
-import { generateFingerprint } from '../lib/fingerprint';
 import { professorServiceClient } from '../lib/firebase-client';
+import { v4 as uuidv4 } from 'uuid';
 
 const SessionContext = createContext<SessionContext | undefined>(undefined);
 
@@ -16,12 +16,26 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   });
 
   // Device ID management for student authentication
-  const getOrCreateDeviceId = (): string => {
+  const getOrCreateDeviceId = async (): Promise<string> => {
     let deviceId = localStorage.getItem('deviceId');
-    if (!deviceId) {
-      deviceId = generateFingerprint();
-      localStorage.setItem('deviceId', deviceId);
+    
+    // Check if the stored deviceId is corrupted (contains Promise string)
+    if (deviceId && (deviceId === '[object Promise]' || deviceId.includes('Promise'))) {
+      localStorage.removeItem('deviceId');
+      deviceId = null;
     }
+    
+    if (!deviceId) {
+      try {
+        deviceId = uuidv4();
+        localStorage.setItem('deviceId', deviceId);
+      } catch (error) {
+        // Use a simple UUID as fallback
+        deviceId = uuidv4();
+        localStorage.setItem('deviceId', deviceId);
+      }
+    }
+    
     return deviceId;
   };
 
@@ -124,7 +138,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     try {
       setState(prev => ({ ...prev, isLoading: true, error: undefined }));
 
-      const deviceId = getOrCreateDeviceId();
+      const deviceId = await getOrCreateDeviceId();
 
       // Use existing verification endpoint (sets server cookies)
       const response = await fetch('/api/auth/verify', {
@@ -208,6 +222,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const clearError = () => {
     setState(prev => ({ ...prev, error: undefined }));
   };
+
+
 
   const value: SessionContext = {
     state,

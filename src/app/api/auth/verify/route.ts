@@ -15,9 +15,11 @@ const requestCounts = new Map<string, { count: number; timestamp: number }>();
 
 // Validar formato del deviceId
 function isValidDeviceId(deviceId: string): boolean {
-  const uuidRegex =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(deviceId);
+  // Accept both UUID format and fingerprint format (hash-uuid)
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const fingerprintRegex = /^[0-9a-f]+-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  
+  return uuidRegex.test(deviceId) || fingerprintRegex.test(deviceId);
 }
 
 // Rate limiting
@@ -111,6 +113,11 @@ export async function POST(request: NextRequest) {
       return createErrorResponse("Por favor ingresa un código válido");
     }
 
+    // Validate deviceId format
+    if (!isValidDeviceId(deviceId)) {
+      return createErrorResponse("Device ID inválido", 400);
+    }
+
     // SINGLE STUDENT LOOKUP - Reuse existing function
     const student = await findStudentByCode(code);
     
@@ -122,36 +129,32 @@ export async function POST(request: NextRequest) {
       return createErrorResponse("Tu cuenta no está autorizada. Contacta a tu profesor.", 403);
     }
 
-    // Device validation (simplified)
+    // Device validation (true device binding)
     if (FINGERPRINT_VALIDATION_ENABLED) {
-      if (!student.deviceId) {
-        // First time access - register device
-        const pathParts = student.id?.split('/') || [];
-        const professorId = pathParts[0];
-        const studentId = pathParts[1];
-        
-        if (professorId && studentId) {
-          const docRef = adminDb.collection('professors').doc(professorId).collection('students').doc(studentId);
-          await docRef.update({
-            deviceId,
-            lastAccess: new Date()
-          });
+      try {
+        if (!student.deviceId || student.deviceId === null || student.deviceId === undefined) {
+          // First time access - register device
+          const pathParts = student.id?.split('/') || [];
+          const professorId = pathParts[0];
+          const studentId = pathParts[1];
+          
+          if (professorId && studentId) {
+            try {
+              const docRef = adminDb.collection('professors').doc(professorId).collection('students').doc(studentId);
+              await docRef.update({
+                deviceId,
+                lastAccess: new Date()
+              });
+            } catch (updateError) {
+              // Continue with login even if update fails
+            }
+          }
+        } else if (student.deviceId !== deviceId) {
+          // Device mismatch - reject access from different devices
+          return createErrorResponse("Acceso no autorizado desde este dispositivo. Solo puedes acceder desde el dispositivo donde te registraste inicialmente.", 403);
         }
-      } else if (student.deviceId !== deviceId) {
-        // Si el deviceId no coincide, permitir re-autenticación desde el mismo dispositivo
-        // Esto permite que el estudiante pueda volver a autenticarse si se borró la caché
-
-        const pathParts = student.id?.split('/') || [];
-        const professorId = pathParts[0];
-        const studentId = pathParts[1];
-        
-        if (professorId && studentId) {
-          const docRef = adminDb.collection('professors').doc(professorId).collection('students').doc(studentId);
-          await docRef.update({
-            deviceId,
-            lastAccess: new Date()
-          });
-        }
+      } catch (deviceValidationError) {
+        // Continue with login even if device validation fails
       }
     }
 
