@@ -54,6 +54,7 @@ async function handleCreateStudent(request: AuthenticatedRequest) {
     const body = await request.json();
     const { 
       name, 
+      email,
       allowedSubjects = [],
       authorized = true 
     } = body;
@@ -115,7 +116,7 @@ async function handleCreateStudent(request: AuthenticatedRequest) {
 
 
     // Crear el estudiante
-    const studentData = {
+    const studentData: any = {
       code,
       name: name.trim(),
       authorized,
@@ -124,6 +125,11 @@ async function handleCreateStudent(request: AuthenticatedRequest) {
       enrolledAt: new Date(),
       lastAccess: new Date()
     };
+
+    // Solo agregar email si está presente y no está vacío
+    if (email && email.trim()) {
+      studentData.email = email.trim();
+    }
 
     const docRef = await adminDb.collection('professors').doc(professorId).collection('students').add({
       ...studentData,
