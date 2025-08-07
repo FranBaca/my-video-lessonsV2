@@ -15,9 +15,10 @@ Una aplicación Next.js completa para gestionar y visualizar clases en video, co
 
 ### Para Profesores
 - **Panel de administración completo** con Firebase Authentication
-- **Gestión de estudiantes** (crear, editar, listar)
-- **Gestión de asignaturas** (crear, editar, eliminar)
+- **Gestión de estudiantes** (crear, editar, listar) con **búsqueda en tiempo real**
+- **Gestión de asignaturas** (crear, editar, eliminar) con **búsqueda en tiempo real**
 - **Sistema de carga de videos** con integración a Mux
+- **Gestión de videos** (subir, eliminar) con **búsqueda en tiempo real**
 - **Monitoreo de estado de videos** (procesando, listo, error)
 - **Gestión de profesores** y permisos
 - **Recuperación de contraseñas** para profesores

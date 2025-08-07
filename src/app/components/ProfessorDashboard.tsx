@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { authService } from '../lib/auth-service';
 import { professorServiceClient, videoServiceClient, studentServiceClient, subjectServiceClient } from '../lib/firebase-client';
 import { Professor, Video, Student, Subject } from '../types/firebase';
@@ -8,6 +8,7 @@ import CreateSubjectModal from './CreateSubjectModal';
 import SubjectCard from './SubjectCard';
 import VideoUpload from './VideoUpload';
 import EditStudentModal from './EditStudentModal';
+import SearchBar from './SearchBar';
 import { showNotification, showConfirmation } from '../lib/notifications';
 
 interface ProfessorDashboardProps {
@@ -35,6 +36,15 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
   const [newStudentName, setNewStudentName] = useState('');
   const [newStudentEmail, setNewStudentEmail] = useState('');
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
+  
+  // Estado para búsqueda de estudiantes
+  const [studentSearchTerm, setStudentSearchTerm] = useState('');
+  
+  // Estado para búsqueda de videos
+  const [videoSearchTerm, setVideoSearchTerm] = useState('');
+  
+  // Estado para búsqueda de materias
+  const [subjectSearchTerm, setSubjectSearchTerm] = useState('');
 
   const loadDashboardData = useCallback(async () => {
     try {
@@ -271,6 +281,94 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
     );
   };
 
+  /**
+   * Filtrado de estudiantes basado en el término de búsqueda
+   * 
+   * Busca en:
+   * - Nombre del estudiante
+   * - Código del estudiante  
+   * - Email del estudiante (si existe)
+   * 
+   * La búsqueda es case-insensitive y se actualiza en tiempo real
+   */
+  const filteredStudents = useMemo(() => {
+    if (!studentSearchTerm.trim()) {
+      return students;
+    }
+    
+    const searchTerm = studentSearchTerm.toLowerCase().trim();
+    return students.filter(student => {
+      return (
+        student.name.toLowerCase().includes(searchTerm) ||
+        student.code.toLowerCase().includes(searchTerm) ||
+        (student.email && student.email.toLowerCase().includes(searchTerm))
+      );
+    });
+  }, [students, studentSearchTerm]);
+
+  /**
+   * Filtrado de videos basado en el término de búsqueda
+   * 
+   * Busca en:
+   * - Nombre del video
+   * - Descripción del video (si existe)
+   * - Nombre de la materia asociada
+   * 
+   * La búsqueda es case-insensitive y se actualiza en tiempo real
+   */
+  const filteredVideos = useMemo(() => {
+    if (!videoSearchTerm.trim()) {
+      return videos;
+    }
+    
+    const searchTerm = videoSearchTerm.toLowerCase().trim();
+    return videos.filter(video => {
+      const subject = subjects.find(s => s.id === video.subjectId);
+      return (
+        video.name.toLowerCase().includes(searchTerm) ||
+        (video.description && video.description.toLowerCase().includes(searchTerm)) ||
+        (subject && subject.name.toLowerCase().includes(searchTerm))
+      );
+    });
+  }, [videos, videoSearchTerm, subjects]);
+
+  /**
+   * Filtrado de materias basado en el término de búsqueda
+   * 
+   * Busca en:
+   * - Nombre de la materia
+   * - Descripción de la materia
+   * 
+   * La búsqueda es case-insensitive y se actualiza en tiempo real
+   */
+  const filteredSubjects = useMemo(() => {
+    if (!subjectSearchTerm.trim()) {
+      return subjects;
+    }
+    
+    const searchTerm = subjectSearchTerm.toLowerCase().trim();
+    return subjects.filter(subject => {
+      return (
+        subject.name.toLowerCase().includes(searchTerm) ||
+        (subject.description && subject.description.toLowerCase().includes(searchTerm))
+      );
+    });
+  }, [subjects, subjectSearchTerm]);
+
+  // Limpiar búsqueda cuando se cambia de tab
+  const handleTabChange = (tab: 'overview' | 'subjects' | 'videos' | 'students') => {
+    if (tab !== 'students') {
+      setStudentSearchTerm('');
+    }
+    if (tab !== 'videos') {
+      setVideoSearchTerm('');
+    }
+    if (tab !== 'subjects') {
+      setSubjectSearchTerm('');
+    }
+    setActiveTab(tab);
+  };
+
 
 
   if (loading) {
@@ -311,7 +409,7 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
         <div className="border-b border-gray-200">
           <nav className="-mb-px flex space-x-8">
             <button
-              onClick={() => setActiveTab('overview')}
+              onClick={() => handleTabChange('overview')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'overview'
                   ? 'border-blue-500 text-blue-600'
@@ -321,7 +419,7 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
               Resumen
             </button>
             <button
-              onClick={() => setActiveTab('subjects')}
+              onClick={() => handleTabChange('subjects')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'subjects'
                   ? 'border-blue-500 text-blue-600'
@@ -331,7 +429,7 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
               Materias ({subjects.length})
             </button>
             <button
-              onClick={() => setActiveTab('videos')}
+              onClick={() => handleTabChange('videos')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'videos'
                   ? 'border-blue-500 text-blue-600'
@@ -341,7 +439,7 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
               Clases ({videos.length})
             </button>
             <button
-              onClick={() => setActiveTab('students')}
+              onClick={() => handleTabChange('students')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'students'
                   ? 'border-blue-500 text-blue-600'
@@ -425,51 +523,70 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
 
         {activeTab === 'subjects' && (
           <div className="space-y-6">
-            {/* Header con botones */}
-            <div className="flex justify-between items-center">
+            {/* Header con búsqueda y botones */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <h2 className="text-lg font-medium text-gray-900">Materias</h2>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => setShowVideoUploadModal(true)}
-                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-                >
-                  <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
-                  Subir Video
-                </button>
-                <button
-                  onClick={() => setShowCreateSubjectModal(true)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-                >
-                  <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  Crear Materia
-                </button>
-              </div>
-            </div>
-
-            {/* Grid de materias */}
-            {subjects.length === 0 ? (
-              <div className="text-center py-12">
-                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                </svg>
-                <h3 className="mt-2 text-sm font-medium text-gray-900">No hay materias</h3>
-                <p className="mt-1 text-sm text-gray-500">Comienza creando tu primera materia.</p>
-                <div className="mt-6">
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                <div className="w-full sm:w-64">
+                  <SearchBar
+                    placeholder="Buscar materias..."
+                    value={subjectSearchTerm}
+                    onChange={setSubjectSearchTerm}
+                    onClear={() => setSubjectSearchTerm('')}
+                  />
+                </div>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => setShowVideoUploadModal(true)}
+                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                  >
+                    <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    Subir Video
+                  </button>
                   <button
                     onClick={() => setShowCreateSubjectModal(true)}
                     className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
                   >
-                    Crear Primera Materia
+                    <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Crear Materia
                   </button>
                 </div>
               </div>
+            </div>
+
+            {/* Grid de materias */}
+            {filteredSubjects.length === 0 ? (
+              <div className="text-center py-12">
+                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+                <h3 className="mt-2 text-sm font-medium text-gray-900">
+                  {subjectSearchTerm.trim() ? 'No se encontraron materias' : 'No hay materias'}
+                </h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  {subjectSearchTerm.trim() 
+                    ? 'Intenta con un término de búsqueda diferente.'
+                    : 'Comienza creando tu primera materia.'
+                  }
+                </p>
+                {!subjectSearchTerm.trim() && (
+                  <div className="mt-6">
+                    <button
+                      onClick={() => setShowCreateSubjectModal(true)}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                    >
+                      Crear Primera Materia
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {subjects.map((subject) => {
+                {filteredSubjects.map((subject) => {
                   const videoCount = videos.filter(v => v.subjectId === subject.id).length;
                   return (
                     <SubjectCard
@@ -487,33 +604,62 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
 
         {activeTab === 'videos' && (
           <div className="space-y-6">
-            {/* Header con botón de subir */}
-            <div className="flex justify-between items-center">
+            {/* Header con búsqueda y botón de subir */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <h2 className="text-lg font-medium text-gray-900">Clases</h2>
-              <button
-                onClick={() => setShowVideoUploadModal(true)}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-              >
-                <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                </svg>
-                Subir Video
-              </button>
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                <div className="w-full sm:w-64">
+                  <SearchBar
+                    placeholder="Buscar clases..."
+                    value={videoSearchTerm}
+                    onChange={setVideoSearchTerm}
+                    onClear={() => setVideoSearchTerm('')}
+                  />
+                </div>
+                <button
+                  onClick={() => setShowVideoUploadModal(true)}
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap"
+                >
+                  <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  Subir Video
+                </button>
+              </div>
             </div>
 
             {/* Lista de videos */}
             <div className="bg-white shadow overflow-hidden sm:rounded-md">
-              {videos.length === 0 ? (
+              {/* Indicador de resultados de búsqueda */}
+              {videoSearchTerm.trim() && (
+                <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+                  <p className="text-sm text-gray-600">
+                    {filteredVideos.length === 0 
+                      ? `No se encontraron clases que coincidan con "${videoSearchTerm}"`
+                      : `Mostrando ${filteredVideos.length} de ${videos.length} clases`
+                    }
+                  </p>
+                </div>
+              )}
+              
+              {filteredVideos.length === 0 ? (
                 <div className="text-center py-12">
                   <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                   </svg>
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">No hay clases</h3>
-                                      <p className="mt-1 text-sm text-gray-500">Comienza subiendo tu primera clase.</p>
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">
+                    {videoSearchTerm.trim() ? 'No se encontraron clases' : 'No hay clases'}
+                  </h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {videoSearchTerm.trim() 
+                      ? 'Intenta con un término de búsqueda diferente.'
+                      : 'Comienza subiendo tu primera clase.'
+                    }
+                  </p>
                 </div>
               ) : (
                 <ul className="divide-y divide-gray-200">
-                  {videos.map((video) => {
+                  {filteredVideos.map((video) => {
                     const subject = subjects.find(s => s.id === video.subjectId);
                     return (
                       <li key={video.id}>
@@ -560,33 +706,62 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
 
         {activeTab === 'students' && (
           <div className="space-y-6">
-            {/* Header con botón de crear */}
-            <div className="flex justify-between items-center">
+            {/* Header con búsqueda y botón de crear */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <h2 className="text-lg font-medium text-gray-900">Estudiantes</h2>
-              <button
-                onClick={() => setShowCreateStudentModal(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-              >
-                <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Agregar Estudiante
-              </button>
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                <div className="w-full sm:w-64">
+                  <SearchBar
+                    placeholder="Buscar estudiantes..."
+                    value={studentSearchTerm}
+                    onChange={setStudentSearchTerm}
+                    onClear={() => setStudentSearchTerm('')}
+                  />
+                </div>
+                <button
+                  onClick={() => setShowCreateStudentModal(true)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap"
+                >
+                  <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Agregar Estudiante
+                </button>
+              </div>
             </div>
 
             {/* Lista de estudiantes */}
             <div className="bg-white shadow overflow-hidden sm:rounded-md">
-              {students.length === 0 ? (
+              {/* Indicador de resultados de búsqueda */}
+              {studentSearchTerm.trim() && (
+                <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+                  <p className="text-sm text-gray-600">
+                    {filteredStudents.length === 0 
+                      ? `No se encontraron estudiantes que coincidan con "${studentSearchTerm}"`
+                      : `Mostrando ${filteredStudents.length} de ${students.length} estudiantes`
+                    }
+                  </p>
+                </div>
+              )}
+              
+              {filteredStudents.length === 0 ? (
                 <div className="text-center py-12">
                   <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                   </svg>
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">No hay estudiantes</h3>
-                  <p className="mt-1 text-sm text-gray-500">Comienza agregando tu primer estudiante.</p>
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">
+                    {studentSearchTerm.trim() ? 'No se encontraron estudiantes' : 'No hay estudiantes'}
+                  </h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {studentSearchTerm.trim() 
+                      ? 'Intenta con un término de búsqueda diferente.'
+                      : 'Comienza agregando tu primer estudiante.'
+                    }
+                  </p>
                 </div>
               ) : (
                 <ul className="divide-y divide-gray-200">
-                  {students.map((student) => (
+                  {filteredStudents.map((student) => (
                     <li key={student.id}>
                       <div className="px-4 py-4 flex items-center justify-between">
                         <div className="flex items-center">
