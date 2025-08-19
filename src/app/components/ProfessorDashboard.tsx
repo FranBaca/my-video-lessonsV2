@@ -1,6 +1,15 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiEdit, FiTrash2, FiPlus, FiUpload, FiBook, FiVideo, FiUsers, FiSearch, FiX } from 'react-icons/fi';
+import { 
+  dashboardAnimations, 
+  statsCardVariants, 
+  tabContentVariants, 
+  listVariants,
+  modalAnimations 
+} from '../../animations';
 import { authService } from '../lib/auth-service';
 import { professorServiceClient, videoServiceClient, studentServiceClient, subjectServiceClient } from '../lib/firebase-client';
 import { Professor, Video, Student, Subject } from '../types/firebase';
@@ -452,77 +461,94 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
         </div>
       </div>
 
-      {/* Content */}
+            {/* Content */}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-
+        <AnimatePresence mode="wait">
                  {activeTab === 'overview' && (
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">Total Clases</dt>
-                      <dd className="text-lg font-medium text-gray-900">{videos.length}</dd>
-                    </dl>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <motion.div 
+              className="grid grid-cols-1 md:grid-cols-3 gap-6"
+              variants={statsCardVariants.container}
+              initial="initial"
+              animate="animate"
+            >
+             <motion.div 
+               className="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow duration-200"
+               variants={statsCardVariants.card}
+               whileHover="whileHover"
+             >
+               <div className="p-5">
+                 <div className="flex items-center">
+                   <div className="flex-shrink-0">
+                     <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
+                       <FiVideo className="w-5 h-5 text-white" />
+                     </div>
+                   </div>
+                   <div className="ml-5 w-0 flex-1">
+                     <dl>
+                       <dt className="text-sm font-medium text-gray-500 truncate">Total Clases</dt>
+                       <dd className="text-lg font-medium text-gray-900">{videos.length}</dd>
+                     </dl>
+                   </div>
+                 </div>
+               </div>
+             </motion.div>
 
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">Total Estudiantes</dt>
-                      <dd className="text-lg font-medium text-gray-900">{students.length}</dd>
-                    </dl>
-                  </div>
-                </div>
-              </div>
-            </div>
+             <motion.div 
+               className="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow duration-200"
+               variants={statsCardVariants.card}
+               whileHover="whileHover"
+             >
+               <div className="p-5">
+                 <div className="flex items-center">
+                   <div className="flex-shrink-0">
+                     <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
+                       <FiUsers className="w-5 h-5 text-white" />
+                     </div>
+                   </div>
+                   <div className="ml-5 w-0 flex-1">
+                     <dl>
+                       <dt className="text-sm font-medium text-gray-500 truncate">Total Estudiantes</dt>
+                       <dd className="text-lg font-medium text-gray-900">{students.length}</dd>
+                     </dl>
+                   </div>
+                 </div>
+               </div>
+             </motion.div>
 
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">Materias</dt>
-                      <dd className="text-lg font-medium text-gray-900">{subjects.length}</dd>
-                    </dl>
-                  </div>
-                </div>
-              </div>
-            </div>
+             <motion.div 
+               className="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow duration-200"
+               variants={statsCardVariants.card}
+               whileHover="whileHover"
+             >
+               <div className="p-5">
+                 <div className="flex items-center">
+                   <div className="flex-shrink-0">
+                     <div className="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
+                       <FiBook className="w-5 h-5 text-white" />
+                     </div>
+                   </div>
+                   <div className="ml-5 w-0 flex-1">
+                     <dl>
+                       <dt className="text-sm font-medium text-gray-500 truncate">Materias</dt>
+                       <dd className="text-lg font-medium text-gray-900">{subjects.length}</dd>
+                     </dl>
+                   </div>
+                 </div>
+               </div>
+             </motion.div>
 
-            
-          </div>
-        )}
+             
+           </motion.div>
+         )}
 
         {activeTab === 'subjects' && (
-          <div className="space-y-6">
+          <motion.div 
+            className="space-y-6"
+            variants={tabContentVariants.subjects}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+          >
             {/* Header con búsqueda y botones */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <h2 className="text-lg font-medium text-gray-900">Materias</h2>
@@ -536,31 +562,38 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
                   />
                 </div>
                 <div className="flex space-x-2">
-                  <button
+                  <motion.button
                     onClick={() => setShowVideoUploadModal(true)}
-                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2"
+                    variants={dashboardAnimations.buttons.primary}
+                    whileHover="whileHover"
+                    whileTap="whileTap"
                   >
-                    <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                    </svg>
+                    <FiUpload className="w-4 h-4" />
                     Subir Video
-                  </button>
-                  <button
+                  </motion.button>
+                  <motion.button
                     onClick={() => setShowCreateSubjectModal(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2"
+                    variants={dashboardAnimations.buttons.primary}
+                    whileHover="whileHover"
+                    whileTap="whileTap"
                   >
-                    <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
+                    <FiPlus className="w-4 h-4" />
                     Crear Materia
-                  </button>
+                  </motion.button>
                 </div>
               </div>
             </div>
 
             {/* Grid de materias */}
             {filteredSubjects.length === 0 ? (
-              <div className="text-center py-12">
+              <motion.div 
+                className="text-center py-12"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+              >
                 <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
@@ -575,35 +608,55 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
                 </p>
                 {!subjectSearchTerm.trim() && (
                   <div className="mt-6">
-                    <button
+                    <motion.button
                       onClick={() => setShowCreateSubjectModal(true)}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2"
+                      variants={dashboardAnimations.buttons.primary}
+                      whileHover="whileHover"
+                      whileTap="whileTap"
                     >
+                      <FiPlus className="w-4 h-4" />
                       Crear Primera Materia
-                    </button>
+                    </motion.button>
                   </div>
                 )}
-              </div>
+              </motion.div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredSubjects.map((subject) => {
+              <motion.div 
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                variants={listVariants.subjects.grid}
+                initial="initial"
+                animate="animate"
+              >
+                {filteredSubjects.map((subject, index) => {
                   const videoCount = videos.filter(v => v.subjectId === subject.id).length;
                   return (
-                    <SubjectCard
+                    <motion.div
                       key={subject.id}
-                      subject={subject}
-                      videoCount={videoCount}
-                      onDelete={() => handleDeleteSubject(subject.id!)}
-                    />
+                      variants={listVariants.subjects.card}
+                      custom={index}
+                    >
+                      <SubjectCard
+                        subject={subject}
+                        videoCount={videoCount}
+                        onDelete={() => handleDeleteSubject(subject.id!)}
+                      />
+                    </motion.div>
                   );
                 })}
-              </div>
+              </motion.div>
             )}
-          </div>
+          </motion.div>
         )}
 
         {activeTab === 'videos' && (
-          <div className="space-y-6">
+          <motion.div 
+            className="space-y-6"
+            variants={tabContentVariants.videos}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+          >
             {/* Header con búsqueda y botón de subir */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <h2 className="text-lg font-medium text-gray-900">Clases</h2>
@@ -616,20 +669,26 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
                     onClear={() => setVideoSearchTerm('')}
                   />
                 </div>
-                <button
+                <motion.button
                   onClick={() => setShowVideoUploadModal(true)}
-                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap"
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap flex items-center gap-2"
+                  variants={dashboardAnimations.buttons.primary}
+                  whileHover="whileHover"
+                  whileTap="whileTap"
                 >
-                  <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
+                  <FiUpload className="w-4 h-4" />
                   Subir Video
-                </button>
+                </motion.button>
               </div>
             </div>
 
             {/* Lista de videos */}
-            <div className="bg-white shadow overflow-hidden sm:rounded-md">
+            <motion.div 
+              className="bg-white shadow overflow-hidden sm:rounded-md"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+            >
               {/* Indicador de resultados de búsqueda */}
               {videoSearchTerm.trim() && (
                 <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
@@ -643,7 +702,12 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
               )}
               
               {filteredVideos.length === 0 ? (
-                <div className="text-center py-12">
+                <motion.div 
+                  className="text-center py-12"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4 }}
+                >
                   <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                   </svg>
@@ -656,13 +720,22 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
                       : 'Comienza subiendo tu primera clase.'
                     }
                   </p>
-                </div>
+                </motion.div>
               ) : (
-                <ul className="divide-y divide-gray-200">
-                  {filteredVideos.map((video) => {
+                <motion.ul 
+                  className="divide-y divide-gray-200"
+                  variants={listVariants.videos.list}
+                  initial="initial"
+                  animate="animate"
+                >
+                  {filteredVideos.map((video, index) => {
                     const subject = subjects.find(s => s.id === video.subjectId);
                     return (
-                      <li key={video.id}>
+                      <motion.li 
+                        key={video.id}
+                        variants={listVariants.videos.item}
+                        custom={index}
+                      >
                         <div className="px-4 py-4 flex items-center justify-between">
                           <div className="flex items-center">
                             <div className="flex-shrink-0">
@@ -680,32 +753,46 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              video.isActive 
-                                ? 'bg-green-100 text-green-800' 
-                                : 'bg-gray-100 text-gray-800'
-                            }`}>
-                              {video.isActive ? 'Activo' : 'Inactivo'}
-                            </span>
-                            <button
-                              onClick={() => handleDeleteVideo(video.id!)}
-                              className="text-red-600 hover:text-red-900 text-sm font-medium"
+                            <motion.span 
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                video.isActive 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-gray-100 text-gray-800'
+                              }`}
+                              variants={dashboardAnimations.badges}
+                              whileHover="whileHover"
                             >
+                              {video.isActive ? 'Activo' : 'Inactivo'}
+                            </motion.span>
+                            <motion.button
+                              onClick={() => handleDeleteVideo(video.id!)}
+                              className="text-red-600 hover:text-red-900 text-sm font-medium flex items-center gap-1"
+                              variants={dashboardAnimations.actionButtons.delete}
+                              whileHover="whileHover"
+                              whileTap="whileTap"
+                            >
+                              <FiTrash2 className="w-4 h-4" />
                               Eliminar
-                            </button>
+                            </motion.button>
                           </div>
                         </div>
-                      </li>
+                      </motion.li>
                     );
                   })}
-                </ul>
+                </motion.ul>
               )}
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         )}
 
         {activeTab === 'students' && (
-          <div className="space-y-6">
+          <motion.div 
+            className="space-y-6"
+            variants={tabContentVariants.students}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+          >
             {/* Header con búsqueda y botón de crear */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <h2 className="text-lg font-medium text-gray-900">Estudiantes</h2>
@@ -718,20 +805,26 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
                     onClear={() => setStudentSearchTerm('')}
                   />
                 </div>
-                <button
+                <motion.button
                   onClick={() => setShowCreateStudentModal(true)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap flex items-center gap-2"
+                  variants={dashboardAnimations.buttons.primary}
+                  whileHover="whileHover"
+                  whileTap="whileTap"
                 >
-                  <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
+                  <FiPlus className="w-4 h-4" />
                   Agregar Estudiante
-                </button>
+                </motion.button>
               </div>
             </div>
 
             {/* Lista de estudiantes */}
-            <div className="bg-white shadow overflow-hidden sm:rounded-md">
+            <motion.div 
+              className="bg-white shadow overflow-hidden sm:rounded-md"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+            >
               {/* Indicador de resultados de búsqueda */}
               {studentSearchTerm.trim() && (
                 <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
@@ -745,7 +838,12 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
               )}
               
               {filteredStudents.length === 0 ? (
-                <div className="text-center py-12">
+                <motion.div 
+                  className="text-center py-12"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4 }}
+                >
                   <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                   </svg>
@@ -758,11 +856,20 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
                       : 'Comienza agregando tu primer estudiante.'
                     }
                   </p>
-                </div>
+                </motion.div>
               ) : (
-                <ul className="divide-y divide-gray-200">
-                  {filteredStudents.map((student) => (
-                    <li key={student.id}>
+                <motion.ul 
+                  className="divide-y divide-gray-200"
+                  variants={listVariants.students.list}
+                  initial="initial"
+                  animate="animate"
+                >
+                  {filteredStudents.map((student, index) => (
+                    <motion.li 
+                      key={student.id}
+                      variants={listVariants.students.item}
+                      custom={index}
+                    >
                       <div className="px-4 py-4 flex items-center justify-between">
                         <div className="flex items-center">
                           <div className="flex-shrink-0">
@@ -781,34 +888,47 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            student.authorized 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-red-100 text-red-800'
-                          }`}>
+                          <motion.span 
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              student.authorized 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'
+                            }`}
+                            variants={dashboardAnimations.badges}
+                            whileHover="whileHover"
+                          >
                             {student.authorized ? 'Autorizado' : 'No autorizado'}
-                          </span>
-                          <button
+                          </motion.span>
+                          <motion.button
                             onClick={() => handleEditStudent(student)}
-                            className="text-blue-600 hover:text-blue-900 text-sm font-medium mr-2"
+                            className="text-blue-600 hover:text-blue-900 text-sm font-medium mr-2 flex items-center gap-1"
+                            variants={dashboardAnimations.actionButtons.edit}
+                            whileHover="whileHover"
+                            whileTap="whileTap"
                           >
+                            <FiEdit className="w-4 h-4" />
                             Editar
-                          </button>
-                          <button
+                          </motion.button>
+                          <motion.button
                             onClick={() => handleDeleteStudent(student.id!)}
-                            className="text-red-600 hover:text-red-900 text-sm font-medium"
+                            className="text-red-600 hover:text-red-900 text-sm font-medium flex items-center gap-1"
+                            variants={dashboardAnimations.actionButtons.delete}
+                            whileHover="whileHover"
+                            whileTap="whileTap"
                           >
+                            <FiTrash2 className="w-4 h-4" />
                             Eliminar
-                          </button>
+                          </motion.button>
                         </div>
                       </div>
-                    </li>
+                    </motion.li>
                   ))}
-                </ul>
+                </motion.ul>
               )}
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         )}
+        </AnimatePresence>
       </main>
 
       {/* Modal para crear materia */}
@@ -834,84 +954,127 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
       )}
 
       {/* Modal para crear estudiante */}
-      {showCreateStudentModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Crear Nuevo Estudiante</h3>
-              
-              <form onSubmit={handleCreateStudent} className="space-y-4">
-                <div>
-                  <label htmlFor="studentName" className="block text-sm font-medium text-gray-700">
-                    Nombre *
-                  </label>
-                                     <input
-                     type="text"
-                     id="studentName"
-                     value={newStudentName}
-                     onChange={(e) => setNewStudentName(e.target.value)}
-                     className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
-                     placeholder="Nombre del estudiante"
-                     required
-                   />
-                </div>
-
-                <div>
-                  <label htmlFor="studentEmail" className="block text-sm font-medium text-gray-700">
-                    Email (opcional)
-                  </label>
-                                     <input
-                     type="email"
-                     id="studentEmail"
-                     value={newStudentEmail}
-                     onChange={(e) => setNewStudentEmail(e.target.value)}
-                     className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
-                     placeholder="email@ejemplo.com"
-                   />
-                </div>
-
-                {subjects.length > 0 && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Materias permitidas (opcional)
+      <AnimatePresence>
+        {showCreateStudentModal && (
+          <motion.div 
+            className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
+            variants={modalAnimations.backdrop}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+          >
+            <motion.div 
+              className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white"
+              variants={modalAnimations.quickScale}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+            >
+              <div className="mt-3">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Crear Nuevo Estudiante</h3>
+                
+                <form onSubmit={handleCreateStudent} className="space-y-4">
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.1 }}
+                  >
+                    <label htmlFor="studentName" className="block text-sm font-medium text-gray-700">
+                      Nombre *
                     </label>
-                    <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-md p-2">
-                      {subjects.map((subject) => (
-                        <label key={subject.id} className="flex items-center space-x-2 py-1">
-                          <input
-                            type="checkbox"
-                            checked={selectedSubjects.includes(subject.id!)}
-                            onChange={() => handleToggleSubjectSelection(subject.id!)}
-                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                          />
-                          <span className="text-sm text-gray-700">{subject.name}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                    <input
+                      type="text"
+                      id="studentName"
+                      value={newStudentName}
+                      onChange={(e) => setNewStudentName(e.target.value)}
+                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+                      placeholder="Nombre del estudiante"
+                      required
+                    />
+                  </motion.div>
 
-                <div className="flex justify-end space-x-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowCreateStudentModal(false)}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-md"
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.2 }}
                   >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={creatingStudent || !newStudentName.trim()}
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md"
+                    <label htmlFor="studentEmail" className="block text-sm font-medium text-gray-700">
+                      Email (opcional)
+                    </label>
+                    <input
+                      type="email"
+                      id="studentEmail"
+                      value={newStudentEmail}
+                      onChange={(e) => setNewStudentEmail(e.target.value)}
+                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+                      placeholder="email@ejemplo.com"
+                    />
+                  </motion.div>
+
+                  {subjects.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: 0.3 }}
+                    >
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Materias permitidas (opcional)
+                      </label>
+                      <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-md p-2">
+                        {subjects.map((subject) => (
+                          <motion.label 
+                            key={subject.id} 
+                            className="flex items-center space-x-2 py-1"
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedSubjects.includes(subject.id!)}
+                              onChange={() => handleToggleSubjectSelection(subject.id!)}
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-sm text-gray-700">{subject.name}</span>
+                          </motion.label>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+
+                  <motion.div 
+                    className="flex justify-end space-x-3 pt-4"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.4 }}
                   >
-                    {creatingStudent ? 'Creando...' : 'Crear Estudiante'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
+                    <motion.button
+                      type="button"
+                      onClick={() => setShowCreateStudentModal(false)}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-md"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      Cancelar
+                    </motion.button>
+                    <motion.button
+                      type="submit"
+                      disabled={creatingStudent || !newStudentName.trim()}
+                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      {creatingStudent ? 'Creando...' : 'Crear Estudiante'}
+                    </motion.button>
+                  </motion.div>
+                </form>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Modal para editar estudiante */}
       {showEditStudentModal && editingStudent && (

@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Subject } from '../types/firebase';
 import { SUBJECT_COLORS } from '../data/subjects';
+import { createSubjectModal } from '../../animations';
 
 interface CreateSubjectModalProps {
   isOpen: boolean;
@@ -75,92 +77,133 @@ export default function CreateSubjectModal({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-        <div className="mt-3">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Crear Nueva Materia</h3>
-          
-          {error && (
-            <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
-              <p className="text-red-800">{error}</p>
-            </div>
-          )}
-          
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Nombre de la materia *
-              </label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({...prev, name: e.target.value}))}
-                placeholder="Ej: Anatomía"
-                className="w-full border rounded-md p-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Descripción
-              </label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({...prev, description: e.target.value}))}
-                placeholder="Ej: Anatomía Humana"
-                className="w-full border rounded-md p-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
-                rows={3}
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Color
-              </label>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {SUBJECT_COLORS.map(color => (
-                  <button
-                    key={color.id}
-                    type="button"
-                    className={`w-8 h-8 rounded-full border-2 transition-all ${
-                      formData.color.id === color.id 
-                        ? 'border-gray-800 scale-110' 
-                        : 'border-gray-300 hover:border-gray-400'
-                    }`}
-                    style={{ backgroundColor: color.value }}
-                    onClick={() => setFormData(prev => ({...prev, color}))}
-                    title={color.name}
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div 
+          className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
+          variants={createSubjectModal.backdrop}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+        >
+          <motion.div 
+            className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white"
+            variants={createSubjectModal.content}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+          >
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Crear Nueva Materia</h3>
+              
+              {error && (
+                <motion.div 
+                  className="bg-red-50 border-l-4 border-red-500 p-4 mb-4"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <p className="text-red-800">{error}</p>
+                </motion.div>
+              )}
+              
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, delay: 0.05 }}
+                >
+                  <label className="block text-sm font-medium text-gray-700">
+                    Nombre de la materia *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({...prev, name: e.target.value}))}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+                    placeholder="Nombre de la materia"
+                    required
                   />
-                ))}
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Color seleccionado: {formData.color.name}
-              </p>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, delay: 0.1 }}
+                >
+                  <label className="block text-sm font-medium text-gray-700">
+                    Descripción (opcional)
+                  </label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({...prev, description: e.target.value}))}
+                    rows={3}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+                    placeholder="Descripción de la materia"
+                  />
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, delay: 0.15 }}
+                >
+                  <label className="block text-sm font-medium text-gray-700">
+                    Color de la materia
+                  </label>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {SUBJECT_COLORS.map((color) => (
+                      <motion.button
+                        key={color.id}
+                        type="button"
+                        onClick={() => setFormData(prev => ({...prev, color}))}
+                        className={`w-8 h-8 rounded-full border-2 ${
+                          formData.color.id === color.id 
+                            ? 'border-gray-800 scale-110' 
+                            : 'border-gray-300 hover:border-gray-400'
+                        }`}
+                        style={{ backgroundColor: color.hex }}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                        transition={{ duration: 0.15 }}
+                      />
+                    ))}
+                  </div>
+                </motion.div>
+
+                <motion.div 
+                  className="flex justify-end space-x-3 pt-4"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, delay: 0.2 }}
+                >
+                  <motion.button
+                    type="button"
+                    onClick={onClose}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-md"
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    Cancelar
+                  </motion.button>
+                  <motion.button
+                    type="submit"
+                    disabled={loading || !formData.name.trim()}
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md"
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    {loading ? 'Creando...' : 'Crear Materia'}
+                  </motion.button>
+                </motion.div>
+              </form>
             </div>
-            
-            <div className="flex justify-end space-x-2 pt-4">
-              <button 
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-md transition-colors"
-              >
-                Cancelar
-              </button>
-              <button 
-                type="submit"
-                disabled={loading || !formData.name.trim()}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition-colors"
-              >
-                {loading ? 'Creando...' : 'Crear Materia'}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 } 
