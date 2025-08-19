@@ -1,5 +1,14 @@
+// Tipo para los colores de las materias
+export interface SubjectColor {
+  id: string;
+  name: string;
+  value: string;
+  bgClass: string;
+  textClass: string;
+}
+
 // Colores para las materias
-export const SUBJECT_COLORS = [
+export const SUBJECT_COLORS: SubjectColor[] = [
   { id: 'blue', name: 'Azul', value: '#3B82F6', bgClass: 'bg-blue-500', textClass: 'text-blue-500' },
   { id: 'green', name: 'Verde', value: '#10B981', bgClass: 'bg-green-500', textClass: 'text-green-500' },
   { id: 'purple', name: 'Púrpura', value: '#8B5CF6', bgClass: 'bg-purple-500', textClass: 'text-purple-500' },

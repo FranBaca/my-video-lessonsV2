@@ -13,6 +13,28 @@ const nextConfig = {
   images: {
     domains: ["stream.mux.com", "image.mux.com"],
   },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      // Client-side webpack configuration
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        net: false,
+        tls: false,
+        fs: false,
+        crypto: false,
+        stream: false,
+        url: false,
+        zlib: false,
+        http: false,
+        https: false,
+        assert: false,
+        os: false,
+        path: false,
+        'agent-base': false,
+      };
+    }
+    return config;
+  },
   async headers() {
     return [
       // Configuración CORS para todas las rutas de API

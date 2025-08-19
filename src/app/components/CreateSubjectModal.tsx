@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Subject } from '../types/firebase';
-import { SUBJECT_COLORS } from '../data/subjects';
+import { SUBJECT_COLORS, SubjectColor } from '../data/subjects';
 import { createSubjectModal } from '../../animations';
 
 interface CreateSubjectModalProps {
@@ -21,7 +21,11 @@ export default function CreateSubjectModal({
   professorId, 
   existingSubjects 
 }: CreateSubjectModalProps) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    description: string;
+    color: SubjectColor;
+  }>({
     name: '',
     description: '',
     color: SUBJECT_COLORS[0]
@@ -163,7 +167,7 @@ export default function CreateSubjectModal({
                             ? 'border-gray-800 scale-110' 
                             : 'border-gray-300 hover:border-gray-400'
                         }`}
-                        style={{ backgroundColor: color.hex }}
+                        style={{ backgroundColor: color.value }}
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.95 }}
                         transition={{ duration: 0.15 }}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { validateAccessCode } from "../lib/auth-utils-client";
 
 interface LoginFormProps {
   onSuccess: (code: string) => void;
@@ -10,14 +11,25 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [touched, setTouched] = useState(false);
 
+  const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.toUpperCase();
+    setCode(value);
+    setTouched(true);
+    
+    // Clear error when user starts typing
+    if (error) {
+      setError("");
+    }
+  };
 
-
-  // Validar formato del código
-  const validateCode = (code: string) => {
-    // El código debe tener al menos 3 caracteres y solo letras, números y guiones
-    const codeRegex = /^[A-Z0-9-]{3,}$/;
-    return codeRegex.test(code);
+  const handleBlur = () => {
+    setTouched(true);
+    const validation = validateAccessCode(code);
+    if (!validation.isValid) {
+      setError(validation.message);
+    }
   };
 
   // Centralized error handling
@@ -32,21 +44,21 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
     setLoading(true);
 
     try {
-      // Validar formato del código
-      if (!validateCode(code)) {
-        throw new Error(
-          "El código debe contener solo letras, números y guiones, y tener al menos 3 caracteres."
-        );
+      // Enhanced validation using utility function
+      const validation = validateAccessCode(code);
+      if (!validation.isValid) {
+        throw new Error(validation.message);
       }
 
-      // Llamar al callback de éxito con el código
-      onSuccess(code);
+      // Call success callback with the validated code
+      onSuccess(code.trim());
     } catch (error: any) {
       handleError(error.message);
-    } finally {
-      setLoading(false);
     }
   };
+
+  const validation = validateAccessCode(code);
+  const showError = touched && !validation.isValid;
 
   return (
     <div className="w-full">
@@ -73,15 +85,29 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
                 name="code"
                 type="text"
                 required
-                className="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
-                placeholder="Ingresa tu código de acceso"
+                className={`appearance-none block w-full px-4 py-3 border rounded-lg shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base transition-colors ${
+                  showError 
+                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                    : 'border-gray-300'
+                }`}
+                placeholder="Ej: ABC-123 o ABC_123"
                 value={code}
-                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                onChange={handleCodeChange}
+                onBlur={handleBlur}
                 disabled={loading}
                 autoComplete="off"
                 autoFocus
+                maxLength={20}
               />
             </div>
+            {showError && (
+              <p className="mt-2 text-sm text-red-600">
+                {validation.message}
+              </p>
+            )}
+            <p className="mt-2 text-xs text-gray-500">
+              El código debe tener al menos 3 caracteres y solo puede contener letras, números, guiones (-) y guiones bajos (_)
+            </p>
           </div>
 
           {error && (
@@ -110,8 +136,8 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
           <div>
             <button
               type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={loading || !validation.isValid}
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? (
                 <div className="flex items-center">

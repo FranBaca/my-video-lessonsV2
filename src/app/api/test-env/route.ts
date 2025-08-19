@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   try {
+    // SECURITY: Block this endpoint in production
+    if (process.env.NODE_ENV === 'production') {
+      return NextResponse.json({ 
+        success: false, 
+        message: "Endpoint not available in production" 
+      }, { status: 404 });
+    }
+
     // Check Firebase Admin SDK variables
     const firebaseConfigured = !!(
       process.env.FIREBASE_PRIVATE_KEY_ID &&

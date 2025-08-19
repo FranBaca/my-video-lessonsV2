@@ -11,7 +11,8 @@ const FINGERPRINT_VALIDATION_ENABLED = true; // Device validation enabled
 // Rate limiting
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minuto
 const MAX_REQUESTS_PER_WINDOW = 5;
-const requestCounts = new Map<string, { count: number; timestamp: number }>();
+const MAX_ATTEMPTS_PER_HOUR = 50; // Added hourly limit
+const requestCounts = new Map<string, { count: number; timestamp: number; hourlyCount: number; hourlyTimestamp: number }>();
 
 // Validar formato del deviceId
 function isValidDeviceId(deviceId: string): boolean {
@@ -22,21 +23,45 @@ function isValidDeviceId(deviceId: string): boolean {
   return uuidRegex.test(deviceId) || fingerprintRegex.test(deviceId);
 }
 
-// Rate limiting
+// Enhanced rate limiting
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
   const requestData = requestCounts.get(ip);
 
   if (!requestData || now - requestData.timestamp > RATE_LIMIT_WINDOW) {
-    requestCounts.set(ip, { count: 1, timestamp: now });
+    // Reset per-minute counter
+    const hourlyCount = requestData ? requestData.hourlyCount : 0;
+    const hourlyTimestamp = requestData ? requestData.hourlyTimestamp : now;
+    
+    requestCounts.set(ip, { 
+      count: 1, 
+      timestamp: now,
+      hourlyCount: hourlyCount + 1,
+      hourlyTimestamp: hourlyTimestamp
+    });
+    
+    // Check hourly limit
+    if (now - hourlyTimestamp > 60 * 60 * 1000) {
+      // Reset hourly counter
+      requestCounts.set(ip, { 
+        count: 1, 
+        timestamp: now,
+        hourlyCount: 1,
+        hourlyTimestamp: now
+      });
+    } else if (hourlyCount >= MAX_ATTEMPTS_PER_HOUR) {
+      return false; // Hourly limit exceeded
+    }
+    
     return true;
   }
 
   if (requestData.count >= MAX_REQUESTS_PER_WINDOW) {
-    return false;
+    return false; // Per-minute limit exceeded
   }
 
   requestData.count++;
+  requestData.hourlyCount++;
   return true;
 }
 
@@ -101,7 +126,7 @@ export async function POST(request: NextRequest) {
     const ip = request.headers.get("x-forwarded-for") || "unknown";
     if (!checkRateLimit(ip)) {
       return createErrorResponse(
-        "Demasiadas solicitudes. Por favor, espera un momento antes de intentar nuevamente.",
+        "Demasiadas solicitudes. Límite: 5 por minuto, 50 por hora. Por favor, espera antes de intentar nuevamente.",
         429
       );
     }
@@ -171,7 +196,7 @@ export async function POST(request: NextRequest) {
     // Establecer cookies
     const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: true, // Always secure - remove environment check
       sameSite: "strict" as "strict",
       maxAge: 30 * 24 * 60 * 60, // 30 días
       path: "/",

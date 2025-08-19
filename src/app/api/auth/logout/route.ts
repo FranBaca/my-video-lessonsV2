@@ -8,12 +8,11 @@ export async function POST() {
     message: "Sesión cerrada exitosamente",
   });
 
-  // Limpiar las cookies
+  // Clear cookies
   const cookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: true, // Always secure - remove environment check
     sameSite: "strict" as "strict",
-    maxAge: 0, // Esto hará que la cookie expire inmediatamente
     path: "/",
   };
 

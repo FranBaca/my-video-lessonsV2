@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
           professorId: firebaseUid,
           email: professor.email,
           name: professor.name,
-          tempPassword: tempPassword
+          // Removed tempPassword for security - password should not be exposed in API responses
         }
       });
 

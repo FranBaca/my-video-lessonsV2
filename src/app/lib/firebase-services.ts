@@ -18,7 +18,9 @@ import {
 import { db } from './firebase';
 import { Professor, Video, Student, Subject, ApiResponse } from '../types/firebase';
 import { auth } from './firebase';
-import { adminDb } from './firebase-admin';
+
+// Remove the top-level import of adminDb
+// import { adminDb } from './firebase-admin';
 
 // Servicios para Profesores
 export const professorService = {
@@ -417,6 +419,8 @@ export const videoService = {
   // Método para buscar videos por muxPlaybackId
   async findByMuxPlaybackId(muxPlaybackId: string): Promise<{ video: Video; professorId: string; subjectId: string; videoId: string } | null> {
     try {
+      // Dynamic import of adminDb to avoid bundling issues
+      const { adminDb } = await import('./firebase-admin');
       if (!adminDb) {
         return null;
       }
@@ -457,6 +461,8 @@ export const videoService = {
   // Método para obtener videos con estado específico
   async getByStatus(status: Video['status']): Promise<Video[]> {
     try {
+      // Dynamic import of adminDb to avoid bundling issues
+      const { adminDb } = await import('./firebase-admin');
       if (!adminDb) {
         return [];
       }
@@ -478,6 +484,8 @@ export const videoService = {
   // Método para obtener videos que han estado procesando por más de X minutos
   async getProcessingVideosOlderThan(minutes: number): Promise<Video[]> {
     try {
+      // Dynamic import of adminDb to avoid bundling issues
+      const { adminDb } = await import('./firebase-admin');
       if (!adminDb) {
         return [];
       }
@@ -503,6 +511,8 @@ export const videoService = {
   // Método para obtener videos de una materia específica desde todos los profesores
   async getBySubjectAcrossProfessors(subjectId: string): Promise<Video[]> {
     try {
+      // Dynamic import of adminDb to avoid bundling issues
+      const { adminDb } = await import('./firebase-admin');
       if (!adminDb) {
         return [];
       }
@@ -760,6 +770,8 @@ export const publicStudentService = {
 export const professorServiceAdmin = {
   async getById(id: string): Promise<Professor | null> {
     try {
+      // Dynamic import of adminDb to avoid bundling issues
+      const { adminDb } = await import('./firebase-admin');
       if (!adminDb) {
         throw new Error("Firebase Admin SDK no está disponible");
       }
@@ -786,6 +798,8 @@ export const professorServiceAdmin = {
 export const subjectServiceAdmin = {
   async getById(professorId: string, subjectId: string): Promise<Subject | null> {
     try {
+      // Dynamic import of adminDb to avoid bundling issues
+      const { adminDb } = await import('./firebase-admin');
       if (!adminDb) {
         throw new Error("Firebase Admin SDK no está disponible");
       }
