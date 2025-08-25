@@ -1,52 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { adminDb } from "@/app/lib/firebase-admin";
 import { Student } from "@/app/types/firebase";
 import { createAuthMiddleware, AuthenticatedRequest } from "@/app/lib/auth-utils";
-
-// Función para buscar estudiante por ID dentro del profesor
-async function findStudentByIdInProfessor(studentId: string, professorId: string): Promise<Student | null> {
-  try {
-    const studentDoc = await adminDb.collection('professors').doc(professorId).collection('students').doc(studentId).get();
-    
-    if (!studentDoc.exists) {
-      return null;
-    }
-    
-    const studentData = {
-      id: `${professorId}/${studentDoc.id}`,
-      ...studentDoc.data(),
-      enrolledAt: studentDoc.data().enrolledAt?.toDate() || new Date(),
-      lastAccess: studentDoc.data().lastAccess?.toDate()
-    } as Student;
-    
-    return studentData;
-  } catch (error) {
-    console.error("❌ Error finding student by ID:", error);
-    return null;
-  }
-}
-
-// Función para validar array de materias
-function validateSubjectsArray(subjects: any): boolean {
-  if (!Array.isArray(subjects)) {
-    return false;
-  }
-  
-  return subjects.every(subject => typeof subject === 'string' && subject.trim().length > 0);
-}
-
-// Función para remover materias duplicadas
-function removeDuplicateSubjects(existingSubjects: string[], newSubjects: string[]): string[] {
-  const existingSet = new Set(existingSubjects);
-  const uniqueNewSubjects = newSubjects.filter(subject => !existingSet.has(subject));
-  return [...existingSubjects, ...uniqueNewSubjects];
-}
+import { studentServiceAdmin } from "@/app/lib/firebase-services";
+import { validateSubjectsArray, removeDuplicateSubjects } from "@/app/lib/utils";
 
 // Función para actualizar materias del estudiante
 async function updateStudentSubjects(studentId: string, professorId: string, newSubjects: string[]): Promise<Student> {
   try {
     // Obtener estudiante actual
-    const currentStudent = await findStudentByIdInProfessor(studentId, professorId);
+    const currentStudent = await studentServiceAdmin.findStudentByIdInProfessor(studentId, professorId);
     if (!currentStudent) {
       throw new Error("Estudiante no encontrado");
     }
@@ -92,7 +55,7 @@ async function handleUpdateStudent(request: AuthenticatedRequest, context: { par
     const professorId = request.professorId!;
     
     // Validar que el estudiante existe y pertenece al profesor
-    const existingStudent = await findStudentByIdInProfessor(studentId, professorId);
+    const existingStudent = await studentServiceAdmin.findStudentByIdInProfessor(studentId, professorId);
     if (!existingStudent) {
       return NextResponse.json(
         {
@@ -141,4 +104,4 @@ async function handleUpdateStudent(request: AuthenticatedRequest, context: { par
 }
 
 // Exportar el endpoint con middleware de autenticación
-export const PUT = createAuthMiddleware(handleUpdateStudent); 
+export const PUT = createAuthMiddleware(handleUpdateStudent);

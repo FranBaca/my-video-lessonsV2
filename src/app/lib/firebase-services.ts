@@ -821,4 +821,220 @@ export const subjectServiceAdmin = {
       throw error;
     }
   }
+};
+
+// Servicios para Estudiantes (Admin SDK - para API routes)
+export const studentServiceAdmin = {
+  async findByCode(code: string): Promise<Student | null> {
+    try {
+      const { adminDb } = await import('./firebase-admin');
+      if (!adminDb) {
+        throw new Error("Firebase Admin SDK no está disponible");
+      }
+      // Obtener todos los profesores
+      const professorsSnapshot = await adminDb.collection('professors').get();
+      
+      // Buscar en cada profesor
+      for (const professorDoc of professorsSnapshot.docs) {
+        const professorId = professorDoc.id;
+        
+        try {
+          // Buscar estudiantes en este profesor
+          const studentsQuery = adminDb.collection('professors').doc(professorId).collection('students').where('code', '==', code);
+          
+          const studentsSnapshot = await studentsQuery.get();
+          
+          if (!studentsSnapshot.empty) {
+            const studentDoc = studentsSnapshot.docs[0];
+            
+            const studentData = {
+              id: `${professorId}/${studentDoc.id}`,
+              ...studentDoc.data(),
+              enrolledAt: studentDoc.data().enrolledAt?.toDate() || new Date(),
+              lastAccess: studentDoc.data().lastAccess?.toDate()
+            } as Student;
+            
+            return studentData;
+          }
+        } catch (error) {
+          continue; // Try next professor
+        }
+      }
+      
+      return null;
+    } catch (error) {
+      return null;
+    }
+  },
+
+  async findByCodeInProfessor(code: string, professorId: string): Promise<Student | null> {
+    try {
+      const { adminDb } = await import('./firebase-admin');
+      if (!adminDb) {
+        throw new Error("Firebase Admin SDK no está disponible");
+      }
+      const studentsQuery = adminDb.collection('professors').doc(professorId).collection('students').where('code', '==', code);
+      const studentsSnapshot = await studentsQuery.get();
+      
+      if (!studentsSnapshot.empty) {
+        const studentDoc = studentsSnapshot.docs[0];
+        const studentData = {
+          id: `${professorId}/${studentDoc.id}`,
+          ...studentDoc.data(),
+          enrolledAt: studentDoc.data().enrolledAt?.toDate() || new Date(),
+          lastAccess: studentDoc.data().lastAccess?.toDate()
+        } as Student;
+        return studentData;
+      }
+      return null;
+    } catch (error) {
+      return null;
+    }
+  },
+
+  async generateUniqueCode(professorId: string): Promise<string> {
+    let code: string;
+    let existing = true;
+    let attempts = 0;
+
+    while (existing) {
+      attempts++;
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      code = '';
+      for (let i = 0; i < 12; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      existing = !!(await this.findByCodeInProfessor(code, professorId));
+
+      if (attempts > 10) {
+        throw new Error("Failed to generate a unique student code after 10 attempts.");
+      }
+    }
+    return code!;
+  },
+
+  async findStudentByIdInProfessor(studentId: string, professorId: string): Promise<Student | null> {
+    try {
+      const { adminDb } = await import('./firebase-admin');
+      if (!adminDb) {
+        throw new Error("Firebase Admin SDK no está disponible");
+      }
+      const studentDoc = await adminDb.collection('professors').doc(professorId).collection('students').doc(studentId).get();
+      
+      if (!studentDoc.exists) {
+        return null;
+      }
+      
+      const studentData = {
+        id: `${professorId}/${studentDoc.id}`,
+        ...studentDoc.data(),
+        enrolledAt: studentDoc.data().enrolledAt?.toDate() || new Date(),
+        lastAccess: studentDoc.data().lastAccess?.toDate()
+      } as Student;
+      
+      return studentData;
+    } catch (error) {
+      console.error("❌ Error finding student by ID:", error);
+      return null;
+    }
+  }
+}; 
+
+// Servicios para Videos (Admin SDK - para API routes)
+export const videoServiceAdmin = {
+  async getBySubject(professorId: string, subjectId: string): Promise<Video[]> {
+    try {
+      const { adminDb } = await import('./firebase-admin');
+      if (!adminDb) {
+        throw new Error("Firebase Admin SDK no está disponible");
+      }
+      const videosQuery = adminDb.collection('professors').doc(professorId).collection('subjects').doc(subjectId).collection('videos').where('isActive', '==', true);
+      const videosSnapshot = await videosQuery.get();
+      
+      return videosSnapshot.docs.map((doc: any) => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate() || new Date(),
+        updatedAt: doc.data().updatedAt?.toDate()
+      })) as Video[];
+    } catch (error) {
+      return [];
+    }
+  },
+
+  async delete(professorId: string, subjectId: string, videoId: string): Promise<void> {
+    try {
+      const { adminDb } = await import('./firebase-admin');
+      if (!adminDb) {
+        throw new Error("Firebase Admin SDK no está disponible");
+      }
+      const docRef = adminDb.collection('professors').doc(professorId).collection('subjects').doc(subjectId).collection('videos').doc(videoId);
+      await docRef.delete();
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  async getByProfessor(professorId: string): Promise<Video[]> {
+    try {
+      const { adminDb } = await import('./firebase-admin');
+      if (!adminDb) {
+        throw new Error("Firebase Admin SDK no está disponible");
+      }
+      const subjectsSnapshot = await adminDb.collection('professors').doc(professorId).collection('subjects').get();
+      const allVideos: Video[] = [];
+
+      for (const subjectDoc of subjectsSnapshot.docs) {
+        const subjectId = subjectDoc.id;
+        const videos = await this.getBySubject(professorId, subjectId);
+        allVideos.push(...videos);
+      }
+
+      return allVideos;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  async findByMuxAssetId(muxAssetId: string): Promise<{ video: Video; professorId: string; subjectId: string; videoId: string } | null> {
+    try {
+      const { adminDb } = await import('./firebase-admin');
+      if (!adminDb) {
+        throw new Error("Firebase Admin SDK no está disponible");
+      }
+      const professorsSnapshot = await adminDb.collection('professors').get();
+      
+      for (const professorDoc of professorsSnapshot.docs) {
+        const professorId = professorDoc.id;
+        const subjectsSnapshot = await adminDb.collection('professors').doc(professorId).collection('subjects').get();
+        
+        for (const subjectDoc of subjectsSnapshot.docs) {
+          const subjectId = subjectDoc.id;
+          const videosQuery = adminDb.collection('professors').doc(professorId).collection('subjects').doc(subjectId).collection('videos').where('muxAssetId', '==', muxAssetId);
+          const videosSnapshot = await videosQuery.get();
+          
+          if (!videosSnapshot.empty) {
+            const videoDoc = videosSnapshot.docs[0];
+            const video = {
+              id: videoDoc.id,
+              ...videoDoc.data(),
+              createdAt: videoDoc.data().createdAt?.toDate() || new Date(),
+              updatedAt: videoDoc.data().updatedAt?.toDate()
+            } as Video;
+            
+            return {
+              video,
+              professorId,
+              subjectId,
+              videoId: videoDoc.id
+            };
+          }
+        }
+      }
+      
+      return null;
+    } catch (error) {
+      return null;
+    }
+  }
 }; 

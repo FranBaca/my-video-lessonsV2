@@ -2,25 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/app/lib/firebase-admin";
 import { professorService } from "@/app/lib/firebase-services";
 
-// Middleware para verificar autenticación de administrador
-async function verifyAdminAuth(request: NextRequest): Promise<boolean> {
-  const authHeader = request.headers.get("authorization");
-  
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return false;
-  }
-
-  const token = authHeader.substring(7);
-  
-  // Verificar token de administrador
-  const adminToken = process.env.ADMIN_SECRET_TOKEN;
-  
-  if (!adminToken || token !== adminToken) {
-    return false;
-  }
-
-  return true;
-}
+import { verifyAdminAuth } from "@/app/lib/auth-utils";
 
 export async function POST(request: NextRequest) {
   try {

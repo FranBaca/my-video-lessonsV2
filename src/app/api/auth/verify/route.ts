@@ -1,116 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
+import { studentServiceAdmin } from "@/app/lib/firebase-services";
 import { adminDb } from "@/app/lib/firebase-admin";
 import { Student } from "@/app/types/firebase";
+import { createErrorResponse, checkRateLimit, isValidDeviceId } from "@/app/lib/server-utils";
 
 export const dynamic = 'force-dynamic';
 
 // Variable para activar/desactivar la validación de dispositivo
 const FINGERPRINT_VALIDATION_ENABLED = true; // Device validation enabled
-// process.env.FINGERPRINT_VALIDATION_ENABLED === "true";
 
-// Rate limiting
-const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minuto
 const MAX_REQUESTS_PER_WINDOW = 5;
-const MAX_ATTEMPTS_PER_HOUR = 50; // Added hourly limit
-const requestCounts = new Map<string, { count: number; timestamp: number; hourlyCount: number; hourlyTimestamp: number }>();
-
-// Validar formato del deviceId
-function isValidDeviceId(deviceId: string): boolean {
-  // Accept both UUID format and fingerprint format (hash-uuid)
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  const fingerprintRegex = /^[0-9a-f]+-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  
-  return uuidRegex.test(deviceId) || fingerprintRegex.test(deviceId);
-}
-
-// Enhanced rate limiting
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const requestData = requestCounts.get(ip);
-
-  if (!requestData || now - requestData.timestamp > RATE_LIMIT_WINDOW) {
-    // Reset per-minute counter
-    const hourlyCount = requestData ? requestData.hourlyCount : 0;
-    const hourlyTimestamp = requestData ? requestData.hourlyTimestamp : now;
-    
-    requestCounts.set(ip, { 
-      count: 1, 
-      timestamp: now,
-      hourlyCount: hourlyCount + 1,
-      hourlyTimestamp: hourlyTimestamp
-    });
-    
-    // Check hourly limit
-    if (now - hourlyTimestamp > 60 * 60 * 1000) {
-      // Reset hourly counter
-      requestCounts.set(ip, { 
-        count: 1, 
-        timestamp: now,
-        hourlyCount: 1,
-        hourlyTimestamp: now
-      });
-    } else if (hourlyCount >= MAX_ATTEMPTS_PER_HOUR) {
-      return false; // Hourly limit exceeded
-    }
-    
-    return true;
-  }
-
-  if (requestData.count >= MAX_REQUESTS_PER_WINDOW) {
-    return false; // Per-minute limit exceeded
-  }
-
-  requestData.count++;
-  requestData.hourlyCount++;
-  return true;
-}
-
-// Función mejorada para buscar estudiantes en Firebase
-async function findStudentByCode(code: string): Promise<Student | null> {
-  try {
-    // Obtener todos los profesores
-    const professorsSnapshot = await adminDb.collection('professors').get();
-    
-    // Buscar en cada profesor
-    for (const professorDoc of professorsSnapshot.docs) {
-      const professorId = professorDoc.id;
-      
-      try {
-        // Buscar estudiantes en este profesor
-        const studentsQuery = adminDb.collection('professors').doc(professorId).collection('students').where('code', '==', code);
-        
-        const studentsSnapshot = await studentsQuery.get();
-        
-        if (!studentsSnapshot.empty) {
-          const studentDoc = studentsSnapshot.docs[0];
-          
-          const studentData = {
-            id: `${professorId}/${studentDoc.id}`,
-            ...studentDoc.data(),
-            enrolledAt: studentDoc.data().enrolledAt?.toDate() || new Date(),
-            lastAccess: studentDoc.data().lastAccess?.toDate()
-          } as Student;
-          
-          return studentData;
-        }
-      } catch (error) {
-        continue; // Try next professor
-      }
-    }
-    
-    return null;
-  } catch (error) {
-    return null;
-  }
-}
-
-// Centralized error handling
-function createErrorResponse(message: string, status: number = 400) {
-  return NextResponse.json(
-    { success: false, message },
-    { status }
-  );
-}
+const MAX_ATTEMPTS_PER_HOUR = 50;
 
 export async function POST(request: NextRequest) {
   try {
@@ -124,7 +24,7 @@ export async function POST(request: NextRequest) {
     
     // Rate limiting
     const ip = request.headers.get("x-forwarded-for") || "unknown";
-    if (!checkRateLimit(ip)) {
+    if (!checkRateLimit(ip, MAX_REQUESTS_PER_WINDOW, MAX_ATTEMPTS_PER_HOUR)) {
       return createErrorResponse(
         "Demasiadas solicitudes. Límite: 5 por minuto, 50 por hora. Por favor, espera antes de intentar nuevamente.",
         429
@@ -144,7 +44,7 @@ export async function POST(request: NextRequest) {
     }
 
     // SINGLE STUDENT LOOKUP - Reuse existing function
-    const student = await findStudentByCode(code);
+    const student = await studentServiceAdmin.findByCode(code);
     
     if (!student) {
       return createErrorResponse("El código ingresado no es válido o no existe", 403);

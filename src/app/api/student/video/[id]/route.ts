@@ -1,83 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { MuxUploadService } from "@/app/lib/mux-upload-service";
+import { studentServiceAdmin, subjectServiceAdmin, videoServiceAdmin } from "@/app/lib/firebase-services";
 import { adminDb } from "@/app/lib/firebase-admin";
-import { Student } from "@/app/types/firebase";
 
 const uploadService = new MuxUploadService();
-
-// Función para buscar estudiantes (copiada del verify route)
-async function findStudentByCode(code: string): Promise<Student | null> {
-  try {
-    // Obtener todos los profesores
-    const professorsSnapshot = await adminDb.collection('professors').get();
-    
-    // Buscar en cada profesor
-    for (const professorDoc of professorsSnapshot.docs) {
-      const professorId = professorDoc.id;
-      
-      try {
-        // Buscar estudiantes en este profesor
-        const studentsQuery = adminDb.collection('professors').doc(professorId).collection('students').where('code', '==', code);
-        
-        const studentsSnapshot = await studentsQuery.get();
-        
-        if (!studentsSnapshot.empty) {
-          const studentDoc = studentsSnapshot.docs[0];
-          
-          const studentData = {
-            id: `${professorId}/${studentDoc.id}`,
-            ...studentDoc.data(),
-            enrolledAt: studentDoc.data().enrolledAt?.toDate() || new Date(),
-            lastAccess: studentDoc.data().lastAccess?.toDate()
-          } as Student;
-          
-          return studentData;
-        }
-      } catch (error) {
-        continue; // Try next professor
-      }
-    }
-    
-    return null;
-  } catch (error) {
-    return null;
-  }
-}
-
-// Función para obtener videos de una materia usando Admin SDK
-async function getVideosBySubject(professorId: string, subjectId: string) {
-  try {
-    const videosQuery = adminDb.collection('professors').doc(professorId).collection('subjects').doc(subjectId).collection('videos').where('isActive', '==', true);
-    const videosSnapshot = await videosQuery.get();
-    
-    return videosSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate() || new Date(),
-      updatedAt: doc.data().updatedAt?.toDate()
-    }));
-  } catch (error) {
-    return [];
-  }
-}
-
-// Función para obtener materia usando Admin SDK
-async function getSubjectById(professorId: string, subjectId: string) {
-  try {
-    const subjectDoc = await adminDb.collection('professors').doc(professorId).collection('subjects').doc(subjectId).get();
-    if (subjectDoc.exists) {
-      return {
-        id: subjectDoc.id,
-        ...subjectDoc.data(),
-        createdAt: subjectDoc.data().createdAt?.toDate() || new Date(),
-        updatedAt: subjectDoc.data().updatedAt?.toDate()
-      };
-    }
-    return null;
-  } catch (error) {
-    return null;
-  }
-}
 
 export async function GET(
   request: NextRequest,
@@ -98,7 +24,7 @@ export async function GET(
     }
 
     // Obtener información del estudiante usando la nueva función
-    const student = await findStudentByCode(studentCode);
+    const student = await studentServiceAdmin.findByCode(studentCode);
     
     if (!student) {
       return NextResponse.json(
@@ -131,7 +57,7 @@ export async function GET(
 
     // Buscar el video en las materias permitidas del estudiante
     const allowedSubjects = student.allowedSubjects || [];
-    let video = null;
+    let video: any = null;
     let foundSubject = null;
 
     // Extraer el professorId del id del estudiante
@@ -140,12 +66,12 @@ export async function GET(
 
     for (const subjectId of allowedSubjects) {
       try {
-        const videos = await getVideosBySubject(professorId, subjectId);
+        const videos = await videoServiceAdmin.getBySubject(professorId, subjectId);
         const foundVideo = videos.find(v => v.id === videoId);
         
         if (foundVideo) {
           video = foundVideo;
-          foundSubject = await getSubjectById(professorId, subjectId);
+          foundSubject = await subjectServiceAdmin.getById(professorId, subjectId);
           break;
         }
       } catch (error) {
@@ -255,4 +181,4 @@ export async function GET(
       { status: 500 }
     );
   }
-} 
+}

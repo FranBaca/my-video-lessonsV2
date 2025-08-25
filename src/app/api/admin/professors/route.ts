@@ -4,27 +4,7 @@ import { Professor } from "@/app/types/firebase";
 import { auth } from "@/app/lib/firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 
-// Middleware para verificar autenticación de administrador
-async function verifyAdminAuth(request: NextRequest): Promise<boolean> {
-  // Aquí puedes implementar la lógica de verificación de administrador
-  // Por ejemplo, verificar un token especial o credenciales de administrador
-  const authHeader = request.headers.get("authorization");
-  
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return false;
-  }
-
-  const token = authHeader.substring(7);
-  
-  // Verificar token de administrador (puedes usar una variable de entorno)
-  const adminToken = process.env.ADMIN_SECRET_TOKEN;
-  
-  if (!adminToken || token !== adminToken) {
-    return false;
-  }
-
-  return true;
-}
+import { verifyAdminAuth } from "@/app/lib/auth-utils";
 
 export async function POST(request: NextRequest) {
   try {

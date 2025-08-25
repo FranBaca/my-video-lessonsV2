@@ -1,47 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyProfessorAuth } from "@/app/lib/auth-utils";
-import { videoService } from "@/app/lib/firebase-services";
-import { adminDb } from "@/app/lib/firebase-admin";
-import { Student } from "@/app/types/firebase";
-
-// Función para buscar estudiantes (copiada del verify route)
-async function findStudentByCode(code: string): Promise<Student | null> {
-  try {
-    // Obtener todos los profesores
-    const professorsSnapshot = await adminDb.collection('professors').get();
-    
-    // Buscar en cada profesor
-    for (const professorDoc of professorsSnapshot.docs) {
-      const professorId = professorDoc.id;
-      
-      try {
-        // Buscar estudiantes en este profesor
-        const studentsQuery = adminDb.collection('professors').doc(professorId).collection('students').where('code', '==', code);
-        
-        const studentsSnapshot = await studentsQuery.get();
-        
-        if (!studentsSnapshot.empty) {
-          const studentDoc = studentsSnapshot.docs[0];
-          
-          const studentData = {
-            id: `${professorId}/${studentDoc.id}`,
-            ...studentDoc.data(),
-            enrolledAt: studentDoc.data().enrolledAt?.toDate() || new Date(),
-            lastAccess: studentDoc.data().lastAccess?.toDate()
-          } as Student;
-          
-          return studentData;
-        }
-      } catch (error) {
-        continue; // Try next professor
-      }
-    }
-    
-    return null;
-  } catch (error) {
-    return null;
-  }
-}
+import { videoService, studentServiceAdmin } from "@/app/lib/firebase-services";
 
 export async function GET(request: NextRequest) {
   try {
@@ -52,7 +11,7 @@ export async function GET(request: NextRequest) {
     // Si hay un código de estudiante, obtener sus materias permitidas
     if (studentCode) {
       try {
-        const student = await findStudentByCode(studentCode);
+        const student = await studentServiceAdmin.findByCode(studentCode);
         if (student && student.allowedSubjects) {
           allowedSubjects = student.allowedSubjects;
         }
@@ -118,4 +77,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

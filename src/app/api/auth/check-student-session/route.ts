@@ -1,32 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminDb } from "@/app/lib/firebase-admin";
+import { studentServiceAdmin } from "@/app/lib/firebase-services";
 
 export const dynamic = 'force-dynamic';
-
-async function findStudentByCode(code: string) {
-  try {
-    const professorsRef = adminDb.collection('professors');
-    const professorsSnapshot = await professorsRef.get();
-    
-    for (const professorDoc of professorsSnapshot.docs) {
-      const studentsRef = professorDoc.ref.collection('students');
-      const studentsSnapshot = await studentsRef.where('code', '==', code).get();
-      
-      if (!studentsSnapshot.empty) {
-        const studentDoc = studentsSnapshot.docs[0];
-        return {
-          id: `${professorDoc.id}/${studentDoc.id}`,
-          ...studentDoc.data()
-        };
-      }
-    }
-    
-    return null;
-  } catch (error) {
-    console.error('Error finding student:', error);
-    return null;
-  }
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -41,7 +16,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Find student by code
-    const student = await findStudentByCode(studentCode);
+    const student = await studentServiceAdmin.findByCode(studentCode);
     
     if (!student) {
       return NextResponse.json({ 
@@ -77,4 +52,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

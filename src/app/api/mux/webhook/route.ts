@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from 'crypto';
 import { adminDb } from "@/app/lib/firebase-admin";
+import { videoServiceAdmin } from "@/app/lib/firebase-services";
 
 // Configuración para obtener raw body en App Router
 export const dynamic = 'force-dynamic';
@@ -30,53 +31,6 @@ function verifyMuxSignature(payload: string, header: string, secret: string): bo
     return isValid;
   } catch (error) {
     return false;
-  }
-}
-
-// Función para buscar video por muxAssetId usando Admin SDK
-async function findVideoByMuxAssetId(muxAssetId: string): Promise<{ video: any; professorId: string; subjectId: string; videoId: string } | null> {
-  try {
-    // Obtener todos los profesores
-    const professorsSnapshot = await adminDb.collection('professors').get();
-    
-    // Buscar en cada profesor
-    for (const professorDoc of professorsSnapshot.docs) {
-      const professorId = professorDoc.id;
-      
-      // Obtener todas las materias del profesor
-      const subjectsSnapshot = await adminDb.collection('professors').doc(professorId).collection('subjects').get();
-      
-      // Buscar en cada materia
-      for (const subjectDoc of subjectsSnapshot.docs) {
-        const subjectId = subjectDoc.id;
-        
-        // Buscar videos en esta materia
-        const videosQuery = adminDb.collection('professors').doc(professorId).collection('subjects').doc(subjectId).collection('videos').where('muxAssetId', '==', muxAssetId);
-        
-        const videosSnapshot = await videosQuery.get();
-        
-        if (!videosSnapshot.empty) {
-          const videoDoc = videosSnapshot.docs[0];
-          const video = {
-            id: videoDoc.id,
-            ...videoDoc.data(),
-            createdAt: videoDoc.data().createdAt?.toDate() || new Date(),
-            updatedAt: videoDoc.data().updatedAt?.toDate()
-          };
-          
-          return {
-            video,
-            professorId,
-            subjectId,
-            videoId: videoDoc.id
-          };
-        }
-      }
-    }
-    
-    return null;
-  } catch (error) {
-    return null;
   }
 }
 
@@ -140,7 +94,7 @@ async function handleAssetReady(event: any, assetData: any) {
     const playbackId = assetData.playback_ids?.[0]?.id;
     
     // Buscar el video en Firebase por muxAssetId usando Admin SDK
-    const result = await findVideoByMuxAssetId(assetId);
+    const result = await videoServiceAdmin.findByMuxAssetId(assetId);
     
     if (result) {
       const { video, professorId, subjectId, videoId } = result;
@@ -166,13 +120,12 @@ async function handleAssetReady(event: any, assetData: any) {
 async function handleAssetErrored(event: any, assetData: any) {
   try {
     const assetId = assetData.id;
-    const errorMessage = assetData.errors?.message || 'Unknown error';
     
     // Buscar el video en Firebase por muxAssetId usando Admin SDK
-    const result = await findVideoByMuxAssetId(assetId);
+    const result = await videoServiceAdmin.findByMuxAssetId(assetId);
     
     if (result) {
-      const { video, professorId, subjectId, videoId } = result;
+      const { professorId, subjectId, videoId } = result;
       
       // Actualizar el video usando Admin SDK
       const docRef = adminDb.collection('professors').doc(professorId).collection('subjects').doc(subjectId).collection('videos').doc(videoId);
@@ -193,10 +146,10 @@ async function handleUploadAssetCreated(event: any, assetData: any) {
     const uploadId = event.object?.id; // El uploadId está en event.object.id
     
     // Buscar el video por uploadId (que es como se guardó originalmente)
-    const result = await findVideoByMuxAssetId(uploadId);
+    const result = await videoServiceAdmin.findByMuxAssetId(uploadId);
     
     if (result) {
-      const { video, professorId, subjectId, videoId } = result;
+      const { professorId, subjectId, videoId } = result;
       
       // Actualizar el video con el assetId correcto usando Admin SDK
       const docRef = adminDb.collection('professors').doc(professorId).collection('subjects').doc(subjectId).collection('videos').doc(videoId);
@@ -206,22 +159,6 @@ async function handleUploadAssetCreated(event: any, assetData: any) {
         updatedAt: new Date()
       });
     } else {
-      await createDefaultVideo(assetId, assetData);
-    }
-  } catch (error) {
-    // Error handling silently for production
-  }
-}
-
-async function handleAssetCreated(event: any, assetData: any) {
-  try {
-    const assetId = assetData.id;
-    const uploadId = assetData.upload_id;
-    
-    // Buscar el video en Firebase por muxAssetId
-    const result = await findVideoByMuxAssetId(assetId);
-    
-    if (!result) {
       await createDefaultVideo(assetId, assetData);
     }
   } catch (error) {
@@ -277,4 +214,4 @@ async function createDefaultVideo(assetId: string, assetData: any) {
   } catch (error) {
     // Error handling silently for production
   }
-} 
+}

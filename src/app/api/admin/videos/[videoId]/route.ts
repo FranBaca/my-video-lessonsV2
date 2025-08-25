@@ -1,75 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
-import { adminDb } from "@/app/lib/firebase-admin";
-import { Video } from "@/app/types/firebase";
+import { NextResponse } from "next/server";
 import { createAuthMiddleware, AuthenticatedRequest } from "@/app/lib/auth-utils";
 import { MuxUploadService } from "@/app/lib/mux-upload-service";
+import { videoServiceAdmin } from "@/app/lib/firebase-services";
 
 const uploadService = new MuxUploadService();
-
-// Función para buscar video por ID en todas las materias del profesor
-async function findVideoByIdInProfessor(videoId: string, professorId: string): Promise<Video | null> {
-  try {
-    // Obtener todas las materias del profesor
-    const subjectsSnapshot = await adminDb.collection('professors').doc(professorId).collection('subjects').get();
-    
-    // Buscar en cada materia
-    for (const subjectDoc of subjectsSnapshot.docs) {
-      const subjectId = subjectDoc.id;
-      
-      try {
-        // Buscar video en esta materia
-        const videoDoc = await adminDb.collection('professors').doc(professorId).collection('subjects').doc(subjectId).collection('videos').doc(videoId).get();
-        
-        if (videoDoc.exists) {
-          const videoData = {
-            id: videoDoc.id,
-            ...videoDoc.data(),
-            createdAt: videoDoc.data().createdAt?.toDate() || new Date(),
-            updatedAt: videoDoc.data().updatedAt?.toDate()
-          } as Video;
-          
-          return videoData;
-        }
-      } catch (error) {
-        continue; // Try next subject
-      }
-    }
-    
-    return null;
-  } catch (error) {
-    console.error("❌ Error finding video by ID:", error);
-    return null;
-  }
-}
-
-// Función para eliminar video de Firestore
-async function deleteVideoFromFirestore(videoId: string, professorId: string, subjectId: string): Promise<void> {
-  try {
-    await adminDb.collection('professors').doc(professorId).collection('subjects').doc(subjectId).collection('videos').doc(videoId).delete();
-  } catch (error) {
-    console.error("❌ Error deleting video from Firestore:", error);
-    throw error;
-  }
-}
-
-// Función para eliminar asset de Mux (opcional)
-async function deleteMuxAsset(muxAssetId: string): Promise<void> {
-  try {
-    if (muxAssetId) {
-      await uploadService.deleteAsset(muxAssetId);
-    }
-  } catch (error) {
-    console.error("❌ Error deleting Mux asset:", error);
-    // No throw error here - we want to continue even if Mux deletion fails
-  }
-}
 
 // Función principal del endpoint
 async function handleDeleteVideo(request: AuthenticatedRequest, context: { params: { videoId: string } }) {
   try {
-    console.log("🔍 Context received:", context);
-    console.log("🔍 Params received:", context?.params);
-    
     if (!context?.params?.videoId) {
       return NextResponse.json(
         {
@@ -84,7 +22,9 @@ async function handleDeleteVideo(request: AuthenticatedRequest, context: { param
     const professorId = request.professorId!;
     
     // Validar que el video existe y pertenece al profesor
-    const existingVideo = await findVideoByIdInProfessor(videoId, professorId);
+    const videos = await videoServiceAdmin.getByProfessor(professorId);
+    const existingVideo = videos.find(v => v.id === videoId);
+
     if (!existingVideo) {
       return NextResponse.json(
         {
@@ -107,11 +47,16 @@ async function handleDeleteVideo(request: AuthenticatedRequest, context: { param
     }
     
     // Eliminar video de Firestore
-    await deleteVideoFromFirestore(videoId, professorId, existingVideo.subjectId);
+    await videoServiceAdmin.delete(professorId, existingVideo.subjectId, videoId);
     
     // Opcionalmente eliminar de Mux (si tiene muxAssetId)
     if (existingVideo.muxAssetId) {
-      await deleteMuxAsset(existingVideo.muxAssetId);
+      try {
+        await uploadService.deleteAsset(existingVideo.muxAssetId);
+      } catch (error) {
+        // No throw error here - we want to continue even if Mux deletion fails
+        console.error("❌ Error deleting Mux asset:", error);
+      }
     }
     
     return NextResponse.json({
@@ -133,4 +78,4 @@ async function handleDeleteVideo(request: AuthenticatedRequest, context: { param
 }
 
 // Exportar el endpoint con middleware de autenticación
-export const DELETE = createAuthMiddleware(handleDeleteVideo); 
+export const DELETE = createAuthMiddleware(handleDeleteVideo);

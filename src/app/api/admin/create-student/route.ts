@@ -1,53 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { adminDb } from "@/app/lib/firebase-admin";
-import { Student } from "@/app/types/firebase";
 import { createAuthMiddleware, AuthenticatedRequest } from "@/app/lib/auth-utils";
-
-// Función optimizada para buscar estudiantes solo en el profesor actual
-async function findStudentByCodeInProfessor(code: string, professorId: string): Promise<Student | null> {
-  try {
-    const studentsQuery = adminDb.collection('professors').doc(professorId).collection('students').where('code', '==', code);
-    
-    const studentsSnapshot = await studentsQuery.get();
-    
-    if (!studentsSnapshot.empty) {
-      const studentDoc = studentsSnapshot.docs[0];
-      
-      const studentData = {
-        id: `${professorId}/${studentDoc.id}`,
-        ...studentDoc.data(),
-        enrolledAt: studentDoc.data().enrolledAt?.toDate() || new Date(),
-        lastAccess: studentDoc.data().lastAccess?.toDate()
-      } as Student;
-      
-      return studentData;
-    }
-    
-    return null;
-  } catch (error) {
-    return null;
-  }
-}
-
-// Función para verificar que el profesor existe
-async function verifyProfessorExists(professorId: string): Promise<boolean> {
-  try {
-    const professorDoc = await adminDb.collection('professors').doc(professorId).get();
-    return professorDoc.exists;
-  } catch (error) {
-    return false;
-  }
-}
-
-// Función para generar código único de estudiante
-function generateStudentCode(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result = '';
-  for (let i = 0; i < 12; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-}
+import { studentServiceAdmin, professorServiceAdmin } from "@/app/lib/firebase-services";
 
 async function handleCreateStudent(request: AuthenticatedRequest) {
   try {
@@ -82,7 +36,7 @@ async function handleCreateStudent(request: AuthenticatedRequest) {
 
     // Verificar que el profesor existe
     const professorId = request.professorId!;
-    const professorExists = await verifyProfessorExists(professorId);
+    const professorExists = await professorServiceAdmin.getById(professorId);
     if (!professorExists) {
       return NextResponse.json(
         {
@@ -94,26 +48,7 @@ async function handleCreateStudent(request: AuthenticatedRequest) {
     }
 
     // Generar código único para el estudiante (solo verificar en este profesor)
-    let code: string;
-    let attempts = 0;
-    const maxAttempts = 10;
-
-    do {
-      code = generateStudentCode();
-      attempts++;
-      
-      if (attempts > maxAttempts) {
-        return NextResponse.json(
-          {
-            success: false,
-            message: "No se pudo generar un código único para el estudiante"
-          },
-          { status: 500 }
-        );
-      }
-    } while (await findStudentByCodeInProfessor(code, professorId));
-
-
+    const code = await studentServiceAdmin.generateUniqueCode(professorId);
 
     // Crear el estudiante
     const studentData: any = {
@@ -137,8 +72,6 @@ async function handleCreateStudent(request: AuthenticatedRequest) {
       lastAccess: new Date()
     });
 
-
-
     return NextResponse.json({
       success: true,
       message: "Estudiante creado exitosamente",
@@ -161,4 +94,4 @@ async function handleCreateStudent(request: AuthenticatedRequest) {
 }
 
 // Exportar el endpoint con middleware de autenticación
-export const POST = createAuthMiddleware(handleCreateStudent); 
+export const POST = createAuthMiddleware(handleCreateStudent);
