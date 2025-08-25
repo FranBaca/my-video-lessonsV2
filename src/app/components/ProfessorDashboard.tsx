@@ -1,24 +1,23 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FiEdit, FiTrash2, FiPlus, FiUpload, FiBook, FiVideo, FiUsers, FiSearch, FiX } from 'react-icons/fi';
-import { 
-  dashboardAnimations, 
-  statsCardVariants, 
-  tabContentVariants, 
-  listVariants,
-  modalAnimations 
-} from '../../animations';
+import { useState, useEffect, useCallback } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { authService } from '../lib/auth-service';
 import { professorServiceClient, videoServiceClient, studentServiceClient, subjectServiceClient } from '../lib/firebase-client';
 import { Professor, Video, Student, Subject } from '../types/firebase';
+import { showNotification, showConfirmation } from '../lib/notifications';
+
+// Import the new smaller components
+import DashboardHeader from './DashboardHeader';
+import DashboardNav from './DashboardNav';
+import OverviewTab from './OverviewTab';
+import SubjectsTab from './SubjectsTab';
+import VideosTab from './VideosTab';
+import StudentsTab from './StudentsTab';
 import CreateSubjectModal from './CreateSubjectModal';
-import SubjectCard from './SubjectCard';
 import VideoUpload from './VideoUpload';
 import EditStudentModal from './EditStudentModal';
-import SearchBar from './SearchBar';
-import { showNotification, showConfirmation } from '../lib/notifications';
+import CreateStudentModal from './CreateStudentModal';
 
 interface ProfessorDashboardProps {
   professorId: string;
@@ -33,58 +32,28 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'subjects' | 'videos' | 'students'>('overview');
   
-  // Estados para modales
+  // Modal states
   const [showCreateSubjectModal, setShowCreateSubjectModal] = useState(false);
   const [showVideoUploadModal, setShowVideoUploadModal] = useState(false);
   const [showCreateStudentModal, setShowCreateStudentModal] = useState(false);
   const [showEditStudentModal, setShowEditStudentModal] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
-  
-  // Estados para crear estudiante
-  const [creatingStudent, setCreatingStudent] = useState(false);
-  const [newStudentName, setNewStudentName] = useState('');
-  const [newStudentEmail, setNewStudentEmail] = useState('');
-  const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
-  
-  // Estado para búsqueda de estudiantes
-  const [studentSearchTerm, setStudentSearchTerm] = useState('');
-  
-  // Estado para búsqueda de videos
-  const [videoSearchTerm, setVideoSearchTerm] = useState('');
-  
-  // Estado para búsqueda de materias
-  const [subjectSearchTerm, setSubjectSearchTerm] = useState('');
 
   const loadDashboardData = useCallback(async () => {
     try {
       setLoading(true);
-      
       const [videosData, subjectsData, studentsData] = await Promise.all([
         videoServiceClient.getByProfessor(professorId),
         subjectServiceClient.getByProfessor(professorId),
         studentServiceClient.getByProfessor(professorId)
       ]);
-      
       setVideos(videosData);
       setSubjects(subjectsData);
       setStudents(studentsData);
     } catch (error) {
-      console.error('Error loading dashboard data:', error);
-      // Show error notification in development
-      if (process.env.NODE_ENV === 'development') {
-        showNotification.error('Error al cargar los datos del dashboard');
-      }
+      showNotification.error('Error al cargar los datos del dashboard');
     } finally {
       setLoading(false);
-    }
-  }, [professorId]);
-
-  const refreshSubjects = useCallback(async () => {
-    try {
-      const subjectsData = await subjectServiceClient.getByProfessor(professorId);
-      setSubjects(subjectsData);
-    } catch (error) {
-      console.error('Error refreshing subjects:', error);
     }
   }, [professorId]);
 
@@ -97,38 +66,17 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
       await authService.logout();
       onLogout();
     } catch (error) {
-      // Aún así, llamar a onLogout para limpiar el estado local
       onLogout();
     }
   };
 
-  // Funciones para materias
+  // Subject handlers
   const handleCreateSubject = async (subjectData: Omit<Subject, 'id'>) => {
     try {
       const subjectId = await subjectServiceClient.create(professorId, subjectData);
-      
-      // Cerrar el modal antes de recargar datos
       setShowCreateSubjectModal(false);
-      
-      // Actualizar inmediatamente el estado local con la nueva materia
-      const newSubject: Subject = {
-        id: subjectId,
-        ...subjectData,
-        createdAt: new Date(),
-        updatedAt: undefined
-      };
-      
+      const newSubject: Subject = { id: subjectId, ...subjectData, createdAt: new Date() };
       setSubjects(prev => [...prev, newSubject]);
-      
-      // Refrescar subjects específicamente después de un breve delay
-      setTimeout(async () => {
-        try {
-          await refreshSubjects();
-        } catch (error) {
-          console.error('Error refreshing subjects:', error);
-        }
-      }, 1000);
-      
       showNotification.success('Materia creada exitosamente');
     } catch (error) {
       showNotification.error(`Error al crear la materia: ${error instanceof Error ? error.message : 'Error desconocido'}`);
@@ -138,7 +86,6 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
   const handleDeleteSubject = async (subjectId: string) => {
     const confirmed = await showConfirmation('¿Estás seguro de que quieres eliminar esta materia? Esta acción no se puede deshacer.');
     if (!confirmed) return;
-
     try {
       await subjectServiceClient.delete(professorId, subjectId);
       await loadDashboardData();
@@ -148,42 +95,27 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
     }
   };
 
-  // Funciones para videos
+  // Video handlers
   const handleVideoUploadSuccess = async (video: Video) => {
     await loadDashboardData();
     setShowVideoUploadModal(false);
-          showNotification.success('Clase subida exitosamente');
-  };
-
-  const handleVideoUploadError = (error: string) => {
-    showNotification.error(`Error al subir el video: ${error}`);
+    showNotification.success('Clase subida exitosamente');
   };
 
   const handleDeleteVideo = async (videoId: string) => {
     const confirmed = await showConfirmation('¿Estás seguro de que quieres eliminar este video? Esta acción no se puede deshacer.');
     if (!confirmed) return;
-
     try {
-      // Get the current user's ID token for authentication
-      const currentUser = authService.getCurrentUser();
-      if (!currentUser) {
-        throw new Error('No hay usuario autenticado');
-      }
-
-      const token = await currentUser.getIdToken();
-      
+      const token = await authService.getCurrentUser()?.getIdToken();
+      if (!token) throw new Error('No autenticado');
       const response = await fetch(`/api/admin/videos/${videoId}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        headers: { 'Authorization': `Bearer ${token}` },
       });
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Error al eliminar el video');
       }
-
       await loadDashboardData();
       showNotification.success('Video eliminado exitosamente');
     } catch (error) {
@@ -191,51 +123,22 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
     }
   };
 
-  // Funciones para crear estudiantes
-  const handleCreateStudent = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newStudentName.trim()) return;
-
+  // Student handlers
+  const handleCreateStudent = async (name: string, email: string, allowedSubjects: string[]) => {
     try {
-      setCreatingStudent(true);
-      
-      const studentData: any = {
-        name: newStudentName.trim(),
-        authorized: true,
-        allowedVideos: [], // Por ahora vacío, se puede implementar después
-        allowedSubjects: selectedSubjects,
-        enrolledAt: new Date()
-      };
-
-      // Solo incluir email si no está vacío
-      if (newStudentEmail.trim()) {
-        studentData.email = newStudentEmail.trim();
-      }
-
+      const studentData: any = { name, authorized: true, allowedVideos: [], allowedSubjects, enrolledAt: new Date() };
+      if (email) studentData.email = email;
       const result = await studentServiceClient.createWithGeneratedCode(professorId, studentData);
-
-      // Limpiar formulario
-      setNewStudentName('');
-      setNewStudentEmail('');
-      setSelectedSubjects([]);
-      setShowCreateStudentModal(false);
-
-      // Recargar datos
       await loadDashboardData();
-
-      // Mostrar mensaje de éxito
-      showNotification.success(`Estudiante creado exitosamente!\nCódigo: ${result.code}`);
+      showNotification.success(`Estudiante creado exitosamente! Código: ${result.code}`);
     } catch (error) {
       showNotification.error(`Error al crear el estudiante: ${error instanceof Error ? error.message : 'Error desconocido'}`);
-    } finally {
-      setCreatingStudent(false);
     }
   };
 
   const handleDeleteStudent = async (studentId: string) => {
     const confirmed = await showConfirmation('¿Estás seguro de que quieres eliminar este estudiante?');
     if (!confirmed) return;
-
     try {
       await studentServiceClient.delete(professorId, studentId);
       await loadDashboardData();
@@ -252,133 +155,24 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
 
   const handleUpdateStudent = async (studentId: string, subjectsToAdd: string[]) => {
     try {
-      // Get the current user's ID token for authentication
-      const currentUser = authService.getCurrentUser();
-      if (!currentUser) {
-        throw new Error('No hay usuario autenticado');
-      }
-
-      const token = await currentUser.getIdToken();
-      
+      const token = await authService.getCurrentUser()?.getIdToken();
+      if (!token) throw new Error('No autenticado');
       const response = await fetch(`/api/admin/students/${studentId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ subjectsToAdd }),
       });
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Error al actualizar el estudiante');
       }
-
       await loadDashboardData();
       showNotification.success('Estudiante actualizado exitosamente');
     } catch (error) {
       showNotification.error(`Error al actualizar el estudiante: ${error instanceof Error ? error.message : 'Error desconocido'}`);
-      throw error; // Re-throw to let the modal handle it
+      throw error;
     }
   };
-
-  const handleToggleSubjectSelection = (subjectId: string) => {
-    setSelectedSubjects(prev => 
-      prev.includes(subjectId) 
-        ? prev.filter(id => id !== subjectId)
-        : [...prev, subjectId]
-    );
-  };
-
-  /**
-   * Filtrado de estudiantes basado en el término de búsqueda
-   * 
-   * Busca en:
-   * - Nombre del estudiante
-   * - Código del estudiante  
-   * - Email del estudiante (si existe)
-   * 
-   * La búsqueda es case-insensitive y se actualiza en tiempo real
-   */
-  const filteredStudents = useMemo(() => {
-    if (!studentSearchTerm.trim()) {
-      return students;
-    }
-    
-    const searchTerm = studentSearchTerm.toLowerCase().trim();
-    return students.filter(student => {
-      return (
-        student.name.toLowerCase().includes(searchTerm) ||
-        student.code.toLowerCase().includes(searchTerm) ||
-        (student.email && student.email.toLowerCase().includes(searchTerm))
-      );
-    });
-  }, [students, studentSearchTerm]);
-
-  /**
-   * Filtrado de videos basado en el término de búsqueda
-   * 
-   * Busca en:
-   * - Nombre del video
-   * - Descripción del video (si existe)
-   * - Nombre de la materia asociada
-   * 
-   * La búsqueda es case-insensitive y se actualiza en tiempo real
-   */
-  const filteredVideos = useMemo(() => {
-    if (!videoSearchTerm.trim()) {
-      return videos;
-    }
-    
-    const searchTerm = videoSearchTerm.toLowerCase().trim();
-    return videos.filter(video => {
-      const subject = subjects.find(s => s.id === video.subjectId);
-      return (
-        video.name.toLowerCase().includes(searchTerm) ||
-        (video.description && video.description.toLowerCase().includes(searchTerm)) ||
-        (subject && subject.name.toLowerCase().includes(searchTerm))
-      );
-    });
-  }, [videos, videoSearchTerm, subjects]);
-
-  /**
-   * Filtrado de materias basado en el término de búsqueda
-   * 
-   * Busca en:
-   * - Nombre de la materia
-   * - Descripción de la materia
-   * 
-   * La búsqueda es case-insensitive y se actualiza en tiempo real
-   */
-  const filteredSubjects = useMemo(() => {
-    if (!subjectSearchTerm.trim()) {
-      return subjects;
-    }
-    
-    const searchTerm = subjectSearchTerm.toLowerCase().trim();
-    return subjects.filter(subject => {
-      return (
-        subject.name.toLowerCase().includes(searchTerm) ||
-        (subject.description && subject.description.toLowerCase().includes(searchTerm))
-      );
-    });
-  }, [subjects, subjectSearchTerm]);
-
-  // Limpiar búsqueda cuando se cambia de tab
-  const handleTabChange = (tab: 'overview' | 'subjects' | 'videos' | 'students') => {
-    if (tab !== 'students') {
-      setStudentSearchTerm('');
-    }
-    if (tab !== 'videos') {
-      setVideoSearchTerm('');
-    }
-    if (tab !== 'subjects') {
-      setSubjectSearchTerm('');
-    }
-    setActiveTab(tab);
-  };
-
-
 
   if (loading) {
     return (
@@ -393,545 +187,44 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                Dashboard de Profesor
-              </h1>
-              <p className="text-gray-600">Bienvenido, {professor.name}</p>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-            >
-              Cerrar Sesión
-            </button>
-          </div>
-        </div>
-      </header>
+      <DashboardHeader professor={professor} onLogout={handleLogout} />
+      <DashboardNav 
+        activeTab={activeTab} 
+        onTabChange={setActiveTab} 
+        counts={{ subjects: subjects.length, videos: videos.length, students: students.length }}
+      />
 
-      {/* Navigation Tabs */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
-            <button
-              onClick={() => handleTabChange('overview')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'overview'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Resumen
-            </button>
-            <button
-              onClick={() => handleTabChange('subjects')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'subjects'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Materias ({subjects.length})
-            </button>
-            <button
-              onClick={() => handleTabChange('videos')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'videos'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Clases ({videos.length})
-            </button>
-            <button
-              onClick={() => handleTabChange('students')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'students'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Estudiantes ({students.length})
-            </button>
-          </nav>
-        </div>
-      </div>
-
-            {/* Content */}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <AnimatePresence mode="wait">
-                 {activeTab === 'overview' && (
-            <motion.div 
-              className="grid grid-cols-1 md:grid-cols-3 gap-6"
-              variants={statsCardVariants.container}
-              initial="initial"
-              animate="animate"
-            >
-             <motion.div 
-               className="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow duration-200"
-               variants={statsCardVariants.card}
-               whileHover="whileHover"
-             >
-               <div className="p-5">
-                 <div className="flex items-center">
-                   <div className="flex-shrink-0">
-                     <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                       <FiVideo className="w-5 h-5 text-white" />
-                     </div>
-                   </div>
-                   <div className="ml-5 w-0 flex-1">
-                     <dl>
-                       <dt className="text-sm font-medium text-gray-500 truncate">Total Clases</dt>
-                       <dd className="text-lg font-medium text-gray-900">{videos.length}</dd>
-                     </dl>
-                   </div>
-                 </div>
-               </div>
-             </motion.div>
-
-             <motion.div 
-               className="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow duration-200"
-               variants={statsCardVariants.card}
-               whileHover="whileHover"
-             >
-               <div className="p-5">
-                 <div className="flex items-center">
-                   <div className="flex-shrink-0">
-                     <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                       <FiUsers className="w-5 h-5 text-white" />
-                     </div>
-                   </div>
-                   <div className="ml-5 w-0 flex-1">
-                     <dl>
-                       <dt className="text-sm font-medium text-gray-500 truncate">Total Estudiantes</dt>
-                       <dd className="text-lg font-medium text-gray-900">{students.length}</dd>
-                     </dl>
-                   </div>
-                 </div>
-               </div>
-             </motion.div>
-
-             <motion.div 
-               className="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow duration-200"
-               variants={statsCardVariants.card}
-               whileHover="whileHover"
-             >
-               <div className="p-5">
-                 <div className="flex items-center">
-                   <div className="flex-shrink-0">
-                     <div className="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
-                       <FiBook className="w-5 h-5 text-white" />
-                     </div>
-                   </div>
-                   <div className="ml-5 w-0 flex-1">
-                     <dl>
-                       <dt className="text-sm font-medium text-gray-500 truncate">Materias</dt>
-                       <dd className="text-lg font-medium text-gray-900">{subjects.length}</dd>
-                     </dl>
-                   </div>
-                 </div>
-               </div>
-             </motion.div>
-
-             
-           </motion.div>
-         )}
-
-        {activeTab === 'subjects' && (
-          <motion.div 
-            className="space-y-6"
-            variants={tabContentVariants.subjects}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-          >
-            {/* Header con búsqueda y botones */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <h2 className="text-lg font-medium text-gray-900">Materias</h2>
-              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                <div className="w-full sm:w-64">
-                  <SearchBar
-                    placeholder="Buscar materias..."
-                    value={subjectSearchTerm}
-                    onChange={setSubjectSearchTerm}
-                    onClear={() => setSubjectSearchTerm('')}
-                  />
-                </div>
-                <div className="flex space-x-2">
-                  <motion.button
-                    onClick={() => setShowVideoUploadModal(true)}
-                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2"
-                    variants={dashboardAnimations.buttons.primary}
-                    whileHover="whileHover"
-                    whileTap="whileTap"
-                  >
-                    <FiUpload className="w-4 h-4" />
-                    Subir Video
-                  </motion.button>
-                  <motion.button
-                    onClick={() => setShowCreateSubjectModal(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2"
-                    variants={dashboardAnimations.buttons.primary}
-                    whileHover="whileHover"
-                    whileTap="whileTap"
-                  >
-                    <FiPlus className="w-4 h-4" />
-                    Crear Materia
-                  </motion.button>
-                </div>
-              </div>
-            </div>
-
-            {/* Grid de materias */}
-            {filteredSubjects.length === 0 ? (
-              <motion.div 
-                className="text-center py-12"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-              >
-                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                </svg>
-                <h3 className="mt-2 text-sm font-medium text-gray-900">
-                  {subjectSearchTerm.trim() ? 'No se encontraron materias' : 'No hay materias'}
-                </h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  {subjectSearchTerm.trim() 
-                    ? 'Intenta con un término de búsqueda diferente.'
-                    : 'Comienza creando tu primera materia.'
-                  }
-                </p>
-                {!subjectSearchTerm.trim() && (
-                  <div className="mt-6">
-                    <motion.button
-                      onClick={() => setShowCreateSubjectModal(true)}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2"
-                      variants={dashboardAnimations.buttons.primary}
-                      whileHover="whileHover"
-                      whileTap="whileTap"
-                    >
-                      <FiPlus className="w-4 h-4" />
-                      Crear Primera Materia
-                    </motion.button>
-                  </div>
-                )}
-              </motion.div>
-            ) : (
-              <motion.div 
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                variants={listVariants.subjects.grid}
-                initial="initial"
-                animate="animate"
-              >
-                {filteredSubjects.map((subject, index) => {
-                  const videoCount = videos.filter(v => v.subjectId === subject.id).length;
-                  return (
-                    <motion.div
-                      key={subject.id}
-                      variants={listVariants.subjects.card}
-                      custom={index}
-                    >
-                      <SubjectCard
-                        subject={subject}
-                        videoCount={videoCount}
-                        onDelete={() => handleDeleteSubject(subject.id!)}
-                      />
-                    </motion.div>
-                  );
-                })}
-              </motion.div>
-            )}
-          </motion.div>
-        )}
-
-        {activeTab === 'videos' && (
-          <motion.div 
-            className="space-y-6"
-            variants={tabContentVariants.videos}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-          >
-            {/* Header con búsqueda y botón de subir */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <h2 className="text-lg font-medium text-gray-900">Clases</h2>
-              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                <div className="w-full sm:w-64">
-                  <SearchBar
-                    placeholder="Buscar clases..."
-                    value={videoSearchTerm}
-                    onChange={setVideoSearchTerm}
-                    onClear={() => setVideoSearchTerm('')}
-                  />
-                </div>
-                <motion.button
-                  onClick={() => setShowVideoUploadModal(true)}
-                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap flex items-center gap-2"
-                  variants={dashboardAnimations.buttons.primary}
-                  whileHover="whileHover"
-                  whileTap="whileTap"
-                >
-                  <FiUpload className="w-4 h-4" />
-                  Subir Video
-                </motion.button>
-              </div>
-            </div>
-
-            {/* Lista de videos */}
-            <motion.div 
-              className="bg-white shadow overflow-hidden sm:rounded-md"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-            >
-              {/* Indicador de resultados de búsqueda */}
-              {videoSearchTerm.trim() && (
-                <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
-                  <p className="text-sm text-gray-600">
-                    {filteredVideos.length === 0 
-                      ? `No se encontraron clases que coincidan con "${videoSearchTerm}"`
-                      : `Mostrando ${filteredVideos.length} de ${videos.length} clases`
-                    }
-                  </p>
-                </div>
-              )}
-              
-              {filteredVideos.length === 0 ? (
-                <motion.div 
-                  className="text-center py-12"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4 }}
-                >
-                  <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">
-                    {videoSearchTerm.trim() ? 'No se encontraron clases' : 'No hay clases'}
-                  </h3>
-                  <p className="mt-1 text-sm text-gray-500">
-                    {videoSearchTerm.trim() 
-                      ? 'Intenta con un término de búsqueda diferente.'
-                      : 'Comienza subiendo tu primera clase.'
-                    }
-                  </p>
-                </motion.div>
-              ) : (
-                <motion.ul 
-                  className="divide-y divide-gray-200"
-                  variants={listVariants.videos.list}
-                  initial="initial"
-                  animate="animate"
-                >
-                  {filteredVideos.map((video, index) => {
-                    const subject = subjects.find(s => s.id === video.subjectId);
-                    return (
-                      <motion.li 
-                        key={video.id}
-                        variants={listVariants.videos.item}
-                        custom={index}
-                      >
-                        <div className="px-4 py-4 flex items-center justify-between">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0">
-                              <div className="w-10 h-10 bg-gray-300 rounded-md flex items-center justify-center">
-                                <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                </svg>
-                              </div>
-                            </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">{video.name}</div>
-                              <div className="text-sm text-gray-500">
-                                {subject ? subject.name : 'Sin materia'}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <motion.span 
-                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                video.isActive 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : 'bg-gray-100 text-gray-800'
-                              }`}
-                              variants={dashboardAnimations.badges}
-                              whileHover="whileHover"
-                            >
-                              {video.isActive ? 'Activo' : 'Inactivo'}
-                            </motion.span>
-                            <motion.button
-                              onClick={() => handleDeleteVideo(video.id!)}
-                              className="text-red-600 hover:text-red-900 text-sm font-medium flex items-center gap-1"
-                              variants={dashboardAnimations.actionButtons.delete}
-                              whileHover="whileHover"
-                              whileTap="whileTap"
-                            >
-                              <FiTrash2 className="w-4 h-4" />
-                              Eliminar
-                            </motion.button>
-                          </div>
-                        </div>
-                      </motion.li>
-                    );
-                  })}
-                </motion.ul>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
-
-        {activeTab === 'students' && (
-          <motion.div 
-            className="space-y-6"
-            variants={tabContentVariants.students}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-          >
-            {/* Header con búsqueda y botón de crear */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <h2 className="text-lg font-medium text-gray-900">Estudiantes</h2>
-              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                <div className="w-full sm:w-64">
-                  <SearchBar
-                    placeholder="Buscar estudiantes..."
-                    value={studentSearchTerm}
-                    onChange={setStudentSearchTerm}
-                    onClear={() => setStudentSearchTerm('')}
-                  />
-                </div>
-                <motion.button
-                  onClick={() => setShowCreateStudentModal(true)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap flex items-center gap-2"
-                  variants={dashboardAnimations.buttons.primary}
-                  whileHover="whileHover"
-                  whileTap="whileTap"
-                >
-                  <FiPlus className="w-4 h-4" />
-                  Agregar Estudiante
-                </motion.button>
-              </div>
-            </div>
-
-            {/* Lista de estudiantes */}
-            <motion.div 
-              className="bg-white shadow overflow-hidden sm:rounded-md"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-            >
-              {/* Indicador de resultados de búsqueda */}
-              {studentSearchTerm.trim() && (
-                <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
-                  <p className="text-sm text-gray-600">
-                    {filteredStudents.length === 0 
-                      ? `No se encontraron estudiantes que coincidan con "${studentSearchTerm}"`
-                      : `Mostrando ${filteredStudents.length} de ${students.length} estudiantes`
-                    }
-                  </p>
-                </div>
-              )}
-              
-              {filteredStudents.length === 0 ? (
-                <motion.div 
-                  className="text-center py-12"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4 }}
-                >
-                  <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                  </svg>
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">
-                    {studentSearchTerm.trim() ? 'No se encontraron estudiantes' : 'No hay estudiantes'}
-                  </h3>
-                  <p className="mt-1 text-sm text-gray-500">
-                    {studentSearchTerm.trim() 
-                      ? 'Intenta con un término de búsqueda diferente.'
-                      : 'Comienza agregando tu primer estudiante.'
-                    }
-                  </p>
-                </motion.div>
-              ) : (
-                <motion.ul 
-                  className="divide-y divide-gray-200"
-                  variants={listVariants.students.list}
-                  initial="initial"
-                  animate="animate"
-                >
-                  {filteredStudents.map((student, index) => (
-                    <motion.li 
-                      key={student.id}
-                      variants={listVariants.students.item}
-                      custom={index}
-                    >
-                      <div className="px-4 py-4 flex items-center justify-between">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0">
-                            <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                              <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                              </svg>
-                            </div>
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{student.name}</div>
-                            <div className="text-sm text-gray-500">Código: {student.code}</div>
-                            {student.email && (
-                              <div className="text-sm text-gray-500">{student.email}</div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <motion.span 
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              student.authorized 
-                                ? 'bg-green-100 text-green-800' 
-                                : 'bg-red-100 text-red-800'
-                            }`}
-                            variants={dashboardAnimations.badges}
-                            whileHover="whileHover"
-                          >
-                            {student.authorized ? 'Autorizado' : 'No autorizado'}
-                          </motion.span>
-                          <motion.button
-                            onClick={() => handleEditStudent(student)}
-                            className="text-blue-600 hover:text-blue-900 text-sm font-medium mr-2 flex items-center gap-1"
-                            variants={dashboardAnimations.actionButtons.edit}
-                            whileHover="whileHover"
-                            whileTap="whileTap"
-                          >
-                            <FiEdit className="w-4 h-4" />
-                            Editar
-                          </motion.button>
-                          <motion.button
-                            onClick={() => handleDeleteStudent(student.id!)}
-                            className="text-red-600 hover:text-red-900 text-sm font-medium flex items-center gap-1"
-                            variants={dashboardAnimations.actionButtons.delete}
-                            whileHover="whileHover"
-                            whileTap="whileTap"
-                          >
-                            <FiTrash2 className="w-4 h-4" />
-                            Eliminar
-                          </motion.button>
-                        </div>
-                      </div>
-                    </motion.li>
-                  ))}
-                </motion.ul>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
+          {activeTab === 'overview' && <OverviewTab stats={{ videos: videos.length, students: students.length, subjects: subjects.length }} />}
+          {activeTab === 'subjects' && (
+            <SubjectsTab 
+              subjects={subjects} 
+              videos={videos} 
+              onDeleteSubject={handleDeleteSubject} 
+              onShowCreateSubjectModal={() => setShowCreateSubjectModal(true)}
+              onShowVideoUploadModal={() => setShowVideoUploadModal(true)}
+            />
+          )}
+          {activeTab === 'videos' && (
+            <VideosTab 
+              videos={videos} 
+              subjects={subjects} 
+              onDeleteVideo={handleDeleteVideo} 
+              onShowVideoUploadModal={() => setShowVideoUploadModal(true)}
+            />
+          )}
+          {activeTab === 'students' && (
+            <StudentsTab 
+              students={students} 
+              onDeleteStudent={handleDeleteStudent} 
+              onEditStudent={handleEditStudent} 
+              onShowCreateStudentModal={() => setShowCreateStudentModal(true)}
+            />
+          )}
         </AnimatePresence>
       </main>
 
-      {/* Modal para crear materia */}
       {showCreateSubjectModal && (
         <CreateSubjectModal
           isOpen={showCreateSubjectModal}
@@ -942,148 +235,29 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
         />
       )}
 
-      {/* Modal para subir video */}
       {showVideoUploadModal && (
         <VideoUpload
           professorId={professorId}
           subjects={subjects}
           onUploadSuccess={handleVideoUploadSuccess}
-          onUploadError={handleVideoUploadError}
+          onUploadError={(err) => showNotification.error(`Error al subir: ${err}`)}
           onCancel={() => setShowVideoUploadModal(false)}
         />
       )}
 
-      {/* Modal para crear estudiante */}
-      <AnimatePresence>
-        {showCreateStudentModal && (
-          <motion.div 
-            className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
-            variants={modalAnimations.backdrop}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-          >
-            <motion.div 
-              className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white"
-              variants={modalAnimations.quickScale}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-            >
-              <div className="mt-3">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Crear Nuevo Estudiante</h3>
-                
-                <form onSubmit={handleCreateStudent} className="space-y-4">
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: 0.1 }}
-                  >
-                    <label htmlFor="studentName" className="block text-sm font-medium text-gray-700">
-                      Nombre *
-                    </label>
-                    <input
-                      type="text"
-                      id="studentName"
-                      value={newStudentName}
-                      onChange={(e) => setNewStudentName(e.target.value)}
-                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
-                      placeholder="Nombre del estudiante"
-                      required
-                    />
-                  </motion.div>
+      {showCreateStudentModal && (
+        <CreateStudentModal 
+          isOpen={showCreateStudentModal}
+          onClose={() => setShowCreateStudentModal(false)}
+          onSubmit={handleCreateStudent}
+          subjects={subjects}
+        />
+      )}
 
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: 0.2 }}
-                  >
-                    <label htmlFor="studentEmail" className="block text-sm font-medium text-gray-700">
-                      Email (opcional)
-                    </label>
-                    <input
-                      type="email"
-                      id="studentEmail"
-                      value={newStudentEmail}
-                      onChange={(e) => setNewStudentEmail(e.target.value)}
-                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
-                      placeholder="email@ejemplo.com"
-                    />
-                  </motion.div>
-
-                  {subjects.length > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: 0.3 }}
-                    >
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Materias permitidas (opcional)
-                      </label>
-                      <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-md p-2">
-                        {subjects.map((subject) => (
-                          <motion.label 
-                            key={subject.id} 
-                            className="flex items-center space-x-2 py-1"
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.2 }}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={selectedSubjects.includes(subject.id!)}
-                              onChange={() => handleToggleSubjectSelection(subject.id!)}
-                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                            />
-                            <span className="text-sm text-gray-700">{subject.name}</span>
-                          </motion.label>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-
-                  <motion.div 
-                    className="flex justify-end space-x-3 pt-4"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: 0.4 }}
-                  >
-                    <motion.button
-                      type="button"
-                      onClick={() => setShowCreateStudentModal(false)}
-                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-md"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      Cancelar
-                    </motion.button>
-                    <motion.button
-                      type="submit"
-                      disabled={creatingStudent || !newStudentName.trim()}
-                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      {creatingStudent ? 'Creando...' : 'Crear Estudiante'}
-                    </motion.button>
-                  </motion.div>
-                </form>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Modal para editar estudiante */}
       {showEditStudentModal && editingStudent && (
         <EditStudentModal
           isOpen={showEditStudentModal}
-          onClose={() => {
-            setShowEditStudentModal(false);
-            setEditingStudent(null);
-          }}
+          onClose={() => setShowEditStudentModal(false)}
           onSubmit={handleUpdateStudent}
           student={editingStudent}
           subjects={subjects}
@@ -1091,4 +265,4 @@ export default function ProfessorDashboard({ professorId, professor, onLogout }:
       )}
     </div>
   );
-} 
+}
